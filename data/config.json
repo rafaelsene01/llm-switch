@@ -1,0 +1,248 @@
+{
+  "blocklist": [
+    {
+      "id": "builtin_cpf",
+      "label": "CPF",
+      "value": "\\b\\d{3}[.\\-]?\\d{3}[.\\-]?\\d{3}[.\\-]?\\d{2}\\b",
+      "type": "regex",
+      "replacement": "[CPF_REMOVIDO]",
+      "active": true,
+      "builtin": true,
+      "category": "documento"
+    },
+    {
+      "id": "builtin_cnpj",
+      "label": "CNPJ",
+      "value": "\\b\\d{2}[.\\-\\/]?\\d{3}[.\\-\\/]?\\d{3}[.\\-\\/]?\\d{4}[.\\-\\/]?\\d{2}\\b",
+      "type": "regex",
+      "replacement": "[CNPJ_REMOVIDO]",
+      "active": true,
+      "builtin": true,
+      "category": "documento"
+    },
+    {
+      "id": "builtin_rg",
+      "label": "RG",
+      "value": "\\b\\d{1,2}[.\\-]?\\d{3}[.\\-]?\\d{3}[-]?[\\dxX]\\b",
+      "type": "regex",
+      "replacement": "[RG_REMOVIDO]",
+      "active": true,
+      "builtin": true,
+      "category": "documento"
+    },
+    {
+      "id": "builtin_cnh",
+      "label": "CNH",
+      "value": "\\bCNH\\s*:?\\s*\\d{9,11}\\b",
+      "type": "regex",
+      "replacement": "[CNH_REMOVIDA]",
+      "active": true,
+      "builtin": true,
+      "category": "documento"
+    },
+    {
+      "id": "builtin_email",
+      "label": "E-mail",
+      "value": "[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}",
+      "type": "regex",
+      "replacement": "[EMAIL_REMOVIDO]",
+      "active": true,
+      "builtin": true,
+      "category": "contato"
+    },
+    {
+      "id": "builtin_telefone",
+      "label": "Telefone BR",
+      "value": "(?:\\+55\\s?)?(?:\\(?\\d{2}\\)?\\s?)(?:9\\s?)?\\d{4,5}[.\\-\\s]?\\d{4}\\b",
+      "type": "regex",
+      "replacement": "[TELEFONE_REMOVIDO]",
+      "active": true,
+      "builtin": true,
+      "category": "contato"
+    },
+    {
+      "id": "builtin_cartao",
+      "label": "Cartão de Crédito",
+      "value": "\\b(?:\\d{4}[.\\-\\s]?){3}\\d{4}\\b",
+      "type": "regex",
+      "replacement": "[CARTAO_REMOVIDO]",
+      "active": true,
+      "builtin": true,
+      "category": "financeiro"
+    },
+    {
+      "id": "builtin_agencia_conta",
+      "label": "Agência / Conta Bancária",
+      "value": "\\bagência\\s*:?\\s*\\d{4,5}[-]?\\d?\\s*[,\\/]?\\s*conta\\s*:?\\s*\\d{5,12}[-]?\\d?\\b",
+      "type": "regex",
+      "replacement": "[DADOS_BANCARIOS_REMOVIDOS]",
+      "active": true,
+      "builtin": true,
+      "category": "financeiro"
+    },
+    {
+      "id": "builtin_pix",
+      "label": "Chave Pix",
+      "value": "\\bchave\\s*pix\\s*:?\\s*[\\w\\+@.\\-]{5,}",
+      "type": "regex",
+      "replacement": "[CHAVE_PIX_REMOVIDA]",
+      "active": true,
+      "builtin": true,
+      "category": "financeiro"
+    },
+    {
+      "id": "builtin_api_key",
+      "label": "API Key (sk-, AKIA, ghp_, etc.)",
+      "value": "\\b(?:sk-[a-zA-Z0-9\\-_]{20,}|AKIA[A-Z0-9]{16}|ghp_[a-zA-Z0-9]{36}|glpat-[a-zA-Z0-9\\-_]{20}|xoxb-[0-9\\-a-zA-Z]{40,}|AIza[0-9A-Za-z\\-_]{35})\\b",
+      "type": "regex",
+      "replacement": "[API_KEY_REMOVIDA]",
+      "active": true,
+      "builtin": true,
+      "category": "credencial"
+    },
+    {
+      "id": "builtin_jwt",
+      "label": "JWT Token",
+      "value": "eyJ[a-zA-Z0-9_\\-]+\\.eyJ[a-zA-Z0-9_\\-]+\\.[a-zA-Z0-9_\\-]+",
+      "type": "regex",
+      "replacement": "[JWT_REMOVIDO]",
+      "active": true,
+      "builtin": true,
+      "category": "credencial"
+    },
+    {
+      "id": "builtin_senha_inline",
+      "label": "Senha inline (senha:, password=, etc.)",
+      "value": "(?:senha|password|passwd|pwd|secret)\\s*[:=]\\s*\\S+",
+      "type": "regex",
+      "replacement": "[SENHA_REMOVIDA]",
+      "active": true,
+      "builtin": true,
+      "category": "credencial"
+    },
+    {
+      "id": "builtin_basic_auth",
+      "label": "Basic Auth (header)",
+      "value": "Basic\\s+[A-Za-z0-9+/=]{10,}",
+      "type": "regex",
+      "replacement": "[BASIC_AUTH_REMOVIDO]",
+      "active": true,
+      "builtin": true,
+      "category": "credencial"
+    },
+    {
+      "id": "builtin_cid",
+      "label": "CID (código de doença)",
+      "value": "\\bCID[-\\s]?[A-Z]\\d{2}(?:\\.\\d{1,2})?\\b",
+      "type": "regex",
+      "replacement": "[CID_REMOVIDO]",
+      "active": true,
+      "builtin": true,
+      "category": "saude"
+    },
+    {
+      "id": "builtin_crm",
+      "label": "CRM (médico)",
+      "value": "\\bCRM[-\\/]?[A-Z]{2}\\s*\\d{4,6}\\b",
+      "type": "regex",
+      "replacement": "[CRM_REMOVIDO]",
+      "active": true,
+      "builtin": true,
+      "category": "saude"
+    },
+    {
+      "id": "builtin_cep",
+      "label": "CEP",
+      "value": "\\b\\d{5}-?\\d{3}\\b",
+      "type": "regex",
+      "replacement": "[CEP_REMOVIDO]",
+      "active": true,
+      "builtin": true,
+      "category": "documento"
+    },
+    {
+      "id": "builtin_ip_privado",
+      "label": "IP Privado (192.168.x, 10.x, 172.16-31.x)",
+      "value": "\\b(?:10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|172\\.(?:1[6-9]|2\\d|3[01])\\.\\d{1,3}\\.\\d{1,3}|192\\.168\\.\\d{1,3}\\.\\d{1,3})\\b",
+      "type": "regex",
+      "replacement": "[IP_INTERNO_REMOVIDO]",
+      "active": true,
+      "builtin": true,
+      "category": "rede"
+    },
+    {
+      "id": "custom_projeto_phoenix",
+      "label": "Projeto Phoenix (exemplo)",
+      "value": "Projeto Phoenix",
+      "type": "word",
+      "replacement": "[PROJETO_BLOQUEADO]",
+      "active": false,
+      "builtin": false,
+      "category": "custom"
+    },
+    {
+      "id": "custom_cliente_xyz",
+      "label": "Cliente XYZ (exemplo)",
+      "value": "Cliente XYZ",
+      "type": "word",
+      "replacement": "[CLIENTE_BLOQUEADO]",
+      "active": false,
+      "builtin": false,
+      "category": "custom"
+    }
+  ],
+  "models": [
+    {
+      "id": "default_openai_4o_mini",
+      "value": "openai:gpt-4o-mini",
+      "label": "GPT-4o Mini",
+      "active": true
+    },
+    {
+      "id": "default_openai_4o",
+      "value": "openai:gpt-4o",
+      "label": "GPT-4o",
+      "active": true
+    },
+    {
+      "id": "default_claude_haiku",
+      "value": "anthropic:claude-3-5-haiku-20241022",
+      "label": "Claude 3.5 Haiku",
+      "active": true
+    },
+    {
+      "id": "default_claude_sonnet",
+      "value": "anthropic:claude-3-5-sonnet-20241022",
+      "label": "Claude 3.5 Sonnet",
+      "active": true
+    },
+    {
+      "id": "default_gemini_flash",
+      "value": "google:gemini-2.0-flash",
+      "label": "Gemini 2.0 Flash",
+      "active": true
+    },
+    {
+      "id": "default_ollama_llama",
+      "value": "ollama:llama3.2",
+      "label": "Llama 3.2 (Ollama local)",
+      "active": true
+    },
+    {
+      "id": "default_lmstudio_qwen",
+      "value": "lmstudio:qwen/qwen3-8b",
+      "label": "Qwen3 8B (LM Studio local)",
+      "active": true
+    }
+  ],
+  "users": [
+    {
+      "id": "u_1776612943061",
+      "name": "Sene",
+      "key": "gw_442d73c24f8331c3c842ddc5a6f0dc77f8380dda",
+      "model": "openai:gpt-4o",
+      "createdAt": "2026-04-19T15:35:43.061Z",
+      "active": false
+    }
+  ]
+}

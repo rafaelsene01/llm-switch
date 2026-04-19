@@ -1,0 +1,39 @@
+{"level":"info","message":"🚀 LLM Gateway rodando em http://localhost:3000","timestamp":"2026-04-19 11:05:16"}
+{"level":"info","message":"   Providers: openai | anthropic | google | mistral | openrouter | ollama | lmstudio","timestamp":"2026-04-19 11:05:16"}
+{"level":"info","message":"   Default:   lmstudio:qwen/qwen3-8b","timestamp":"2026-04-19 11:05:16"}
+{"client":"time-dev","durationMs":6316,"level":"warn","message":"request_sanitized","messagesCount":1,"provider":"lmstudio:qwen/qwen3-8b","requestId":"58946e36-4762-4931-b401-cc42112d939a","responseTokens":230,"sanitizationReport":[{"findings":[{"count":1,"label":"CPF"},{"count":1,"label":"EMAIL"}],"messageIndex":0,"role":"user"}],"sensitiveDataRemoved":true,"timestamp":"2026-04-19 11:15:24"}
+{"client":"time-dev","durationMs":13720,"level":"info","message":"request_ok","messagesCount":1,"provider":"lmstudio:qwen/qwen3-8b","requestId":"11ddfdc6-2f29-4fec-9008-8abd89c3db59","responseTokens":484,"sensitiveDataRemoved":false,"timestamp":"2026-04-19 11:16:17"}
+{"client":"time-dev","durationMs":5783,"level":"warn","message":"request_sanitized","messagesCount":1,"provider":"lmstudio:qwen/qwen3-8b","requestId":"92a081ab-8392-46cb-8e68-cd3638b16ebe","responseTokens":220,"sanitizationReport":[{"findings":[{"count":1,"label":"CPF"},{"count":1,"label":"EMAIL"}],"messageIndex":0,"role":"user"}],"sensitiveDataRemoved":true,"timestamp":"2026-04-19 11:16:41"}
+{"client":"time-dev","durationMs":5796,"level":"warn","message":"request_sanitized","messagesCount":1,"provider":"lmstudio:qwen/qwen3-8b","requestId":"165a70de-4e13-4ccb-b5cb-7a59b6105da8","responseTokens":220,"sanitizationReport":[{"findings":[{"count":1,"label":"CPF"},{"count":1,"label":"EMAIL"}],"messageIndex":0,"role":"user"}],"sensitiveDataRemoved":true,"timestamp":"2026-04-19 11:18:26"}
+{"level":"info","message":"🚀 LLM Gateway rodando em http://localhost:3000","timestamp":"2026-04-19 11:41:09"}
+{"level":"info","message":"   Providers: openai | anthropic | google | mistral | openrouter | ollama | lmstudio","timestamp":"2026-04-19 11:41:09"}
+{"level":"info","message":"   Default:   lmstudio:qwen/qwen3-8b","timestamp":"2026-04-19 11:41:09"}
+{"level":"info","message":"🚀 LLM Gateway rodando em http://localhost:3000","timestamp":"2026-04-19 11:41:21"}
+{"level":"info","message":"   Providers: openai | anthropic | google | mistral | openrouter | ollama | lmstudio","timestamp":"2026-04-19 11:41:21"}
+{"level":"info","message":"   Default:   lmstudio:qwen/qwen3-8b","timestamp":"2026-04-19 11:41:21"}
+{"level":"info","message":"🚀 LLM Gateway rodando em http://localhost:3000","timestamp":"2026-04-19 11:41:33"}
+{"level":"info","message":"   Providers: openai | anthropic | google | mistral | openrouter | ollama | lmstudio","timestamp":"2026-04-19 11:41:33"}
+{"level":"info","message":"   Default:   lmstudio:qwen/qwen3-8b","timestamp":"2026-04-19 11:41:33"}
+{"level":"info","message":"🚀 LLM Gateway rodando em http://localhost:3000","timestamp":"2026-04-19 11:41:43"}
+{"level":"info","message":"   Providers: openai | anthropic | google | mistral | openrouter | ollama | lmstudio","timestamp":"2026-04-19 11:41:43"}
+{"level":"info","message":"   Default:   lmstudio:qwen/qwen3-8b","timestamp":"2026-04-19 11:41:43"}
+{"level":"info","message":"🚀 LLM Gateway rodando em http://localhost:3000","timestamp":"2026-04-19 11:41:51"}
+{"level":"info","message":"   UI Admin:  http://localhost:3000","timestamp":"2026-04-19 11:41:51"}
+{"level":"info","message":"   API:       http://localhost:3000/v1/chat/completions","timestamp":"2026-04-19 11:41:51"}
+{"level":"info","message":"🚀 LLM Gateway rodando em http://localhost:3000","timestamp":"2026-04-19 11:45:17"}
+{"level":"info","message":"   UI Admin:  http://localhost:3000","timestamp":"2026-04-19 11:45:17"}
+{"level":"info","message":"   API:       http://localhost:3000/v1/chat/completions","timestamp":"2026-04-19 11:45:17"}
+{"client":"key_dev_...","durationMs":5804,"level":"warn","message":"request_sanitized","messagesCount":1,"provider":"lmstudio:qwen/qwen3-8b","requestId":"dd6ac5da-1d2a-4d37-bc09-896a1ec5942e","responseTokens":220,"sanitizationReport":[{"findings":[{"count":1,"label":"CPF"},{"count":1,"label":"EMAIL"}],"messageIndex":0,"role":"user"}],"sensitiveDataRemoved":true,"timestamp":"2026-04-19 12:06:37"}
+{"client":"key_dev_...","durationMs":6040,"level":"warn","message":"request_sanitized","messagesCount":1,"provider":"lmstudio:qwen/qwen3-8b","requestId":"0953bcfe-2247-4f37-9f35-73b2cc0bbdbd","responseTokens":220,"sanitizationReport":[{"findings":[{"count":1,"label":"CPF"},{"count":1,"label":"EMAIL"}],"messageIndex":0,"role":"user"}],"sensitiveDataRemoved":true,"timestamp":"2026-04-19 12:06:48"}
+{"client":"key_dev_...","durationMs":5910,"level":"warn","message":"request_sanitized","messagesCount":1,"provider":"lmstudio:qwen/qwen3-8b","requestId":"68171f1d-df85-4cbc-92c8-5a908a7824da","responseTokens":220,"sanitizationReport":[{"findings":[{"count":1,"label":"CPF"},{"count":1,"label":"EMAIL"}],"messageIndex":0,"role":"user"}],"sensitiveDataRemoved":true,"timestamp":"2026-04-19 12:07:01"}
+{"level":"info","message":"🚀 LLM Gateway rodando em http://localhost:3000","timestamp":"2026-04-19 12:33:12"}
+{"level":"info","message":"   UI Admin:  http://localhost:3000","timestamp":"2026-04-19 12:33:12"}
+{"level":"info","message":"   API:       http://localhost:3000/v1/chat/completions","timestamp":"2026-04-19 12:33:12"}
+{"level":"info","message":"🚀 LLM Gateway rodando em http://localhost:3000","timestamp":"2026-04-19 12:33:13"}
+{"level":"info","message":"   UI Admin:  http://localhost:3000","timestamp":"2026-04-19 12:33:13"}
+{"level":"info","message":"   API:       http://localhost:3000/v1/chat/completions","timestamp":"2026-04-19 12:33:13"}
+{"client":"key_dev_...","durationMs":11989,"level":"warn","message":"request_sanitized","messagesCount":1,"provider":"lmstudio:qwen/qwen3-8b","requestId":"826c1636-cfc3-4589-a61d-9841a819b99a","responseTokens":220,"sanitizationReport":[{"findings":[{"count":1,"label":"CPF"},{"count":1,"label":"E-mail"}],"messageIndex":0,"role":"user"}],"sensitiveDataRemoved":true,"timestamp":"2026-04-19 12:36:20"}
+{"client":"key_dev_...","durationMs":11135,"level":"warn","message":"request_sanitized","messagesCount":1,"provider":"lmstudio:qwen/qwen3-8b","requestId":"508546cb-c067-4eac-b295-ee68d598f436","responseTokens":220,"sanitizationReport":[{"findings":[{"count":1,"label":"CPF"},{"count":1,"label":"E-mail"}],"messageIndex":0,"role":"user"}],"sensitiveDataRemoved":true,"timestamp":"2026-04-19 12:37:16"}
+{"client":"key_dev_...","durationMs":34202,"level":"info","message":"request_ok","messagesCount":1,"provider":"lmstudio:qwen/qwen3-8b","requestId":"7008d2ee-96b0-450e-8fbd-267df3000bde","responseTokens":642,"sensitiveDataRemoved":false,"timestamp":"2026-04-19 12:40:06"}
+{"client":"key_dev_...","durationMs":28517,"level":"warn","message":"request_sanitized","messagesCount":1,"provider":"lmstudio:qwen/qwen3-8b","requestId":"96c44b4d-4954-46ec-b949-cd0c279f8dc5","responseTokens":515,"sanitizationReport":[{"findings":[{"count":1,"label":"CPF"}],"messageIndex":0,"role":"user"}],"sensitiveDataRemoved":true,"timestamp":"2026-04-19 12:40:54"}
+{"client":"key_dev_...","durationMs":11229,"level":"warn","message":"request_sanitized","messagesCount":1,"provider":"lmstudio:qwen/qwen3-8b","requestId":"4524baeb-85df-4b54-bb9d-ed5b581de844","responseTokens":220,"sanitizationReport":[{"findings":[{"count":1,"label":"CPF"},{"count":1,"label":"E-mail"}],"messageIndex":0,"role":"user"}],"sensitiveDataRemoved":true,"timestamp":"2026-04-19 12:42:02"}
