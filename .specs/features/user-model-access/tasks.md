@@ -61,7 +61,7 @@ T5 → T6
 
 **Done when**:
 - [ ] Para token do store: `req.user` tem `{ id, name, model, allowedModels }`
-- [ ] Para token legado (GATEWAY_KEYS): `req.user = null`
+- [ ] Para token inválido: retorna 401 antes de chegar aqui
 - [ ] `req.userModel` continua sendo definido (sem quebrar chat.js)
 - [ ] `req.clientLabel` continua sendo definido (sem quebrar rate limit e logs)
 

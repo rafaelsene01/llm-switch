@@ -50,7 +50,7 @@ Atualmente todos os usuários autenticados têm acesso irrestrito a todos os mod
 
 1. WHEN `GET /v1/models` é chamado com token de usuário que tem `allowedModels: ["openai:gpt-4o"]` THEN o sistema SHALL retornar apenas `openai:gpt-4o` na listagem
 2. WHEN `GET /v1/models` é chamado com token de usuário com `allowedModels: []` THEN o sistema SHALL retornar todos os modelos ativos de `data/config.json`
-3. WHEN `GET /v1/models` é chamado com token legado (GATEWAY_KEYS) THEN o sistema SHALL retornar todos os modelos ativos (sem restrição, backward compatible)
+3. WHEN `GET /v1/models` é chamado com token de usuário com `allowedModels: []` THEN o sistema SHALL retornar todos os modelos ativos (sem restrição)
 4. WHEN o modelo em `allowedModels` do usuário não existe em `data/config.json` THEN o sistema SHALL omiti-lo silenciosamente da listagem
 
 **Independent Test**: Criar dois usuários com `allowedModels` distintos, chamar `GET /v1/models` com cada token e comparar as respostas.
@@ -68,7 +68,7 @@ Atualmente todos os usuários autenticados têm acesso irrestrito a todos os mod
 1. WHEN `POST /v1/chat/completions` usa modelo que NÃO está em `allowedModels` do usuário THEN o sistema SHALL retornar `403 Forbidden` com mensagem explicativa
 2. WHEN `POST /v1/chat/completions` usa modelo que ESTÁ em `allowedModels` THEN o sistema SHALL processar normalmente
 3. WHEN usuário tem `allowedModels: []` THEN o sistema SHALL permitir qualquer modelo (sem restrição)
-4. WHEN token legado (GATEWAY_KEYS) é usado THEN o sistema SHALL permitir qualquer modelo (backward compatible)
+4. WHEN usuário tem `allowedModels: []` THEN o sistema SHALL permitir qualquer modelo (sem restrição)
 5. WHEN usuário tem modelo padrão (`model`) que NÃO está em `allowedModels` THEN o sistema SHALL retornar 403 (o padrão também é validado)
 
 **Independent Test**: Usuário com `allowedModels: ["openai:gpt-4o-mini"]` tenta chamar `anthropic:claude-3-5-haiku-20241022` → espera 403.

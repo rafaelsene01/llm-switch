@@ -43,18 +43,26 @@ router.get("/blocklist", wrap(async (req, res) => {
   res.json(getBlocklist());
 }));
 
+const VALID_MODES = ["disabled", "redact", "pseudonymize", "block"];
+
 router.post("/blocklist", wrap(async (req, res) => {
-  const { value, type, label, replacement, category } = req.body;
+  const { value, type, label, replacement, category, mode } = req.body;
   if (!value) return res.status(400).json({ error: { message: "Campo 'value' obrigatório." } });
   if (type === "regex") {
     try { new RegExp(value); } catch {
       return res.status(400).json({ error: { message: "Regex inválida." } });
     }
   }
-  res.status(201).json(addBlocklistEntry({ value, type, label, replacement, category }));
+  if (mode !== undefined && !VALID_MODES.includes(mode)) {
+    return res.status(400).json({ error: { message: `mode inválido. Valores aceitos: ${VALID_MODES.join(", ")}` } });
+  }
+  res.status(201).json(addBlocklistEntry({ value, type, label, replacement, category, mode }));
 }));
 
 router.patch("/blocklist/:id", wrap(async (req, res) => {
+  if (req.body.mode !== undefined && !VALID_MODES.includes(req.body.mode)) {
+    return res.status(400).json({ error: { message: `mode inválido. Valores aceitos: ${VALID_MODES.join(", ")}` } });
+  }
   const entry = updateBlocklistEntry(req.params.id, req.body);
   if (!entry) return res.status(404).json({ error: { message: "Entrada não encontrada." } });
   res.json(entry);
@@ -95,10 +103,10 @@ router.get("/users/generate-key", (req, res) => {
 });
 
 router.post("/users", wrap(async (req, res) => {
-  const { name, key, model } = req.body;
+  const { name, key, model, allowedModels } = req.body;
   if (!name) return res.status(400).json({ error: { message: "Campo 'name' obrigatório." } });
   if (!key)  return res.status(400).json({ error: { message: "Campo 'key' obrigatório." } });
-  res.status(201).json(addUser({ name, key, model }));
+  res.status(201).json(addUser({ name, key, model, allowedModels }));
 }));
 
 router.patch("/users/:id", wrap(async (req, res) => {

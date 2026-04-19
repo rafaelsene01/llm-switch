@@ -31,8 +31,17 @@ function save(data) {
 
 // ─── BLOCKLIST ────────────────────────────────────────────────────────────────
 
+const VALID_MODES = ["disabled", "redact", "block"];
+
+function normalizeMode(entry) {
+  if (VALID_MODES.includes(entry.mode)) return entry.mode;
+  // backward compat: converte campo legado `active` para mode
+  if (entry.active === false) return "disabled";
+  return "redact";
+}
+
 export function getBlocklist() {
-  return load().blocklist;
+  return load().blocklist.map((e) => ({ ...e, mode: normalizeMode(e) }));
 }
 
 export function addBlocklistEntry(entry) {
@@ -42,23 +51,27 @@ export function addBlocklistEntry(entry) {
     label: entry.label || entry.value.slice(0, 40),
     value: entry.value,
     type: entry.type || "word",
-    replacement: entry.replacement || "[BLOQUEADO]",
-    active: true,
+    replacement: entry.replacement || "[REMOVIDO]",
+    mode: VALID_MODES.includes(entry.mode) ? entry.mode : "redact",
     builtin: false,
     category: entry.category || "custom",
   };
   data.blocklist.push(newEntry);
   save(data);
-  return newEntry;
+  return { ...newEntry, mode: normalizeMode(newEntry) };
 }
 
 export function updateBlocklistEntry(id, patch) {
   const data = load();
   const idx = data.blocklist.findIndex((e) => e.id === id);
   if (idx === -1) return null;
-  data.blocklist[idx] = { ...data.blocklist[idx], ...patch };
+  const safePatch = { ...patch };
+  if (safePatch.mode !== undefined && !VALID_MODES.includes(safePatch.mode)) {
+    delete safePatch.mode;
+  }
+  data.blocklist[idx] = { ...data.blocklist[idx], ...safePatch };
   save(data);
-  return data.blocklist[idx];
+  return { ...data.blocklist[idx], mode: normalizeMode(data.blocklist[idx]) };
 }
 
 export function deleteBlocklistEntry(id) {
@@ -133,6 +146,7 @@ export function addUser(user) {
     name: user.name,
     key: user.key,
     model: user.model || null,
+    allowedModels: Array.isArray(user.allowedModels) ? user.allowedModels : [],
     createdAt: new Date().toISOString(),
     active: true,
   };

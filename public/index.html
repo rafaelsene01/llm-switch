@@ -301,6 +301,26 @@ td { padding: 10px 12px; vertical-align: middle; }
 .badge-yellow { background: var(--yellow-dim); color: var(--yellow); }
 .badge-gray { background: rgba(255,255,255,0.06); color: var(--text-dim); }
 
+/* ─── RULE MODE SELECT ──────────────────────────────────────────────────── */
+.mode-select {
+  appearance: none;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 3px 24px 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--mono);
+  cursor: pointer;
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7f90'/%3E%3C/svg%3E");
+  transition: border-color 0.15s;
+}
+.mode-select:focus { outline: none; border-color: var(--accent); }
+.mode-select[data-mode="disabled"] { background-color: rgba(255,255,255,0.04); color: var(--text-dim); border-color: var(--border); }
+.mode-select[data-mode="redact"]   { background-color: var(--yellow-dim); color: var(--yellow); border-color: rgba(240,192,64,0.3); }
+.mode-select[data-mode="block"]    { background-color: var(--red-dim); color: var(--red); border-color: rgba(255,77,106,0.3); }
+
 .mono { font-family: var(--mono); font-size: 12px; }
 .text-dim { color: var(--text-dim); }
 .text-accent { color: var(--accent); }
@@ -668,6 +688,32 @@ td { padding: 10px 12px; vertical-align: middle; }
 
 /* ─── BUILTIN INDICATOR ─────────────────────────────────────────────────── */
 .builtin-dot { color: var(--accent); font-size: 10px; margin-right: 2px; }
+
+/* ─── MODELS CHECKLIST ───────────────────────────────────────────────────── */
+.models-checklist {
+  max-height: 160px;
+  overflow-y: auto;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 6px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.model-check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s;
+  font-size: 12px;
+}
+.model-check-item:hover { background: rgba(255,255,255,0.04); }
+.model-check-item input { accent-color: var(--accent); cursor: pointer; width: 14px; height: 14px; }
+.model-check-label { display: flex; align-items: center; gap: 8px; }
 </style>
 </head>
 <body>
@@ -1154,11 +1200,22 @@ const CATEGORY_LABELS = {
   credencial:'Credencial', saude:'Saúde', rede:'Rede', custom:'Custom'
 };
 
-function renderRules() {
-  const active  = state.rules.filter(r => r.active).length;
-  const total   = state.rules.length;
+const RULE_MODE_LABELS = {
+  disabled: 'Desativado',
+  redact:   'Redigir',
+  block:    'Bloquear',
+};
 
-  // Agrupa por categoria para exibição
+const RULE_MODE_TIPS = {
+  disabled: 'Regra ignorada. Nenhum processamento é aplicado.',
+  redact:   'Substitui o dado pelo texto de substituição configurado e envia ao provider.',
+  block:    'Impede o envio ao provider. Retorna uma resposta sintética indicando qual dado sensível foi detectado.',
+};
+
+function renderRules() {
+  const active = state.rules.filter(r => r.mode !== 'disabled').length;
+  const total  = state.rules.length;
+
   const groups = {};
   for (const r of state.rules) {
     const cat = r.category || 'custom';
@@ -1207,6 +1264,14 @@ function renderRules() {
           <option value="rede">Rede</option>
         </select>
       </div>
+      <div class="input-group" style="width:150px">
+        <label class="input-label">Ação</label>
+        <select class="input" id="rule-mode">
+          <option value="redact"   title="${RULE_MODE_TIPS.redact}">Redigir</option>
+          <option value="block"    title="${RULE_MODE_TIPS.block}">Bloquear</option>
+          <option value="disabled" title="${RULE_MODE_TIPS.disabled}">Desativado</option>
+        </select>
+      </div>
       <button class="btn btn-primary" onclick="addRule()">+ Adicionar</button>
     </div>
   </div>
@@ -1215,11 +1280,11 @@ function renderRules() {
   <div class="card">
     <div class="card-title">
       <span class="cat cat-${cat}">${CATEGORY_LABELS[cat] || cat}</span>
-      ${groups[cat].filter(r=>r.active).length} / ${groups[cat].length} ativas
+      ${groups[cat].filter(r => r.mode !== 'disabled').length} / ${groups[cat].length} ativas
     </div>
     <div class="table-wrap">
     <table>
-      <thead><tr><th style="width:36px"></th><th>Label</th><th>Padrão / Valor</th><th>Substitui por</th><th>Status</th><th>Ação</th></tr></thead>
+      <thead><tr><th style="width:36px"></th><th>Label</th><th>Padrão / Valor</th><th>Substitui por</th><th>Ação</th><th></th></tr></thead>
       <tbody>
       ${groups[cat].map(r => `
         <tr>
@@ -1228,12 +1293,14 @@ function renderRules() {
           </td>
           <td style="font-weight:500;color:var(--text)">${escHtml(r.label || r.id)}</td>
           <td class="mono text-dim" style="max-width:260px;word-break:break-all;font-size:11px">${escHtml(r.value)}</td>
-          <td class="mono" style="font-size:11px;color:var(--accent)">${escHtml(r.replacement || '[REMOVIDO]')}</td>
+          <td class="mono" style="font-size:11px;color:var(--accent-dim)">${r.mode === 'redact' ? escHtml(r.replacement || '[REMOVIDO]') : '<span style="color:var(--muted)">—</span>'}</td>
           <td>
-            <label class="toggle" title="${r.active ? 'Clique para desativar' : 'Clique para ativar'}">
-              <input type="checkbox" ${r.active ? 'checked' : ''} onchange="toggleRule('${r.id}', this.checked)">
-              <span class="toggle-slider"></span>
-            </label>
+            <select class="mode-select" data-mode="${r.mode}" title="${RULE_MODE_TIPS[r.mode] || ''}"
+              onchange="setRuleMode('${r.id}', this.value); this.dataset.mode = this.value">
+              ${Object.entries(RULE_MODE_LABELS).map(([val, lbl]) =>
+                `<option value="${val}" ${r.mode === val ? 'selected' : ''}>${lbl}</option>`
+              ).join('')}
+            </select>
           </td>
           <td>
             <button class="btn btn-danger btn-sm" onclick="deleteRule('${r.id}')">✕</button>
@@ -1253,18 +1320,27 @@ async function addRule() {
   const type     = document.getElementById('rule-type').value;
   const label    = document.getElementById('rule-label').value.trim();
   const category = document.getElementById('rule-category').value;
+  const mode     = document.getElementById('rule-mode').value;
   if (!value) return toast('Informe um valor para a regra.', 'error');
   try {
-    await api('POST', '/blocklist', { value, type, label, category });
+    await api('POST', '/blocklist', { value, type, label, category, mode });
     toast('Regra adicionada!');
     await loadRules();
     document.getElementById('main-content').innerHTML = renderRules();
   } catch(e) { toast(e.message, 'error'); }
 }
 
-async function toggleRule(id, active) {
+async function toggleUser(id, active) {
   try {
-    await api('PATCH', `/blocklist/${id}`, { active });
+    await api('PATCH', `/users/${id}`, { active });
+    state.users = await api('GET', '/users');
+    document.getElementById('main-content').innerHTML = renderUsers();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function setRuleMode(id, mode) {
+  try {
+    await api('PATCH', `/blocklist/${id}`, { mode });
     state.rules = await api('GET', '/blocklist');
     updateBadges();
   } catch(e) { toast(e.message, 'error'); }
@@ -1384,7 +1460,7 @@ function renderUsers() {
   <div class="module-toolbar">
     <div class="module-toolbar-title">
       <h1>Usuários</h1>
-      <p>Cada usuário tem uma API key única e um modelo padrão atribuído.</p>
+      <p>Cada usuário tem uma API key, modelo padrão e lista de modelos permitidos.</p>
     </div>
     <button class="btn btn-ghost" onclick="openModuleImport('users')">⬆ Importar</button>
     <button class="btn btn-ghost" onclick="exportModuleFile('users')">⬇ Exportar</button>
@@ -1407,11 +1483,12 @@ function renderUsers() {
     <div class="card-title">Usuários cadastrados</div>
     <div class="table-wrap">
     <table>
-      <thead><tr><th>Nome</th><th>API Key</th><th>Modelo padrão</th><th>Status</th><th>Criado em</th><th>Ações</th></tr></thead>
+      <thead><tr><th>Nome</th><th>API Key</th><th>Modelo padrão</th><th>Acesso a modelos</th><th>Status</th><th>Criado em</th><th>Ações</th></tr></thead>
       <tbody>
-      ${state.users.length === 0 ? `<tr><td colspan="6"><div class="empty">Nenhum usuário cadastrado. Crie o primeiro!</div></td></tr>` : ''}
+      ${state.users.length === 0 ? `<tr><td colspan="7"><div class="empty">Nenhum usuário cadastrado. Crie o primeiro!</div></td></tr>` : ''}
       ${state.users.map(u => {
         const model = state.models.find(m => m.value === u.model);
+        const allowed = u.allowedModels || [];
         return `<tr>
           <td style="font-weight:500;color:#fff">${escHtml(u.name)}</td>
           <td class="mono text-dim">${escHtml(u.keyPreview)}</td>
@@ -1419,7 +1496,16 @@ function renderUsers() {
             ? `<span class="badge badge-green">◈ ${escHtml(model ? model.label : u.model)}</span>`
             : `<span class="badge badge-gray">DEFAULT_PROVIDER</span>`
           }</td>
-          <td><span class="badge ${u.active ? 'badge-green' : 'badge-red'}">${u.active ? '● ativo' : '○ inativo'}</span></td>
+          <td>${allowed.length === 0
+            ? `<span class="badge badge-green">Todos</span>`
+            : `<span class="badge badge-yellow" title="${escHtml(allowed.join(', '))}">${allowed.length} modelo${allowed.length > 1 ? 's' : ''}</span>`
+          }</td>
+          <td>
+            <label class="toggle" title="${u.active ? 'Clique para desativar' : 'Clique para ativar'}">
+              <input type="checkbox" ${u.active ? 'checked' : ''} onchange="toggleUser('${u.id}', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </td>
           <td class="text-dim mono" style="font-size:11px">${new Date(u.createdAt).toLocaleDateString('pt-BR')}</td>
           <td class="actions">
             <button class="btn btn-ghost btn-sm" onclick="openEditUser('${u.id}')">✎ Editar</button>
@@ -1457,6 +1543,10 @@ function openAddUser() {
         <option value="">— usar DEFAULT_PROVIDER —</option>
         ${modelOptions}
       </select>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Modelos permitidos</label>
+      ${allowedModelsCheckboxes([], 'new')}
     </div>`,
     `<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
      <button class="btn btn-primary" onclick="saveUser()">Criar usuário</button>`
@@ -1486,6 +1576,10 @@ function openEditUser(id) {
       </select>
     </div>
     <div class="input-group">
+      <label class="input-label">Modelos permitidos</label>
+      ${allowedModelsCheckboxes(user.allowedModels || [], 'edit')}
+    </div>
+    <div class="input-group">
       <label class="input-label">Status</label>
       <select class="input" id="u-edit-active">
         <option value="true"  ${user.active ? 'selected':''}>Ativo</option>
@@ -1506,13 +1600,14 @@ async function generateKey() {
 }
 
 async function saveUser() {
-  const name  = document.getElementById('u-name')?.value.trim();
-  const key   = document.getElementById('u-key')?.value.trim();
-  const model = document.getElementById('u-model')?.value || null;
+  const name          = document.getElementById('u-name')?.value.trim();
+  const key           = document.getElementById('u-key')?.value.trim();
+  const model         = document.getElementById('u-model')?.value || null;
+  const allowedModels = getAllowedModels('new');
   if (!name) return toast('Informe um nome.', 'error');
   if (!key)  return toast('Informe ou gere uma API key.', 'error');
   try {
-    const user = await api('POST', '/users', { name, key, model: model || null });
+    const user = await api('POST', '/users', { name, key, model: model || null, allowedModels });
     state.newKey = user.key; // guarda para exibir uma vez
     toast(`Usuário "${name}" criado!`);
     closeModal();
@@ -1522,12 +1617,13 @@ async function saveUser() {
 }
 
 async function saveEditUser() {
-  const id     = document.getElementById('u-edit-id')?.value;
-  const name   = document.getElementById('u-edit-name')?.value.trim();
-  const model  = document.getElementById('u-edit-model')?.value || null;
-  const active = document.getElementById('u-edit-active')?.value === 'true';
+  const id            = document.getElementById('u-edit-id')?.value;
+  const name          = document.getElementById('u-edit-name')?.value.trim();
+  const model         = document.getElementById('u-edit-model')?.value || null;
+  const active        = document.getElementById('u-edit-active')?.value === 'true';
+  const allowedModels = getAllowedModels('edit');
   try {
-    await api('PATCH', `/users/${id}`, { name, model: model || null, active });
+    await api('PATCH', `/users/${id}`, { name, model: model || null, active, allowedModels });
     toast('Usuário atualizado!');
     closeModal();
     await loadUsers();
@@ -1545,6 +1641,29 @@ async function deleteUser(id) {
     await loadUsers();
     document.getElementById('main-content').innerHTML = renderUsers();
   } catch(e) { toast(e.message, 'error'); }
+}
+
+// ─── ALLOWED MODELS HELPERS ───────────────────────────────────────────────────
+function allowedModelsCheckboxes(selected = [], prefix = 'new') {
+  if (state.models.length === 0) {
+    return `<div style="color:var(--text-dim);font-size:12px;padding:8px">Nenhum modelo cadastrado. Adicione modelos primeiro.</div>`;
+  }
+  return `<div class="models-checklist">
+    ${state.models.map(m => `
+      <label class="model-check-item">
+        <input type="checkbox" name="${prefix}-allowed-model" value="${escHtml(m.value)}" ${selected.includes(m.value) ? 'checked' : ''}>
+        <span class="model-check-label">
+          <span class="badge badge-gray">${escHtml(m.value.split(':')[0])}</span>
+          ${escHtml(m.label)}
+        </span>
+      </label>`).join('')}
+  </div>
+  <div style="font-size:11px;color:var(--text-dim);margin-top:6px">Deixe todos desmarcados para permitir qualquer modelo.</div>`;
+}
+
+function getAllowedModels(prefix = 'new') {
+  return Array.from(document.querySelectorAll(`input[name="${prefix}-allowed-model"]:checked`))
+    .map(c => c.value);
 }
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────

@@ -8,7 +8,8 @@
       "replacement": "[CPF_REMOVIDO]",
       "active": true,
       "builtin": true,
-      "category": "documento"
+      "category": "documento",
+      "mode": "redact"
     },
     {
       "id": "builtin_cnpj",
@@ -237,12 +238,13 @@
   ],
   "users": [
     {
-      "id": "u_1776612943061",
+      "id": "u_1776636971562",
       "name": "Sene",
-      "key": "gw_442d73c24f8331c3c842ddc5a6f0dc77f8380dda",
-      "model": "openai:gpt-4o",
-      "createdAt": "2026-04-19T15:35:43.061Z",
-      "active": false
+      "key": "gw_044f5469772e930c7869c63ac60d6f3367bed5e1",
+      "model": "lmstudio:qwen/qwen3-8b",
+      "allowedModels": [],
+      "createdAt": "2026-04-19T22:16:11.562Z",
+      "active": true
     }
   ]
 }

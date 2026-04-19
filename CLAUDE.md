@@ -18,7 +18,7 @@ docker compose down                # Stop container
 
 There are no test or lint scripts defined.
 
-Copy `.env.example` to `.env` before running. Key variables: `PORT`, `GATEWAY_KEYS` (comma-separated internal API keys), `DEFAULT_PROVIDER` (format: `provider:model`), `ADMIN_KEY`, and provider keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.).
+Copy `.env.example` to `.env` before running. Key variables: `PORT`, `DEFAULT_PROVIDER` (format: `provider:model`), `ADMIN_KEY`, and provider keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.). Users and API keys are managed via the admin UI (`/admin`).
 
 ## Architecture
 

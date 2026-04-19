@@ -5,8 +5,6 @@ import rateLimit from "express-rate-limit";
 // Env vars:
 //   RATE_LIMIT_WINDOW_MS  = janela em ms (default: 60000 = 1 minuto)
 //   RATE_LIMIT_MAX        = máximo de requisições por janela (default: 30)
-//
-// Para limites por departamento, configure GATEWAY_KEY_LABELS e ajuste abaixo.
 
 const WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS || "60000");
 const MAX_REQUESTS = parseInt(process.env.RATE_LIMIT_MAX || "30");
