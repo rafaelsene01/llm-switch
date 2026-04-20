@@ -2,4 +2,8 @@ node_modules
 .env
 logs
 .specs
-data
+temp
+.nx
+.next
+dist
+tmp

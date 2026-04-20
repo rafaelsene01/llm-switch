@@ -3,14 +3,12 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-      target: deps
-    command: npx nx run api:serve
+      target: api-runner
     ports:
       - "3000:3000"
     volumes:
-      - ./apps/api/src:/workspace/apps/api/src:ro
-      - ./data:/workspace/data
-      - ./logs:/workspace/logs
+      - api-data:/app/data
+      - api-logs:/app/logs
     env_file: .env
     restart: unless-stopped
     healthcheck:
@@ -23,16 +21,19 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-      target: deps
-    command: npx nx run web:dev
+      target: web-runner
+      args:
+        API_URL: http://api:3000
     ports:
       - "3001:3001"
     environment:
       - API_URL=http://api:3000
       - NEXT_PUBLIC_ADMIN_KEY=${ADMIN_KEY}
-    volumes:
-      - ./apps/web/src:/workspace/apps/web/src:ro
     depends_on:
       api:
         condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  api-data:
+  api-logs:
