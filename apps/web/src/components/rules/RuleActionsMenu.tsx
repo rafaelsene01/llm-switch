@@ -112,6 +112,7 @@ export function RuleActionsMenu({ rule, onUpdated, onDeleted }: Props) {
               <Pencil className="mr-2 h-4 w-4" />
               Editar
             </DropdownMenuItem>
+
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
@@ -122,7 +123,7 @@ export function RuleActionsMenu({ rule, onUpdated, onDeleted }: Props) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </Tooltip>
+      </Tooltip >
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>

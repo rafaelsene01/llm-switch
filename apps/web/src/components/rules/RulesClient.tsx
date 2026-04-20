@@ -157,13 +157,11 @@ export function RulesClient() {
                       </Select>
                     </TableCell>
                     <TableCell className="text-right">
-                      {!rule.builtin && (
-                        <RuleActionsMenu
-                          rule={rule}
-                          onUpdated={mutate}
-                          onDeleted={mutate}
-                        />
-                      )}
+                      <RuleActionsMenu
+                        rule={rule}
+                        onUpdated={mutate}
+                        onDeleted={mutate}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
