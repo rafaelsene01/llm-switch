@@ -3,6 +3,7 @@
 import { Home, Shield, Cpu, Users } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { NavItem } from './NavItem';
+import { Separator } from '@/components/ui/separator';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -27,7 +28,8 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="flex items-center justify-between border-t p-4">
+      <Separator />
+      <div className="flex items-center justify-between p-4">
         <span className="text-xs text-muted-foreground">v2.0</span>
         <ThemeToggle />
       </div>

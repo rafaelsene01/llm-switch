@@ -1,4 +1,5 @@
 import { Terminal, Zap, Shield, Users } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const endpoints = [
   {
@@ -34,11 +35,13 @@ export default function HomePage() {
           { icon: Zap, title: 'Multi-provider', desc: 'OpenAI, Anthropic, Google, Mistral, OpenRouter, Ollama, LM Studio' },
           { icon: Users, title: 'Por cliente', desc: 'API keys, rate limit, modelos permitidos e auditoria por usuário' },
         ].map(({ icon: Icon, title, desc }) => (
-          <div key={title} className="rounded-lg border bg-card p-4">
-            <Icon className="mb-2 h-5 w-5 text-primary" />
-            <p className="font-medium text-sm">{title}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{desc}</p>
-          </div>
+          <Card key={title}>
+            <CardContent className="pt-4">
+              <Icon className="mb-2 h-5 w-5 text-primary" />
+              <p className="font-medium text-sm">{title}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{desc}</p>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
@@ -46,15 +49,17 @@ export default function HomePage() {
         <h2 className="mb-3 text-lg font-semibold">Endpoints</h2>
         <div className="space-y-2">
           {endpoints.map(({ method, path, desc }) => (
-            <div key={path} className="flex items-start gap-3 rounded-lg border bg-card p-3">
-              <span className="mt-0.5 rounded bg-primary/10 px-1.5 py-0.5 text-xs font-mono font-semibold text-primary">
-                {method}
-              </span>
-              <div>
-                <code className="text-sm font-mono">{path}</code>
-                <p className="text-xs text-muted-foreground">{desc}</p>
-              </div>
-            </div>
+            <Card key={path}>
+              <CardContent className="flex items-start gap-3 py-3">
+                <span className="mt-0.5 rounded bg-primary/10 px-1.5 py-0.5 text-xs font-mono font-semibold text-primary">
+                  {method}
+                </span>
+                <div>
+                  <code className="text-sm font-mono">{path}</code>
+                  <p className="text-xs text-muted-foreground">{desc}</p>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>
@@ -64,9 +69,13 @@ export default function HomePage() {
           <Terminal className="h-4 w-4" />
           Exemplo de integração
         </h2>
-        <pre className="overflow-x-auto rounded-lg border bg-card p-4 text-sm font-mono leading-relaxed">
-          <code>{curlExample}</code>
-        </pre>
+        <Card>
+          <CardContent className="pt-4">
+            <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
+              <code>{curlExample}</code>
+            </pre>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

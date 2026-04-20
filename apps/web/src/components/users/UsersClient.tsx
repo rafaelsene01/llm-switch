@@ -10,6 +10,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -24,6 +33,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type { UserPublic } from '@/types';
 
 interface FormState {
@@ -130,152 +145,168 @@ export function UsersClient() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Usuários</h1>
-          <p className="text-sm text-muted-foreground">Gerencie usuários e API keys</p>
-        </div>
-        <Button onClick={openAdd} size="sm">
-          <Plus className="mr-1 h-4 w-4" />
-          Criar
-        </Button>
-      </div>
-
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground">Carregando...</p>
-      ) : (
-        <div className="rounded-lg border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium">Nome</th>
-                <th className="px-4 py-3 text-left font-medium">Key</th>
-                <th className="px-4 py-3 text-left font-medium">Modelo padrão</th>
-                <th className="px-4 py-3 text-left font-medium">Ativo</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {users?.map((user) => (
-                <tr key={user.id} className="border-b last:border-0 hover:bg-muted/30">
-                  <td className="px-4 py-3 font-medium">{user.name}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                    {user.keyPreview}
-                  </td>
-                  <td className="px-4 py-3">
-                    {user.model ? (
-                      <code className="text-xs">{user.model}</code>
-                    ) : (
-                      <span className="text-muted-foreground text-xs">padrão do servidor</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Switch
-                      checked={user.active}
-                      onCheckedChange={() => handleToggle(user)}
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEdit(user)}>
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => handleDelete(user.id)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Remover
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-                </tr>
-              ))}
-              {users?.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                    Nenhum usuário cadastrado
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editUser ? 'Editar Usuário' : 'Criar Usuário'}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label>Nome *</Label>
-              <Input
-                placeholder="minha-equipe"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="mt-1.5"
-              />
-            </div>
-            {!editUser && (
-              <div>
-                <Label>API Key *</Label>
-                <div className="mt-1.5 flex gap-2">
-                  <Input
-                    placeholder="gw_..."
-                    value={form.key}
-                    onChange={(e) => setForm({ ...form, key: e.target.value })}
-                    className="font-mono"
-                  />
-                  <Button variant="outline" size="icon" onClick={generateKey} title="Gerar chave">
-                    <RefreshCw className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-            <div>
-              <Label>Modelo padrão</Label>
-              <Input
-                placeholder="openai:gpt-4o-mini"
-                value={form.model}
-                onChange={(e) => setForm({ ...form, model: e.target.value })}
-                className="mt-1.5 font-mono"
-              />
-            </div>
-            <div>
-              <Label>Modelos permitidos (separados por vírgula)</Label>
-              <Input
-                placeholder="openai:gpt-4o, anthropic:claude-3-5-sonnet-20241022"
-                value={form.allowedModels}
-                onChange={(e) => setForm({ ...form, allowedModels: e.target.value })}
-                className="mt-1.5 font-mono text-xs"
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
-                Vazio = apenas o modelo padrão
-              </p>
-            </div>
+    <TooltipProvider>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Usuários</h1>
+            <p className="text-sm text-muted-foreground">Gerencie usuários e API keys</p>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? 'Salvando...' : editUser ? 'Salvar' : 'Criar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+          <Button onClick={openAdd} size="sm">
+            <Plus className="mr-1 h-4 w-4" />
+            Criar
+          </Button>
+        </div>
+
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Key</TableHead>
+                  <TableHead>Modelo padrão</TableHead>
+                  <TableHead>Ativo</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users?.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.name}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">
+                      {user.keyPreview}
+                    </TableCell>
+                    <TableCell>
+                      {user.model ? (
+                        <code className="text-xs">{user.model}</code>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">padrão do servidor</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={user.active}
+                        onCheckedChange={() => handleToggle(user)}
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Ações</TooltipContent>
+                          </Tooltip>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEdit(user)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => handleDelete(user.id)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Remover
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {users?.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                      Nenhum usuário cadastrado
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editUser ? 'Editar Usuário' : 'Criar Usuário'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label>Nome *</Label>
+                <Input
+                  placeholder="minha-equipe"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="mt-1.5"
+                />
+              </div>
+              {!editUser && (
+                <div>
+                  <Label>API Key *</Label>
+                  <div className="mt-1.5 flex gap-2">
+                    <Input
+                      placeholder="gw_..."
+                      value={form.key}
+                      onChange={(e) => setForm({ ...form, key: e.target.value })}
+                      className="font-mono"
+                    />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="outline" size="icon" onClick={generateKey}>
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Gerar chave</TooltipContent>
+                    </Tooltip>
+                  </div>
+                </div>
+              )}
+              <div>
+                <Label>Modelo padrão</Label>
+                <Input
+                  placeholder="openai:gpt-4o-mini"
+                  value={form.model}
+                  onChange={(e) => setForm({ ...form, model: e.target.value })}
+                  className="mt-1.5 font-mono"
+                />
+              </div>
+              <div>
+                <Label>Modelos permitidos (separados por vírgula)</Label>
+                <Input
+                  placeholder="openai:gpt-4o, anthropic:claude-3-5-sonnet-20241022"
+                  value={form.allowedModels}
+                  onChange={(e) => setForm({ ...form, allowedModels: e.target.value })}
+                  className="mt-1.5 font-mono text-xs"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Vazio = apenas o modelo padrão
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? 'Salvando...' : editUser ? 'Salvar' : 'Criar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </TooltipProvider>
   );
 }
