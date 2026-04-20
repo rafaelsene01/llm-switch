@@ -66,8 +66,3 @@ All `/admin/*` routes require `Authorization: Bearer <ADMIN_KEY>`. Full CRUD for
 ## UI Development (apps/web)
 
 The admin UI uses **shadcn/ui** on top of Tailwind CSS. **Always use the shadcn MCP (`mcp__shadcn`) for any visual change in `apps/web`** — component lookup, installation, and usage reference must go through it before editing any UI file.
-
-Workflow for UI changes:
-1. Use the shadcn MCP to find the appropriate component (`Button`, `Input`, `Table`, `Dialog`, `Badge`, etc.)
-2. Run `npx shadcn@latest add <component>` if it isn't already in `apps/web/src/components/ui/`
-3. Import from `@/components/ui/<component>` — never reimplement what shadcn already provides
