@@ -7,10 +7,17 @@ const router = Router();
 router.get("/", (req, res) => {
   const activeModels = getModels().filter((m) => m.active);
 
-  const filtered =
-    req.user?.allowedModels?.length > 0
-      ? activeModels.filter((m) => req.user.allowedModels.includes(m.value))
-      : activeModels;
+  const allowedModels = req.user?.allowedModels ?? [];
+  const userDefaultModel = req.userModel || process.env.DEFAULT_PROVIDER || null;
+
+  let filtered;
+  if (allowedModels.length > 0) {
+    filtered = activeModels.filter((m) => allowedModels.includes(m.value));
+  } else if (userDefaultModel) {
+    filtered = activeModels.filter((m) => m.value === userDefaultModel);
+  } else {
+    filtered = [];
+  }
 
   const data = filtered.map((m) => ({
     id: m.value,

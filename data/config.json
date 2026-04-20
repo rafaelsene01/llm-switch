@@ -242,7 +242,9 @@
       "name": "Sene",
       "key": "gw_044f5469772e930c7869c63ac60d6f3367bed5e1",
       "model": "lmstudio:qwen/qwen3-8b",
-      "allowedModels": [],
+      "allowedModels": [
+        "lmstudio:qwen/qwen3-8b"
+      ],
       "createdAt": "2026-04-19T22:16:11.562Z",
       "active": true
     }
