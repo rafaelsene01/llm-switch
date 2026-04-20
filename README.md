@@ -108,7 +108,6 @@ Ou via `model` no body:
 | Senha inline | `senha: minhasenha` → `[SENHA_REMOVIDA]` |
 | CEP | `01310-100` → `[CEP_REMOVIDO]` |
 | IP interno | `192.168.1.10` → `[IP_INTERNO_REMOVIDO]` |
-| Blocklist | `Projeto Phoenix` → `[TERMO_BLOQUEADO]` |
 
 ---
 
