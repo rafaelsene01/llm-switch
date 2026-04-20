@@ -1,11 +1,14 @@
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import type { Request } from 'express';
 import { env } from '../config/env';
+
+const getIp = (req: Request): string =>
+  (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
 
 export const rateLimitMiddleware = rateLimit({
   windowMs: env.RATE_LIMIT_WINDOW_MS,
   max: env.RATE_LIMIT_MAX,
-  keyGenerator: (req: Request) => req.clientLabel || ipKeyGenerator(req) || 'unknown',
+  keyGenerator: (req: Request) => req.clientLabel || getIp(req),
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req: Request, res) => {
