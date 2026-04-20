@@ -37,6 +37,14 @@ function downloadJson(res, data, filename) {
   res.json(data);
 }
 
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+
+router.get("/config", wrap(async (req, res) => {
+  res.json({
+    defaultProvider: process.env.DEFAULT_PROVIDER || "openai:gpt-4o-mini",
+  });
+}));
+
 // ─── BLOCKLIST ────────────────────────────────────────────────────────────────
 
 router.get("/blocklist", wrap(async (req, res) => {

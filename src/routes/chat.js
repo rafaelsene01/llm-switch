@@ -25,12 +25,34 @@ router.post("/", async (req, res) => {
     req.body.model ||
     req.userModel ||
     process.env.DEFAULT_PROVIDER ||
-    "openai:gpt-4o-mini";
+    null;
 
-  if (req.user?.allowedModels?.length > 0 && !req.user.allowedModels.includes(providerModel)) {
+  if (!providerModel) {
+    return res.status(400).json({
+      error: {
+        message:
+          "Nenhum modelo configurado para este cliente. Atribua um modelo ao usuário, defina DEFAULT_PROVIDER no servidor ou informe o modelo na requisição (header X-Provider ou campo model).",
+        type: "model_not_configured",
+      },
+    });
+  }
+
+  const allowedModels = req.user?.allowedModels ?? [];
+  const userDefaultModel = req.userModel || process.env.DEFAULT_PROVIDER || null;
+
+  if (allowedModels.length > 0) {
+    if (!allowedModels.includes(providerModel)) {
+      return res.status(403).json({
+        error: {
+          message: `Modelo '${providerModel}' não permitido para este token.`,
+          type: "model_not_allowed",
+        },
+      });
+    }
+  } else if (userDefaultModel && providerModel !== userDefaultModel) {
     return res.status(403).json({
       error: {
-        message: `Modelo '${providerModel}' não permitido para este token.`,
+        message: `Modelo '${providerModel}' não permitido. Nenhum modelo extra foi liberado para este token; apenas o modelo padrão '${userDefaultModel}' está disponível.`,
         type: "model_not_allowed",
       },
     });

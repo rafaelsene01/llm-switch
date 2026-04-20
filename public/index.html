@@ -772,7 +772,7 @@ td { padding: 10px 12px; vertical-align: middle; }
 
 <script>
 // ─── STATE ────────────────────────────────────────────────────────────────────
-const state = { page: 'home', rules: [], models: [], users: [], newKey: null };
+const state = { page: 'home', rules: [], models: [], users: [], newKey: null, defaultProvider: 'openai:gpt-4o-mini' };
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 async function api(method, path, body) {
@@ -843,7 +843,8 @@ async function renderPage() {
 async function loadRules()  { state.rules  = await api('GET', '/blocklist'); updateBadges(); }
 async function loadModels() { state.models = await api('GET', '/models');    updateBadges(); }
 async function loadUsers()  { state.users  = await api('GET', '/users');     updateBadges(); }
-async function loadAll()    { await Promise.all([loadModels(), loadUsers()]); }
+async function loadConfig() { const cfg = await api('GET', '/config'); state.defaultProvider = cfg.defaultProvider || 'openai:gpt-4o-mini'; }
+async function loadAll()    { await Promise.all([loadModels(), loadUsers(), loadConfig()]); }
 
 function updateBadges() {
   if (state.rules.length)  document.getElementById('badge-rules').textContent  = state.rules.length;
@@ -1494,7 +1495,7 @@ function renderUsers() {
           <td class="mono text-dim">${escHtml(u.keyPreview)}</td>
           <td>${u.model
             ? `<span class="badge badge-green">◈ ${escHtml(model ? model.label : u.model)}</span>`
-            : `<span class="badge badge-gray">DEFAULT_PROVIDER</span>`
+            : `<span class="badge badge-gray" title="DEFAULT_PROVIDER: ${escHtml(state.defaultProvider)}">◈ ${escHtml(state.defaultProvider)}</span>`
           }</td>
           <td>${allowed.length === 0
             ? `<span class="badge badge-green">Todos</span>`
@@ -1539,7 +1540,7 @@ function openAddUser() {
     </div>
     <div class="input-group">
       <label class="input-label">Modelo padrão</label>
-      <select class="input" id="u-model">
+      <select class="input" id="u-model" onchange="syncDefaultModelToAllowed(this, 'new')">
         <option value="">— usar DEFAULT_PROVIDER —</option>
         ${modelOptions}
       </select>
@@ -1570,14 +1571,14 @@ function openEditUser(id) {
     </div>
     <div class="input-group">
       <label class="input-label">Modelo padrão</label>
-      <select class="input" id="u-edit-model">
+      <select class="input" id="u-edit-model" onchange="syncDefaultModelToAllowed(this, 'edit')">
         <option value="">— usar DEFAULT_PROVIDER —</option>
         ${modelOptions}
       </select>
     </div>
     <div class="input-group">
       <label class="input-label">Modelos permitidos</label>
-      ${allowedModelsCheckboxes(user.allowedModels || [], 'edit')}
+      ${allowedModelsCheckboxes([...new Set([...(user.allowedModels || []), ...(user.model ? [user.model] : [])])], 'edit')}
     </div>
     <div class="input-group">
       <label class="input-label">Status</label>
@@ -1658,7 +1659,14 @@ function allowedModelsCheckboxes(selected = [], prefix = 'new') {
         </span>
       </label>`).join('')}
   </div>
-  <div style="font-size:11px;color:var(--text-dim);margin-top:6px">Deixe todos desmarcados para permitir qualquer modelo.</div>`;
+  <div style="font-size:11px;color:var(--text-dim);margin-top:6px">Sem seleção, apenas o modelo padrão será permitido.</div>`;
+}
+
+function syncDefaultModelToAllowed(select, prefix) {
+  const val = select.value;
+  if (!val) return;
+  const checkbox = document.querySelector(`input[name="${prefix}-allowed-model"][value="${CSS.escape(val)}"]`);
+  if (checkbox) checkbox.checked = true;
 }
 
 function getAllowedModels(prefix = 'new') {
