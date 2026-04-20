@@ -3,15 +3,17 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import type { LucideIcon } from 'lucide-react';
 
 interface NavItemProps {
   href: string;
   label: string;
   icon: LucideIcon;
+  badge?: number;
 }
 
-export function NavItem({ href, label, icon: Icon }: NavItemProps) {
+export function NavItem({ href, label, icon: Icon, badge }: NavItemProps) {
   const pathname = usePathname();
   const isActive = pathname === href;
 
@@ -26,7 +28,12 @@ export function NavItem({ href, label, icon: Icon }: NavItemProps) {
       )}
     >
       <Icon className="h-4 w-4 shrink-0" />
-      {label}
+      <span className="flex-1">{label}</span>
+      {badge !== undefined && (
+        <Badge variant="secondary" className="ml-auto h-5 min-w-5 justify-center px-1 text-xs">
+          {badge}
+        </Badge>
+      )}
     </Link>
   );
 }

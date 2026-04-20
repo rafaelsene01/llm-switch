@@ -4,15 +4,19 @@ import { Home, Shield, Cpu, Users } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { NavItem } from './NavItem';
 import { Separator } from '@/components/ui/separator';
-
-const navItems = [
-  { href: '/', label: 'Home', icon: Home },
-  { href: '/rules', label: 'Regras', icon: Shield },
-  { href: '/models', label: 'Modelos', icon: Cpu },
-  { href: '/users', label: 'Usuários', icon: Users },
-];
+import { useUsers } from '@/hooks/useUsers';
+import { useModels } from '@/hooks/useModels';
+import { useRules } from '@/hooks/useRules';
 
 export function Sidebar() {
+  const { data: users } = useUsers();
+  const { data: models } = useModels();
+  const { data: rules } = useRules();
+
+  const activeUsers = users?.filter((u) => u.active).length;
+  const activeModels = models?.filter((m) => m.active).length;
+  const activeRules = rules?.filter((r) => r.mode !== 'disabled').length;
+
   return (
     <aside className="flex h-screen w-56 shrink-0 flex-col border-r bg-card">
       <div className="p-4">
@@ -23,9 +27,10 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 px-2 py-2">
-        {navItems.map((item) => (
-          <NavItem key={item.href} {...item} />
-        ))}
+        <NavItem href="/" label="Home" icon={Home} />
+        <NavItem href="/rules" label="Regras" icon={Shield} badge={activeRules} />
+        <NavItem href="/models" label="Modelos" icon={Cpu} badge={activeModels} />
+        <NavItem href="/users" label="Usuários" icon={Users} badge={activeUsers} />
       </nav>
 
       <Separator />

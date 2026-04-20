@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { RefreshCw } from 'lucide-react';
+import { Copy, RefreshCw } from 'lucide-react';
 import { useModels } from '@/hooks/useModels';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
@@ -125,6 +125,23 @@ export function CreateUserDialog({ open, onOpenChange, onCreated }: Props) {
                 onChange={(e) => setForm({ ...form, key: e.target.value })}
                 className="font-mono"
               />
+              {form.key && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        navigator.clipboard.writeText(form.key);
+                        toast.success('Chave copiada');
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Copiar chave</TooltipContent>
+                </Tooltip>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="outline" size="icon" onClick={generateKey}>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useRules } from '@/hooks/useRules';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
@@ -32,18 +32,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { RuleActionsMenu } from './RuleActionsMenu';
 import type { BlocklistMode, BlocklistCategory } from '@/types';
 
 const MODE_LABELS: Record<BlocklistMode, string> = {
@@ -97,16 +87,6 @@ export function RulesClient() {
       toast.error((err as Error).message);
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handleDelete(id: string) {
-    try {
-      await apiClient.blocklist.remove(id);
-      await mutate();
-      toast.success('Regra removida');
-    } catch (err) {
-      toast.error((err as Error).message);
     }
   }
 
@@ -178,27 +158,11 @@ export function RulesClient() {
                     </TableCell>
                     <TableCell className="text-right">
                       {!rule.builtin && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Ações</TooltipContent>
-                            </Tooltip>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => handleDelete(rule.id)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Remover
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <RuleActionsMenu
+                          rule={rule}
+                          onUpdated={mutate}
+                          onDeleted={mutate}
+                        />
                       )}
                     </TableCell>
                   </TableRow>
