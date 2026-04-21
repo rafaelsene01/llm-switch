@@ -51,7 +51,7 @@ export function createAdminRouter(): Router {
   router.get(
     '/config',
     wrap(async (_req, res) => {
-      res.json({ defaultProvider: env.DEFAULT_PROVIDER });
+      res.json({ defaultProvider: null });
     })
   );
 

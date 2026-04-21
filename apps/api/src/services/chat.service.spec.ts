@@ -25,6 +25,10 @@ jest.mock('../utils/logger', () => ({
   logRequest: jest.fn(),
 }));
 
+jest.mock('./activity-log.service', () => ({
+  activityLog: { log: jest.fn() },
+}));
+
 const mockResolveModel = providers.resolveModel as jest.Mock;
 const mockGenerateText = ai.generateText as jest.Mock;
 const mockSanitizer = sanitizer as jest.Mocked<typeof sanitizer>;

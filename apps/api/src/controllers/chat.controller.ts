@@ -24,8 +24,7 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
   const providerModel =
     (req.headers['x-provider'] as string | undefined) ||
     (req.body as { model?: string }).model ||
-    req.userModel ||
-    env.DEFAULT_PROVIDER;
+    req.userModel;
 
   if (!providerModel) {
     res.status(400).json({
@@ -40,7 +39,7 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
 
   // Check allowed models
   const allowedModels = req.user?.allowedModels ?? [];
-  const userDefaultModel = req.userModel || env.DEFAULT_PROVIDER;
+  const userDefaultModel = req.userModel;
 
   if (allowedModels.length > 0) {
     if (!allowedModels.includes(providerModel)) {

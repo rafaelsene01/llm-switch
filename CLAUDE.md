@@ -20,7 +20,7 @@ docker compose -f docker-compose.prod.yml up -d --build  # Production build
 docker compose down                    # Stop all services
 ```
 
-Copy `.env.example` to `.env` before running. Key variables: `PORT`, `DEFAULT_PROVIDER` (format: `provider:model`), `ADMIN_KEY`, and provider keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.). Users and API keys are managed via the admin UI at `http://localhost:3001`.
+Copy `.env.example` to `.env` before running. Key variables: `PORT`, `ADMIN_KEY`, and provider keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.). Users and API keys are managed via the admin UI at `http://localhost:3001`.
 
 ## Architecture
 

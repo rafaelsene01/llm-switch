@@ -6,6 +6,7 @@
     "apps/*"
   ],
   "scripts": {
+    "predev": "kill-port 3000",
     "dev": "nx run-many --targets=serve,dev --parallel=true",
     "build": "nx run-many --target=build",
     "lint": "nx run-many --target=lint",

@@ -25,12 +25,9 @@ export interface ActivityLogRow {
   created_at: string;
 }
 
-const DB_PATH = path.resolve('data/activity.db');
-const LOGS_BASE = path.resolve('logs/data');
-
-function initDb(): Database.Database {
-  mkdirSync(path.dirname(DB_PATH), { recursive: true });
-  const db = new Database(DB_PATH);
+function initDb(dbPath: string): Database.Database {
+  if (dbPath !== ':memory:') mkdirSync(path.dirname(dbPath), { recursive: true });
+  const db = new Database(dbPath);
   db.exec(`
     CREATE TABLE IF NOT EXISTS activity_logs (
       id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,11 +78,14 @@ ${response}
 `;
 }
 
-function createActivityLogService() {
+export function createActivityLogService(
+  dbPath = path.resolve('data/activity.db'),
+  logsBase = path.resolve('logs/data')
+) {
   let db: Database.Database | null = null;
 
   function getDb(): Database.Database {
-    if (!db) db = initDb();
+    if (!db) db = initDb(dbPath);
     return db;
   }
 
@@ -96,15 +96,14 @@ function createActivityLogService() {
       const yyyy = d.getFullYear().toString();
       const mm = String(d.getMonth() + 1).padStart(2, '0');
       const dd = String(d.getDate()).padStart(2, '0');
-      const dir = path.join(LOGS_BASE, yyyy, mm);
+      const dir = path.join(logsBase, yyyy, mm);
       mkdirSync(dir, { recursive: true });
       const filePath = path.join(dir, `${yyyy}-${mm}-${dd}-${entry.requestId}.md`);
 
       writeFileSync(filePath, buildMarkdown(entry, now), 'utf8');
 
       const preview = extractMessagePreview(entry.sanitizedMessages);
-      const database = getDb();
-      database.prepare(
+      getDb().prepare(
         `INSERT INTO activity_logs
          (request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
@@ -124,14 +123,11 @@ function createActivityLogService() {
   }
 
   function list(page: number, limit: number): { rows: ActivityLogRow[]; total: number } {
-    const database = getDb();
     const offset = (page - 1) * limit;
-
-    const { count } = database
+    const { count } = getDb()
       .prepare('SELECT COUNT(*) as count FROM activity_logs')
       .get() as { count: number };
-
-    const rows = database
+    const rows = getDb()
       .prepare(
         `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at
          FROM activity_logs
@@ -151,14 +147,13 @@ function createActivityLogService() {
     let deletedFiles = 0;
 
     try {
-      const database = getDb();
-      const { changes: deletedRows } = database
+      const { changes: deletedRows } = getDb()
         .prepare('DELETE FROM activity_logs WHERE created_at < ?')
         .run(cutoff) as { changes: number };
 
-      if (existsSync(LOGS_BASE)) {
-        for (const year of readdirSync(LOGS_BASE)) {
-          const yearDir = path.join(LOGS_BASE, year);
+      if (existsSync(logsBase)) {
+        for (const year of readdirSync(logsBase)) {
+          const yearDir = path.join(logsBase, year);
           if (!statSync(yearDir).isDirectory()) continue;
           for (const month of readdirSync(yearDir)) {
             const monthDir = path.join(yearDir, month);
