@@ -6,16 +6,28 @@ import type {
   BlocklistEntry,
   BlocklistMode,
   GatewayModel,
+  GatewayProvider,
   GatewayUser,
   UserPublic,
 } from '../types';
 
 const VALID_MODES: BlocklistMode[] = ['disabled', 'redact', 'block'];
 
+const DEFAULT_PROVIDERS: GatewayProvider[] = [
+  { id: 'openai',     name: 'OpenAI',      type: 'cloud', configured: false },
+  { id: 'anthropic',  name: 'Anthropic',   type: 'cloud', configured: false },
+  { id: 'google',     name: 'Google',      type: 'cloud', configured: false },
+  { id: 'mistral',    name: 'Mistral',     type: 'cloud', configured: false },
+  { id: 'openrouter', name: 'OpenRouter',  type: 'cloud', configured: false },
+  { id: 'ollama',     name: 'Ollama',      type: 'local', url: 'http://localhost:11434', configured: false },
+  { id: 'lmstudio',   name: 'LM Studio',   type: 'local', url: 'http://localhost:1234',  configured: false },
+];
+
 interface StoreData {
   blocklist: BlocklistEntry[];
   models: GatewayModel[];
   users: GatewayUser[];
+  providers: GatewayProvider[];
 }
 
 interface ExportPayload {
@@ -42,15 +54,21 @@ function createStore(dataFile?: string) {
         blocklist: DEFAULT_BLOCKLIST,
         models: DEFAULT_MODELS,
         users: [],
+        providers: structuredClone(DEFAULT_PROVIDERS),
       };
       mkdirSync(path.dirname(resolvedFile), { recursive: true });
       writeFileSync(resolvedFile, JSON.stringify(fresh, null, 2));
       return structuredClone(fresh);
     }
     try {
-      return JSON.parse(readFileSync(resolvedFile, 'utf8')) as StoreData;
+      const data = JSON.parse(readFileSync(resolvedFile, 'utf8')) as StoreData;
+      if (!data.providers) {
+        data.providers = structuredClone(DEFAULT_PROVIDERS);
+        save(data);
+      }
+      return data;
     } catch {
-      return { blocklist: DEFAULT_BLOCKLIST, models: DEFAULT_MODELS, users: [] };
+      return { blocklist: DEFAULT_BLOCKLIST, models: DEFAULT_MODELS, users: [], providers: structuredClone(DEFAULT_PROVIDERS) };
     }
   }
 
@@ -205,6 +223,41 @@ function createStore(dataFile?: string) {
     return true;
   }
 
+  // ── Providers ──────────────────────────────────────────────────────────────
+
+  function getProviders(): GatewayProvider[] {
+    return load().providers;
+  }
+
+  function updateProvider(id: string, patch: Partial<Pick<GatewayProvider, 'key' | 'url'>>): GatewayProvider | null {
+    const data = load();
+    const idx = data.providers.findIndex((p) => p.id === id);
+    if (idx === -1) return null;
+    const updated = { ...data.providers[idx], ...patch };
+    updated.configured = updated.type === 'cloud'
+      ? Boolean(updated.key)
+      : Boolean(updated.url);
+    data.providers[idx] = updated;
+    save(data);
+    return updated;
+  }
+
+  function clearProviderKey(id: string): boolean {
+    const data = load();
+    const idx = data.providers.findIndex((p) => p.id === id);
+    if (idx === -1) return false;
+    const { key: _key, ...rest } = data.providers[idx];
+    data.providers[idx] = {
+      ...rest,
+      url: data.providers[idx].type === 'local'
+        ? DEFAULT_PROVIDERS.find((p) => p.id === id)?.url
+        : undefined,
+      configured: false,
+    };
+    save(data);
+    return true;
+  }
+
   // ── Export / Import ────────────────────────────────────────────────────────
 
   function exportAll(): ExportPayload {
@@ -314,6 +367,9 @@ function createStore(dataFile?: string) {
     addUser,
     updateUser,
     deleteUser,
+    getProviders,
+    updateProvider,
+    clearProviderKey,
     exportAll,
     importAll,
     exportModule,

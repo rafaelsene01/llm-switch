@@ -37,6 +37,26 @@ export interface GatewayUser {
   active: boolean;
 }
 
+export type ProviderType = 'cloud' | 'local';
+
+export interface GatewayProvider {
+  id: string;
+  name: string;
+  type: ProviderType;
+  key?: string;
+  url?: string;
+  configured: boolean;
+}
+
+export interface ProviderModelInfo {
+  id: string;
+  name: string;
+}
+
+export type TestResult =
+  | { success: true; response: string; latencyMs: number }
+  | { success: false; error: string };
+
 export interface UserPublic {
   id: string;
   name: string;

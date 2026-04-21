@@ -1,21 +1,24 @@
 'use client';
 
-import { Home, Shield, Cpu, Users } from 'lucide-react';
+import { Home, Shield, Cpu, Users, Plug } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { NavItem } from './NavItem';
 import { Separator } from '@/components/ui/separator';
 import { useUsers } from '@/hooks/useUsers';
 import { useModels } from '@/hooks/useModels';
 import { useRules } from '@/hooks/useRules';
+import { useProviders } from '@/hooks/useProviders';
 
 export function Sidebar() {
   const { data: users } = useUsers();
   const { data: models } = useModels();
   const { data: rules } = useRules();
+  const { data: providers } = useProviders();
 
   const activeUsers = users?.filter((u) => u.active).length;
   const activeModels = models?.filter((m) => m.active).length;
   const activeRules = rules?.filter((r) => r.mode !== 'disabled').length;
+  const configuredProviders = providers?.filter((p) => p.configured).length;
 
   return (
     <aside className="flex h-screen w-56 shrink-0 flex-col border-r bg-card">
@@ -31,6 +34,7 @@ export function Sidebar() {
         <NavItem href="/rules" label="Regras" icon={Shield} badge={activeRules} />
         <NavItem href="/models" label="Modelos" icon={Cpu} badge={activeModels} />
         <NavItem href="/users" label="Usuários" icon={Users} badge={activeUsers} />
+        <NavItem href="/providers" label="Providers" icon={Plug} badge={configuredProviders} />
       </nav>
 
       <Separator />

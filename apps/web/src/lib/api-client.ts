@@ -1,6 +1,9 @@
 import type {
   BlocklistEntry,
   GatewayModel,
+  GatewayProvider,
+  ProviderModelInfo,
+  TestResult,
   UserPublic,
   GatewayUser,
 } from '@/types';
@@ -65,6 +68,32 @@ export const apiClient = {
       }),
     remove: (id: string) =>
       apiFetch<{ success: boolean }>(`/admin/users/${id}`, { method: 'DELETE' }),
+  },
+
+  providers: {
+    list: () => apiFetch<{ providers: GatewayProvider[] }>('/admin/providers').then((r) => r.providers),
+    update: (id: string, body: { key?: string; url?: string }) =>
+      apiFetch<{ provider: GatewayProvider }>(`/admin/providers/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      }).then((r) => r.provider),
+    removeKey: (id: string) =>
+      fetch(`/admin/providers/${id}/key`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${ADMIN_KEY}` },
+      }).then((r) => { if (!r.ok && r.status !== 204) throw new Error(`HTTP ${r.status}`); }),
+    listModels: (id: string, params?: { key?: string; url?: string }) => {
+      const qs = new URLSearchParams();
+      if (params?.key) qs.set('key', params.key);
+      if (params?.url) qs.set('url', params.url);
+      const query = qs.toString() ? `?${qs.toString()}` : '';
+      return apiFetch<{ models: ProviderModelInfo[] }>(`/admin/providers/${id}/models${query}`).then((r) => r.models);
+    },
+    test: (id: string, body: { model: string; key?: string; url?: string }) =>
+      apiFetch<TestResult>(`/admin/providers/${id}/test`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
   },
 
   config: {

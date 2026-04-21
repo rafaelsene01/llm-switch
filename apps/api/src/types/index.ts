@@ -61,6 +61,18 @@ export interface UserPublic {
   active: boolean;
 }
 
+// Providers
+export type ProviderType = 'cloud' | 'local';
+
+export interface GatewayProvider {
+  id: string;
+  name: string;
+  type: ProviderType;
+  key?: string;
+  url?: string;
+  configured: boolean;
+}
+
 // Chat
 export interface OpenAIMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';

@@ -4,6 +4,7 @@ import type { Request, Response } from 'express';
 import { store } from '../services/store.service';
 import { env } from '../config/env';
 import type { BlocklistCategory, BlocklistMode } from '../types';
+import { listProviderModels, testProviderConnection } from '../services/providers.service';
 
 const VALID_MODES = ['disabled', 'redact', 'block'];
 const MODULES = ['blocklist', 'models', 'users'] as const;
@@ -207,6 +208,79 @@ export function createAdminRouter(): Router {
         return;
       }
       res.json({ success: true });
+    })
+  );
+
+  // Providers
+  router.get(
+    '/providers',
+    wrap(async (_req, res) => {
+      const providers = store.getProviders().map((p) => ({
+        ...p,
+        key: p.key ? '***' : undefined,
+      }));
+      res.json({ providers });
+    })
+  );
+
+  router.patch(
+    '/providers/:id',
+    wrap(async (req, res) => {
+      const { key, url } = req.body as { key?: string; url?: string };
+      const provider = store.updateProvider(req.params.id, { key, url });
+      if (!provider) {
+        res.status(404).json({ error: { message: 'Provider não encontrado.' } });
+        return;
+      }
+      res.json({ provider: { ...provider, key: provider.key ? '***' : undefined } });
+    })
+  );
+
+  router.delete(
+    '/providers/:id/key',
+    wrap(async (req, res) => {
+      if (!store.clearProviderKey(req.params.id)) {
+        res.status(404).json({ error: { message: 'Provider não encontrado.' } });
+        return;
+      }
+      res.status(204).send();
+    })
+  );
+
+  router.get(
+    '/providers/:id/models',
+    wrap(async (req, res) => {
+      const { id } = req.params;
+      const { key, url } = req.query as { key?: string; url?: string };
+      // Fall back to stored config if no query params provided
+      const storedProvider = store.getProviders().find((p) => p.id === id);
+      const resolvedKey = key ?? storedProvider?.key;
+      const resolvedUrl = url ?? storedProvider?.url;
+      try {
+        const models = await listProviderModels(id, resolvedKey, resolvedUrl);
+        res.json({ models });
+      } catch (err) {
+        res.status(422).json({
+          error: {
+            message: err instanceof Error ? err.message : 'Não foi possível conectar ao provider.',
+            type: 'provider_error',
+          },
+        });
+      }
+    })
+  );
+
+  router.post(
+    '/providers/:id/test',
+    wrap(async (req, res) => {
+      const { id } = req.params;
+      const { model, key, url } = req.body as { model?: string; key?: string; url?: string };
+      if (!model) {
+        res.status(400).json({ error: { message: "Campo 'model' obrigatório." } });
+        return;
+      }
+      const result = await testProviderConnection(id, model, key, url);
+      res.json(result);
     })
   );
 
