@@ -129,6 +129,32 @@ export function createAdminRouter(): Router {
   );
 
   router.post(
+    '/models/sync',
+    wrap(async (_req, res) => {
+      const configured = store.getProviders().filter((p) => p.configured);
+      const configuredIds = configured.map((p) => p.id);
+      const results = await Promise.allSettled(
+        configured.map((p) =>
+          listProviderModels(p.id, p.key, p.url).then((models) =>
+            store.syncModels(p.id, models)
+          )
+        )
+      );
+      let added = 0;
+      let removed = 0;
+      for (const r of results) {
+        if (r.status === 'fulfilled') {
+          added += r.value.added;
+          removed += r.value.removed;
+        }
+      }
+      const pruned = store.pruneUnconfiguredModels(configuredIds);
+      removed += pruned.removed;
+      res.json({ synced: configured.length, added, removed });
+    })
+  );
+
+  router.post(
     '/models',
     wrap(async (req, res) => {
       const { value, label } = req.body as { value?: string; label?: string };
@@ -139,6 +165,19 @@ export function createAdminRouter(): Router {
         return;
       }
       res.status(201).json(store.addModel({ value, label: label ?? value }));
+    })
+  );
+
+  router.patch(
+    '/models/:id',
+    wrap(async (req, res) => {
+      const { active } = req.body as { active?: boolean };
+      const model = store.updateModel(req.params.id, { active });
+      if (!model) {
+        res.status(404).json({ error: { message: 'Modelo não encontrado.' } });
+        return;
+      }
+      res.json(model);
     })
   );
 
@@ -233,6 +272,11 @@ export function createAdminRouter(): Router {
         return;
       }
       res.json({ provider: { ...provider, key: provider.key ? '***' : undefined } });
+      if (provider.configured) {
+        listProviderModels(provider.id, provider.key, provider.url)
+          .then((models) => store.syncModels(provider.id, models))
+          .catch(() => {});
+      }
     })
   );
 

@@ -112,7 +112,7 @@ export async function testProviderConnection(
   try {
     const llmModel = buildTempModel(providerId, model, key, url);
     const result = await Promise.race([
-      generateText({ model: llmModel, prompt: "hi" }),
+      generateText({ model: llmModel, prompt: "say hi" }),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('Timeout: conexão demorou mais de 60s.')), 60_000)
       ),

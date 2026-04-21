@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
 import { useModels } from '@/hooks/useModels';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -25,18 +25,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 const QUICK_ADD = [
   { value: 'openai:gpt-4o', label: 'GPT-4o' },
@@ -50,6 +39,7 @@ export function ModelsClient() {
   const [value, setValue] = useState('');
   const [label, setLabel] = useState('');
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   async function handleAdd() {
     if (!value.trim()) {
@@ -71,11 +61,24 @@ export function ModelsClient() {
     }
   }
 
-  async function handleDelete(id: string) {
+  async function handleSync() {
+    setSyncing(true);
     try {
-      await apiClient.models.remove(id);
+      const result = await apiClient.models.sync();
       await mutate();
-      toast.success('Modelo removido');
+      toast.success(`Sincronizado: ${result.added} adicionados, ${result.removed} removidos`);
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  async function handleToggleActive(id: string, active: boolean) {
+    try {
+      await apiClient.models.update(id, { active });
+      await mutate();
+      toast.success(active ? 'Modelo ativado' : 'Modelo desativado');
     } catch (err) {
       toast.error((err as Error).message);
     }
@@ -89,10 +92,16 @@ export function ModelsClient() {
             <h1 className="text-2xl font-bold">Modelos</h1>
             <p className="text-sm text-muted-foreground">Gerencie os modelos disponíveis</p>
           </div>
-          <Button onClick={() => setOpen(true)} size="sm">
-            <Plus className="mr-1 h-4 w-4" />
-            Adicionar
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
+              <RefreshCw className={`mr-1 h-4 w-4${syncing ? ' animate-spin' : ''}`} />
+              {syncing ? 'Sincronizando...' : 'Sincronizar'}
+            </Button>
+            <Button onClick={() => setOpen(true)} size="sm">
+              <Plus className="mr-1 h-4 w-4" />
+              Adicionar
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
@@ -108,8 +117,7 @@ export function ModelsClient() {
                 <TableRow>
                   <TableHead>Label</TableHead>
                   <TableHead>Provider:Model</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead />
+                  <TableHead>Ativo</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -120,38 +128,16 @@ export function ModelsClient() {
                       {model.value}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={model.active ? 'default' : 'secondary'}>
-                        {model.active ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Ações</TooltipContent>
-                          </Tooltip>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => handleDelete(model.id)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Remover
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Switch
+                        checked={model.active}
+                        onCheckedChange={(checked) => handleToggleActive(model.id, checked)}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
                 {models?.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                    <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
                       Nenhum modelo cadastrado
                     </TableCell>
                   </TableRow>

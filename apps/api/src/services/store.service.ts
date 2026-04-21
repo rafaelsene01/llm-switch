@@ -10,6 +10,7 @@ import type {
   GatewayUser,
   UserPublic,
 } from '../types';
+import type { ProviderModelInfo } from './providers.service';
 
 const VALID_MODES: BlocklistMode[] = ['disabled', 'redact', 'block'];
 
@@ -152,6 +153,59 @@ function createStore(dataFile?: string) {
     data.models.push(newModel);
     save(data);
     return newModel;
+  }
+
+  function syncModels(
+    providerId: string,
+    newModels: ProviderModelInfo[]
+  ): { added: number; removed: number; models: GatewayModel[] } {
+    const data = load();
+    const prefix = `${providerId}:`;
+    const currentForProvider = data.models.filter((m) => m.value.startsWith(prefix));
+    const currentOther = data.models.filter((m) => !m.value.startsWith(prefix));
+
+    const newValueSet = new Set(newModels.map((m) => `${prefix}${m.id}`));
+    const currentValueMap = new Map(currentForProvider.map((m) => [m.value, m]));
+
+    const kept: GatewayModel[] = [];
+    let added = 0;
+
+    for (const m of newModels) {
+      const value = `${prefix}${m.id}`;
+      const existing = currentValueMap.get(value);
+      if (existing) {
+        kept.push(existing);
+      } else {
+        kept.push({ id: `m_${Date.now()}_${Math.random().toString(36).slice(2)}`, value, label: m.name, active: true });
+        added++;
+      }
+    }
+
+    const removed = currentForProvider.filter((m) => !newValueSet.has(m.value)).length;
+    data.models = [...currentOther, ...kept];
+    save(data);
+    return { added, removed, models: data.models };
+  }
+
+  function updateModel(id: string, patch: Partial<Pick<GatewayModel, 'active' | 'label'>>): GatewayModel | null {
+    const data = load();
+    const idx = data.models.findIndex((m) => m.id === id);
+    if (idx === -1) return null;
+    data.models[idx] = { ...data.models[idx], ...patch };
+    save(data);
+    return data.models[idx];
+  }
+
+  function pruneUnconfiguredModels(configuredProviderIds: string[]): { removed: number } {
+    const data = load();
+    const before = data.models.length;
+    data.models = data.models.filter((m) => {
+      const prefix = m.value.split(':')[0];
+      return configuredProviderIds.includes(prefix);
+    });
+    const removed = before - data.models.length;
+    if (removed > 0) save(data);
+    return { removed };
   }
 
   function deleteModel(id: string): boolean {
@@ -361,6 +415,9 @@ function createStore(dataFile?: string) {
     deleteBlocklistEntry,
     getModels,
     addModel,
+    updateModel,
+    syncModels,
+    pruneUnconfiguredModels,
     deleteModel,
     getUsers,
     getUserByKey,
