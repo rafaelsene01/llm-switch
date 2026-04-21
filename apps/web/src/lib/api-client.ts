@@ -1,4 +1,5 @@
 import type {
+  ActivityLogPage,
   BlocklistEntry,
   GatewayModel,
   GatewayProvider,
@@ -98,6 +99,11 @@ export const apiClient = {
         method: 'POST',
         body: JSON.stringify(body),
       }),
+  },
+
+  activity: {
+    list: (page = 1, limit = 50) =>
+      apiFetch<ActivityLogPage>(`/admin/activity?page=${page}&limit=${limit}`),
   },
 
   config: {

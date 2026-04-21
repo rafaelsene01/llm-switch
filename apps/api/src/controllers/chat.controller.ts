@@ -68,6 +68,7 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
       messages,
       providerModel,
       clientLabel: req.clientLabel,
+      tokenPreview: req.tokenPreview,
       user: req.user,
       system,
       tools: rawTools,

@@ -5,6 +5,7 @@ declare global {
     interface Request {
       clientLabel: string;
       userModel: string | null;
+      tokenPreview: string;
       user: {
         id: string;
         name: string;

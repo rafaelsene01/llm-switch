@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, Shield, Cpu, Users, Plug } from 'lucide-react';
+import { Home, Shield, Cpu, Users, Plug, Activity } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { NavItem } from './NavItem';
 import { Separator } from '@/components/ui/separator';
@@ -35,6 +35,7 @@ export function Sidebar() {
         <NavItem href="/models" label="Modelos" icon={Cpu} badge={activeModels} />
         <NavItem href="/users" label="Usuários" icon={Users} badge={activeUsers} />
         <NavItem href="/providers" label="Providers" icon={Plug} badge={configuredProviders} />
+        <NavItem href="/activity" label="Atividade" icon={Activity} />
       </nav>
 
       <Separator />

@@ -33,6 +33,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
 
   req.clientLabel = user.name;
   req.userModel = user.model ?? null;
+  req.tokenPreview = token.slice(0, 8);
   req.user = {
     id: user.id,
     name: user.name,

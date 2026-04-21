@@ -65,6 +65,7 @@ describe('ChatService', () => {
       messages: [{ role: 'user', content: 'Hello', tool_calls: undefined }],
       providerModel: 'openai:gpt-4o-mini',
       clientLabel: 'test-client',
+      tokenPreview: 'testprev',
       user: null,
     });
 
@@ -92,6 +93,7 @@ describe('ChatService', () => {
       messages: [{ role: 'user', content: 'CPF: 123.456.789-09' }],
       providerModel: 'openai:gpt-4o-mini',
       clientLabel: 'test-client',
+      tokenPreview: 'testprev',
       user: null,
     });
 
@@ -112,6 +114,7 @@ describe('ChatService', () => {
       messages: [{ role: 'user', content: 'palavra proibida aqui' }],
       providerModel: 'openai:gpt-4o-mini',
       clientLabel: 'test-client',
+      tokenPreview: 'testprev',
       user: null,
     });
 

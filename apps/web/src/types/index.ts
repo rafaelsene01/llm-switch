@@ -66,3 +66,22 @@ export interface UserPublic {
   createdAt: string;
   active: boolean;
 }
+
+export interface ActivityLogRow {
+  id: number;
+  request_id: string;
+  user_name: string;
+  token_preview: string;
+  message_preview: string;
+  provider_model: string;
+  blocked: boolean;
+  file_path: string | null;
+  created_at: string;
+}
+
+export interface ActivityLogPage {
+  rows: ActivityLogRow[];
+  total: number;
+  page: number;
+  limit: number;
+}

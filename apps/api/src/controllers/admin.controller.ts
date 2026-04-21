@@ -5,6 +5,7 @@ import { store } from '../services/store.service';
 import { env } from '../config/env';
 import type { BlocklistCategory, BlocklistMode } from '../types';
 import { listProviderModels, testProviderConnection } from '../services/providers.service';
+import { activityLog } from '../services/activity-log.service';
 
 const VALID_MODES = ['disabled', 'redact', 'block'];
 const MODULES = ['blocklist', 'models', 'users'] as const;
@@ -413,6 +414,17 @@ export function createAdminRouter(): Router {
           mode as 'merge' | 'replace'
         ),
       });
+    })
+  );
+
+  // Activity log
+  router.get(
+    '/activity',
+    wrap(async (req, res) => {
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+      const result = activityLog.list(page, limit);
+      res.json({ ...result, page, limit });
     })
   );
 

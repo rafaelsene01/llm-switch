@@ -3,12 +3,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { resolveModel } from '../providers';
 import { sanitizer } from './sanitizer.service';
 import { logRequest } from '../utils/logger';
+import { activityLog } from './activity-log.service';
 import type { OpenAIMessage, OpenAITool, BlocklistFinding, SanitizeFinding } from '../types';
 
 export interface ChatServiceOptions {
   messages: OpenAIMessage[];
   providerModel: string;
   clientLabel: string;
+  tokenPreview: string;
   user: {
     id: string;
     name: string;
@@ -110,6 +112,7 @@ export class ChatService {
       messages,
       providerModel,
       clientLabel,
+      tokenPreview,
       system,
       tools: rawTools,
       toolChoice,
@@ -139,6 +142,15 @@ export class ChatService {
           durationMs,
           blocked: true,
         });
+        activityLog.log({
+          requestId,
+          userName: opts.user?.name ?? clientLabel,
+          tokenPreview,
+          sanitizedMessages: sanitizedMessages as Array<{ role: string; content: unknown }>,
+          llmResponse: null,
+          providerModel,
+          blocked: true,
+        });
         return {
           requestId,
           text: null,
@@ -163,6 +175,15 @@ export class ChatService {
         sanitizedMessages,
         sanitizationReport: report.flatMap((r) => r.findings),
         durationMs,
+        blocked: true,
+      });
+      activityLog.log({
+        requestId,
+        userName: opts.user?.name ?? clientLabel,
+        tokenPreview,
+        sanitizedMessages: sanitizedMessages as Array<{ role: string; content: unknown }>,
+        llmResponse: null,
+        providerModel,
         blocked: true,
       });
       return {
@@ -204,6 +225,16 @@ export class ChatService {
       sanitizationReport: flatReport,
       responseTokens: result.usage?.totalTokens,
       durationMs,
+    });
+
+    activityLog.log({
+      requestId,
+      userName: opts.user?.name ?? clientLabel,
+      tokenPreview,
+      sanitizedMessages: sanitizedMessages as Array<{ role: string; content: unknown }>,
+      llmResponse: result.text ?? null,
+      providerModel,
+      blocked: false,
     });
 
     return {
