@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Plus } from 'lucide-react';
+import { Plus, ShieldCheck } from 'lucide-react';
 import { useRules } from '@/hooks/useRules';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { RuleActionsMenu } from './RuleActionsMenu';
 import { ImportExportActions } from '@/components/shared/ImportExportActions';
+import { PageHeader } from '@/components/layout/PageHeader';
 import type { BlocklistMode, BlocklistCategory } from '@/types';
 
 const MODE_LABELS: Record<BlocklistMode, string> = {
@@ -94,55 +95,76 @@ export function RulesClient() {
 
   return (
     <TooltipProvider>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Regras de Sanitização</h1>
-            <p className="text-sm text-muted-foreground">Gerencie regras de detecção de PII</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <ImportExportActions module="blocklist" onImportSuccess={mutate} />
-            <Button onClick={() => setOpen(true)} size="sm">
-              <Plus className="mr-1 h-4 w-4" />
-              Adicionar
-            </Button>
-          </div>
-        </div>
+      <div>
+        <PageHeader
+          title="Regras de Sanitização"
+          description="Gerencie regras de detecção de PII"
+          actions={
+            <>
+              <ImportExportActions module="blocklist" onImportSuccess={mutate} />
+              <Button onClick={() => setOpen(true)} size="sm">
+                <Plus className="mr-1.5 h-4 w-4" />
+                Adicionar
+              </Button>
+            </>
+          }
+        />
 
         {isLoading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
+          <div className="rounded-lg border overflow-hidden">
+            <div className="bg-muted/40 px-4 py-2.5 border-b">
+              <Skeleton className="h-3 w-48" />
+            </div>
+            <div className="divide-y">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-8 px-4 py-3">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-7 w-28" />
+                  <Skeleton className="h-4 w-4 ml-auto" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : !rules?.length ? (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
+            <ShieldCheck className="mb-3 h-10 w-10 text-muted-foreground/30" />
+            <p className="font-medium text-sm">Nenhuma regra cadastrada</p>
+            <p className="mt-1 text-caption">Adicione regras para detectar e sanitizar PII</p>
+            <Button onClick={() => setOpen(true)} size="sm" className="mt-4">
+              <Plus className="mr-1.5 h-4 w-4" />
+              Adicionar regra
+            </Button>
           </div>
         ) : (
-          <div className="rounded-lg border">
+          <div className="rounded-lg border overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Label</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Modo</TableHead>
-                  <TableHead />
+                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                  <TableHead className="text-section-title h-10">Label</TableHead>
+                  <TableHead className="text-section-title h-10">Categoria</TableHead>
+                  <TableHead className="text-section-title h-10">Tipo</TableHead>
+                  <TableHead className="text-section-title h-10">Modo</TableHead>
+                  <TableHead className="h-10" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rules?.map((rule) => (
-                  <TableRow key={rule.id}>
+                {rules.map((rule) => (
+                  <TableRow key={rule.id} className="group hover:bg-muted/30 transition-colors duration-150">
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{rule.label}</span>
                         {rule.builtin && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-xs px-1.5 py-0">
                             built-in
                           </Badge>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{rule.category}</TableCell>
+                    <TableCell className="text-caption">{rule.category}</TableCell>
                     <TableCell>
-                      <code className="text-xs">{rule.type}</code>
+                      <code className="text-caption font-mono bg-muted px-1.5 py-0.5 rounded">{rule.type}</code>
                     </TableCell>
                     <TableCell>
                       <Select
@@ -161,7 +183,7 @@ export function RulesClient() {
                         </SelectContent>
                       </Select>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                       <RuleActionsMenu
                         rule={rule}
                         onUpdated={mutate}
@@ -177,12 +199,12 @@ export function RulesClient() {
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Adicionar Regra</DialogTitle>
+            <DialogHeader className="border-b border-border pb-4 mb-2">
+              <DialogTitle className="text-base font-semibold">Adicionar Regra</DialogTitle>
             </DialogHeader>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <Label>Label</Label>
+                <Label className="text-field-label">Label</Label>
                 <Input
                   placeholder="Minha Regra"
                   value={form.label}
@@ -191,7 +213,7 @@ export function RulesClient() {
                 />
               </div>
               <div>
-                <Label>Padrão *</Label>
+                <Label className="text-field-label">Padrão *</Label>
                 <Input
                   placeholder="palavra ou regex"
                   value={form.value}
@@ -201,7 +223,7 @@ export function RulesClient() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>Tipo</Label>
+                  <Label className="text-field-label">Tipo</Label>
                   <Select
                     value={form.type}
                     onValueChange={(v) => setForm({ ...form, type: v as 'word' | 'regex' })}
@@ -216,7 +238,7 @@ export function RulesClient() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Modo</Label>
+                  <Label className="text-field-label">Modo</Label>
                   <Select
                     value={form.mode}
                     onValueChange={(v) => setForm({ ...form, mode: v as BlocklistMode })}
@@ -233,7 +255,7 @@ export function RulesClient() {
                 </div>
               </div>
               <div>
-                <Label>Substituição</Label>
+                <Label className="text-field-label">Substituição</Label>
                 <Input
                   placeholder="[REMOVIDO]"
                   value={form.replacement}
@@ -242,7 +264,7 @@ export function RulesClient() {
                 />
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="border-t border-border pt-4 mt-2">
               <Button variant="outline" onClick={() => setOpen(false)}>
                 Cancelar
               </Button>

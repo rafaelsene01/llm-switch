@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import type { LucideIcon } from 'lucide-react';
 
 interface NavItemProps {
@@ -21,18 +20,26 @@ export function NavItem({ href, label, icon: Icon, badge }: NavItemProps) {
     <Link
       href={href}
       className={cn(
-        'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+        'group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all duration-150',
         isActive
           ? 'bg-primary/10 text-primary font-medium'
-          : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+          : 'text-muted-foreground hover:bg-white/5 dark:hover:bg-white/5 light:hover:bg-black/5 hover:text-foreground'
       )}
     >
-      <Icon className="h-4 w-4 shrink-0" />
-      <span className="flex-1">{label}</span>
-      {badge !== undefined && (
-        <Badge variant="secondary" className="ml-auto h-5 min-w-5 justify-center px-1 text-xs">
-          {badge}
-        </Badge>
+      {isActive && (
+        <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-primary" />
+      )}
+      <Icon className={cn('h-4 w-4 shrink-0 transition-colors', isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground')} />
+      <span className="flex-1 truncate">{label}</span>
+      {badge !== undefined && badge > 0 && (
+        <span className={cn(
+          'ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-medium tabular-nums',
+          isActive
+            ? 'bg-primary/20 text-primary'
+            : 'bg-muted text-muted-foreground'
+        )}>
+          {badge > 999 ? '999+' : badge}
+        </span>
       )}
     </Link>
   );

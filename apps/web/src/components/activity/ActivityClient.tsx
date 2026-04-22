@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { RefreshCw, Trash2 } from 'lucide-react';
+import { RefreshCw, Trash2, Activity } from 'lucide-react';
 import { useSWRConfig } from 'swr';
 import { useActivity } from '@/hooks/useActivity';
 import { apiClient } from '@/lib/api-client';
@@ -28,8 +28,21 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { cn } from '@/lib/utils';
 
 const PAGE_SIZE = 50;
+
+function StatusDot({ blocked }: { blocked: boolean }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex h-2 w-2 rounded-full shrink-0',
+        blocked ? 'bg-destructive' : 'bg-emerald-500'
+      )}
+    />
+  );
+}
 
 export function ActivityClient() {
   const [page, setPage] = useState(1);
@@ -69,98 +82,104 @@ export function ActivityClient() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Atividade</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Histórico de requisições ao gateway
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder="Filtrar por usuário..."
-            value={userFilter}
-            onChange={(e) => setUserFilter(e.target.value)}
-            className="w-48"
-          />
-          <Button variant="outline" size="sm" onClick={() => revalidateActivity()}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Atualizar
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setClearAllOpen(true)}
-            className="text-destructive hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Limpar tudo
-          </Button>
-        </div>
-      </div>
+    <div>
+      <PageHeader
+        title="Atividade"
+        description="Histórico de requisições ao gateway"
+        actions={
+          <>
+            <Input
+              placeholder="Filtrar por usuário..."
+              value={userFilter}
+              onChange={(e) => setUserFilter(e.target.value)}
+              className="w-44 h-8 text-sm"
+            />
+            <Button variant="outline" size="sm" onClick={() => revalidateActivity()}>
+              <RefreshCw className="h-4 w-4 mr-1.5" />
+              Atualizar
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setClearAllOpen(true)}
+              className="text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-1.5" />
+              Limpar tudo
+            </Button>
+          </>
+        }
+      />
 
-      <div className="rounded-md border">
+      <div className="rounded-lg border overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Usuário</TableHead>
-              <TableHead>Token</TableHead>
-              <TableHead className="w-[40%]">Mensagem</TableHead>
-              <TableHead>Modelo</TableHead>
-              <TableHead>Tokens</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead className="w-[40px]" />
+            <TableRow className="bg-muted/40 hover:bg-muted/40">
+              <TableHead className="text-section-title h-10 w-6" />
+              <TableHead className="text-section-title h-10">Usuário</TableHead>
+              <TableHead className="text-section-title h-10">Token</TableHead>
+              <TableHead className="text-section-title h-10 w-[35%]">Mensagem</TableHead>
+              <TableHead className="text-section-title h-10">Modelo</TableHead>
+              <TableHead className="text-section-title h-10">Tokens</TableHead>
+              <TableHead className="text-section-title h-10">Status</TableHead>
+              <TableHead className="text-section-title h-10">Data</TableHead>
+              <TableHead className="h-10 w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
+              Array.from({ length: 8 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 8 }).map((__, j) => (
+                  {Array.from({ length: 9 }).map((__, j) => (
                     <TableCell key={j}>
-                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-3.5 w-full" />
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : !data?.rows.length ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-10">
-                  Nenhuma atividade registrada ainda.
+                <TableCell colSpan={9}>
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <Activity className="mb-3 h-10 w-10 text-muted-foreground/30" />
+                    <p className="font-medium text-sm">Nenhuma atividade registrada</p>
+                    <p className="mt-1 text-caption">As requisições aparecerão aqui conforme chegarem</p>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
               data.rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="cursor-pointer hover:bg-muted/50"
+                  className="group cursor-pointer hover:bg-muted/30 transition-colors duration-150"
                   onClick={() => router.push(`/activity/${row.id}`)}
                 >
+                  <TableCell className="pr-0">
+                    <StatusDot blocked={row.blocked} />
+                  </TableCell>
                   <TableCell className="font-medium">{row.user_name}</TableCell>
                   <TableCell>
-                    <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                      {row.token_preview}...
+                    <code className="text-caption font-mono bg-muted px-1.5 py-0.5 rounded">
+                      {row.token_preview}…
                     </code>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
                     {row.message_preview}
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
+                  <TableCell className="text-caption font-mono">
                     {row.provider_model}
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground tabular-nums">
+                  <TableCell className="text-caption tabular-nums">
                     {row.blocked ? '—' : row.total_tokens.toLocaleString('pt-BR')}
                   </TableCell>
                   <TableCell>
                     {row.blocked ? (
-                      <Badge variant="destructive">bloqueado</Badge>
+                      <Badge variant="destructive" className="text-xs px-1.5 py-0">bloqueado</Badge>
                     ) : (
-                      <Badge variant="default" className="bg-green-600 hover:bg-green-700">ok</Badge>
+                      <Badge variant="default" className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 text-xs px-1.5 py-0">ok</Badge>
                     )}
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                  <TableCell className="text-caption whitespace-nowrap">
                     {new Date(row.created_at).toLocaleString('pt-BR')}
                   </TableCell>
                   <TableCell
@@ -168,9 +187,10 @@ export function ActivityClient() {
                       e.stopPropagation();
                       setDeletingId(row.id);
                     }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-150"
                   >
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -181,9 +201,9 @@ export function ActivityClient() {
       </div>
 
       {data && totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="mt-4 flex items-center justify-between text-caption">
           <span>
-            {data.total} registro{data.total !== 1 ? 's' : ''} · página {page} de {totalPages}
+            {data.total.toLocaleString('pt-BR')} registro{data.total !== 1 ? 's' : ''} · página {page} de {totalPages}
           </span>
           <div className="flex gap-2">
             <Button
@@ -206,7 +226,6 @@ export function ActivityClient() {
         </div>
       )}
 
-      {/* Dialog: excluir registro individual */}
       <AlertDialog open={deletingId !== null} onOpenChange={(open) => !open && setDeletingId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -227,7 +246,6 @@ export function ActivityClient() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Dialog: limpar tudo */}
       <AlertDialog open={clearAllOpen} onOpenChange={setClearAllOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

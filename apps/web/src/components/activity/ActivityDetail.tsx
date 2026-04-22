@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
-import { ArrowLeft, AlertTriangle, ChevronDown } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, ChevronDown, Shield } from 'lucide-react';
 import type { ActivityLogDetail } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { MessageList, tryParseMessages } from './MessageList';
+import { cn } from '@/lib/utils';
 
 interface Props {
   detail: ActivityLogDetail;
@@ -58,6 +59,15 @@ function parseSections(markdown: string): Array<{ title: string; content: string
     .filter((s) => s.title in SECTION_TITLES);
 }
 
+function MetaField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-section-title mb-1">{label}</p>
+      <div className="text-sm">{children}</div>
+    </div>
+  );
+}
+
 export function ActivityDetail({ detail }: Props) {
   const router = useRouter();
   const { row, markdown } = detail;
@@ -73,80 +83,90 @@ export function ActivityDetail({ detail }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={() => router.back()} className="-ml-2">
           <ArrowLeft className="h-4 w-4 mr-1" />
           Voltar
         </Button>
+        <Separator orientation="vertical" className="h-4" />
         <div>
-          <h1 className="text-xl font-semibold leading-none">Log de Atividade</h1>
-          <p className="text-xs text-muted-foreground mt-1 font-mono">{row.request_id}</p>
+          <h1 className="text-page-title leading-none">Log de Atividade</h1>
+          <p className="text-caption font-mono mt-1">{row.request_id}</p>
+        </div>
+        <div className="ml-auto">
+          {row.blocked ? (
+            <Badge variant="destructive" className="gap-1.5">
+              <Shield className="h-3 w-3" />
+              Bloqueado
+            </Badge>
+          ) : (
+            <Badge variant="default" className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              OK
+            </Badge>
+          )}
         </div>
       </div>
 
-      <Card>
-        <CardContent className="pt-5">
-          <div className="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3">
-            <div>
-              <p className="text-xs text-muted-foreground mb-0.5">Usuário</p>
-              <p className="text-sm font-medium">{row.user_name}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-0.5">Token</p>
-              <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{row.token_preview}...</code>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-0.5">Modelo</p>
-              <p className="text-sm">{row.provider_model}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-0.5">Tokens</p>
-              <p className="text-sm tabular-nums">
+      {/* Metadata card */}
+      <Card className="shadow-card border-border/50">
+        <CardContent className="pt-5 pb-5">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-3">
+            <MetaField label="Usuário">
+              <span className="font-medium">{row.user_name}</span>
+            </MetaField>
+            <MetaField label="Token">
+              <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{row.token_preview}…</code>
+            </MetaField>
+            <MetaField label="Modelo">
+              <code className="text-xs font-mono">{row.provider_model}</code>
+            </MetaField>
+            <MetaField label="Tokens">
+              <span className="tabular-nums font-medium">
                 {row.blocked ? '—' : row.total_tokens.toLocaleString('pt-BR')}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-0.5">Status</p>
-              {row.blocked ? (
-                <Badge variant="destructive">bloqueado</Badge>
-              ) : (
-                <Badge variant="default" className="bg-green-600 hover:bg-green-700">ok</Badge>
-              )}
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-0.5">Data</p>
-              <p className="text-sm">{new Date(row.created_at).toLocaleString('pt-BR')}</p>
-            </div>
+              </span>
+            </MetaField>
+            <MetaField label="Data">
+              <span>{new Date(row.created_at).toLocaleString('pt-BR')}</span>
+            </MetaField>
           </div>
         </CardContent>
       </Card>
 
+      {/* Log sections */}
       {!markdown ? (
-        <div className="flex items-center gap-2 rounded-md border border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-800 p-4 text-sm text-yellow-800 dark:text-yellow-300">
+        <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-300">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           Arquivo de log não encontrado no servidor.
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {sections.map((section) => {
             const isCollapsed = collapsed.has(section.title);
             return (
-              <Card key={section.title}>
+              <Card key={section.title} className="shadow-card border-border/50 overflow-hidden">
                 <CardHeader
-                  className="p-3 cursor-pointer select-none"
+                  className={cn(
+                    'px-4 py-3 cursor-pointer select-none transition-colors duration-150',
+                    isCollapsed ? 'bg-transparent' : 'bg-muted/20'
+                  )}
                   onClick={() => toggle(section.title)}
                 >
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-semibold">{section.title}</CardTitle>
                     <ChevronDown
-                      className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}
+                      className={cn(
+                        'h-4 w-4 text-muted-foreground transition-transform duration-200',
+                        isCollapsed ? '-rotate-90' : ''
+                      )}
                     />
                   </div>
                 </CardHeader>
                 {!isCollapsed && (
                   <>
-                    <Separator />
+                    <Separator className="opacity-60" />
                     <CardContent className="pt-4">
                       {REQUEST_SECTIONS.has(section.title) ? (
                         (() => {

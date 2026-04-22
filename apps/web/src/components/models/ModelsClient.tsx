@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, RefreshCw } from 'lucide-react';
+import { Plus, RefreshCw, Cpu } from 'lucide-react';
 import { useModels } from '@/hooks/useModels';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 const QUICK_ADD = [
   { value: 'openai:gpt-4o', label: 'GPT-4o' },
@@ -86,46 +87,67 @@ export function ModelsClient() {
 
   return (
     <TooltipProvider>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Modelos</h1>
-            <p className="text-sm text-muted-foreground">Gerencie os modelos disponíveis</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
-              <RefreshCw className={`mr-1 h-4 w-4${syncing ? ' animate-spin' : ''}`} />
-              {syncing ? 'Sincronizando...' : 'Sincronizar'}
-            </Button>
-            <Button onClick={() => setOpen(true)} size="sm">
-              <Plus className="mr-1 h-4 w-4" />
-              Adicionar
-            </Button>
-          </div>
-        </div>
+      <div>
+        <PageHeader
+          title="Modelos"
+          description="Gerencie os modelos disponíveis"
+          actions={
+            <>
+              <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
+                <RefreshCw className={`mr-1.5 h-4 w-4${syncing ? ' animate-spin' : ''}`} />
+                {syncing ? 'Sincronizando...' : 'Sincronizar'}
+              </Button>
+              <Button onClick={() => setOpen(true)} size="sm">
+                <Plus className="mr-1.5 h-4 w-4" />
+                Adicionar
+              </Button>
+            </>
+          }
+        />
 
         {isLoading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
+          <div className="rounded-lg border overflow-hidden">
+            <div className="bg-muted/40 px-4 py-2.5 border-b">
+              <Skeleton className="h-3 w-40" />
+            </div>
+            <div className="divide-y">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-8 px-4 py-3">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-5 w-9 rounded-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : !models?.length ? (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
+            <Cpu className="mb-3 h-10 w-10 text-muted-foreground/30" />
+            <p className="font-medium text-sm">Nenhum modelo cadastrado</p>
+            <p className="mt-1 text-caption">Adicione um modelo para começar a rotear requisições</p>
+            <Button onClick={() => setOpen(true)} size="sm" className="mt-4">
+              <Plus className="mr-1.5 h-4 w-4" />
+              Adicionar modelo
+            </Button>
           </div>
         ) : (
-          <div className="rounded-lg border">
+          <div className="rounded-lg border overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Label</TableHead>
-                  <TableHead>Provider:Model</TableHead>
-                  <TableHead>Ativo</TableHead>
+                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                  <TableHead className="text-section-title h-10">Label</TableHead>
+                  <TableHead className="text-section-title h-10">Provider:Model</TableHead>
+                  <TableHead className="text-section-title h-10">Ativo</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {models?.map((model) => (
-                  <TableRow key={model.id}>
+                {models.map((model) => (
+                  <TableRow key={model.id} className="group hover:bg-muted/30 transition-colors duration-150">
                     <TableCell className="font-medium">{model.label}</TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
-                      {model.value}
+                    <TableCell>
+                      <code className="text-caption font-mono bg-muted px-1.5 py-0.5 rounded">
+                        {model.value}
+                      </code>
                     </TableCell>
                     <TableCell>
                       <Switch
@@ -135,13 +157,6 @@ export function ModelsClient() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {models?.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={3} className="py-8 text-center text-muted-foreground">
-                      Nenhum modelo cadastrado
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
           </div>
@@ -149,21 +164,21 @@ export function ModelsClient() {
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Adicionar Modelo</DialogTitle>
+            <DialogHeader className="border-b border-border pb-4 mb-2">
+              <DialogTitle className="text-base font-semibold">Adicionar Modelo</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>Provider:Model *</Label>
+                <Label className="text-field-label">Provider:Model *</Label>
                 <Input
                   placeholder="openai:gpt-4o"
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
-                  className="mt-1.5"
+                  className="mt-1.5 font-mono"
                 />
               </div>
               <div>
-                <Label>Label (opcional)</Label>
+                <Label className="text-field-label">Label (opcional)</Label>
                 <Input
                   placeholder="GPT-4o"
                   value={label}
@@ -172,7 +187,7 @@ export function ModelsClient() {
                 />
               </div>
               <div>
-                <p className="mb-2 text-xs text-muted-foreground">Adicionar rapidamente:</p>
+                <p className="mb-2 text-caption">Adicionar rapidamente:</p>
                 <div className="flex flex-wrap gap-2">
                   {QUICK_ADD.map((q) => (
                     <Button
@@ -187,7 +202,7 @@ export function ModelsClient() {
                 </div>
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="border-t border-border pt-4 mt-2">
               <Button variant="outline" onClick={() => setOpen(false)}>
                 Cancelar
               </Button>

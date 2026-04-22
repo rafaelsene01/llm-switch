@@ -86,8 +86,8 @@ export function ProviderConfigDialog({ provider, open, onClose, onSaved }: Provi
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Configurar {provider.name}</DialogTitle>
+        <DialogHeader className="border-b border-border pb-4 mb-2">
+          <DialogTitle className="text-base font-semibold">Configurar {provider.name}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-2">
@@ -118,7 +118,7 @@ export function ProviderConfigDialog({ provider, open, onClose, onSaved }: Provi
           />
         </div>
 
-        <DialogFooter className="flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <DialogFooter className="flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-t border-border pt-4 mt-2">
           {provider.configured && (
             <Button
               type="button"

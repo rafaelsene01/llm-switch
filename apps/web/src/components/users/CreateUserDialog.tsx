@@ -103,12 +103,12 @@ export function CreateUserDialog({ open, onOpenChange, onCreated }: Props) {
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Criar Usuário</DialogTitle>
+        <DialogHeader className="border-b border-border pb-4 mb-2">
+          <DialogTitle className="text-base font-semibold">Criar Usuário</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div>
-            <Label>Nome *</Label>
+            <Label className="text-field-label">Nome *</Label>
             <Input
               placeholder="minha-equipe"
               value={form.name}
@@ -117,7 +117,7 @@ export function CreateUserDialog({ open, onOpenChange, onCreated }: Props) {
             />
           </div>
           <div>
-            <Label>API Key *</Label>
+            <Label className="text-field-label">API Key *</Label>
             <div className="mt-1.5 flex gap-2">
               <Input
                 placeholder="gw_..."
@@ -161,7 +161,7 @@ export function CreateUserDialog({ open, onOpenChange, onCreated }: Props) {
             onAllowedModelsChange={handleAllowedModelsChange}
           />
         </div>
-        <DialogFooter>
+        <DialogFooter className="border-t border-border pt-4 mt-2">
           <Button variant="outline" onClick={handleClose}>Cancelar</Button>
           <Button onClick={handleCreate} disabled={saving}>
             {saving ? 'Criando...' : 'Criar'}

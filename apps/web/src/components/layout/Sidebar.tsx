@@ -23,15 +23,24 @@ export function Sidebar() {
   const configuredProviders = providers?.filter((p) => p.configured).length;
 
   return (
-    <aside className="flex h-screen w-56 shrink-0 flex-col border-r bg-card">
-      <div className="p-4">
-        <div className="flex items-center gap-2 px-2 py-1">
-          <div className="h-6 w-6 rounded bg-primary" />
-          <span className="font-semibold text-sm">LLM Gateway</span>
+    <aside
+      className="flex h-screen w-56 shrink-0 flex-col border-r border-border/60"
+      style={{ backgroundColor: 'hsl(var(--sidebar-bg))' }}
+    >
+      {/* Brand */}
+      <div className="px-4 py-5">
+        <div className="flex items-center gap-2.5 px-1">
+          <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary">
+            <span className="text-xs font-bold text-primary-foreground">LG</span>
+          </div>
+          <span className="font-bold text-sm tracking-tight">LLM Gateway</span>
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 px-2 py-2">
+      <Separator className="opacity-50" />
+
+      {/* Nav */}
+      <nav className="flex-1 space-y-0.5 px-2 py-3">
         <NavItem href="/" label="Home" icon={Home} />
         <NavItem href="/rules" label="Regras" icon={Shield} badge={activeRules} />
         <NavItem href="/models" label="Modelos" icon={Cpu} badge={activeModels} />
@@ -41,9 +50,9 @@ export function Sidebar() {
         <NavItem href="/analytics" label="Analytics" icon={BarChart2} />
       </nav>
 
-      <Separator />
-      <div className="flex items-center justify-between p-4">
-        <span className="text-xs text-muted-foreground">v2.0</span>
+      <Separator className="opacity-50" />
+      <div className="flex items-center justify-between px-5 py-3">
+        <span className="text-caption opacity-40">v2.0</span>
         <ThemeToggle />
       </div>
     </aside>

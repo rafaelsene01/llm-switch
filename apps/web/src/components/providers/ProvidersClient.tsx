@@ -7,6 +7,7 @@ import type { GatewayProvider } from '@/types';
 import { ProviderCard } from './ProviderCard';
 import { ProviderConfigDialog } from './ProviderConfigDialog';
 import { ImportExportActions } from '@/components/shared/ImportExportActions';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 export function ProvidersClient() {
   const { data: providers, isLoading, error, mutate } = useProviders();
@@ -15,9 +16,9 @@ export function ProvidersClient() {
   if (error) {
     return (
       <div className="flex flex-col items-center gap-4 py-16 text-muted-foreground">
-        <p>Erro ao carregar providers.</p>
+        <p className="text-sm">Erro ao carregar providers.</p>
         <button
-          className="text-sm underline underline-offset-2"
+          className="text-sm underline underline-offset-2 hover:text-foreground transition-colors"
           onClick={() => mutate()}
         >
           Tentar novamente
@@ -27,20 +28,16 @@ export function ProvidersClient() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Providers</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Gerencie as chaves de API e conexões dos providers de LLM.
-          </p>
-        </div>
-        <ImportExportActions module="providers" onImportSuccess={mutate} />
-      </div>
+    <div>
+      <PageHeader
+        title="Providers"
+        description="Gerencie as chaves de API e conexões dos providers de LLM."
+        actions={<ImportExportActions module="providers" onImportSuccess={mutate} />}
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading
-          ? Array.from({ length: 7 }).map((_, i) => (
+          ? Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-36 w-full rounded-lg" />
             ))
           : providers?.map((provider) => (

@@ -1,6 +1,9 @@
-import { Terminal, Zap, Shield, Users } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Terminal } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { HomeConfigActions } from '@/components/home/HomeConfigActions';
+import { HomeStats } from '@/components/home/HomeStats';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 const endpoints = [
   {
@@ -22,64 +25,51 @@ const curlExample = `curl https://seu-gateway.com/v1/chat/completions \\
 
 export default function HomePage() {
   return (
-    <div className="space-y-8">
-      <div className="flex items-start justify-between gap-4">
+    <div>
+      <PageHeader
+        title="LLM Gateway"
+        description="Proxy OpenAI-compatível com sanitização de PII, multi-provider e autenticação por cliente."
+        actions={<HomeConfigActions />}
+      />
+
+      <div className="space-y-8">
+        {/* Stats */}
+        <HomeStats />
+
+        <Separator className="opacity-40" />
+
+        {/* Endpoints */}
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">LLM Gateway</h1>
-          <p className="mt-1 text-muted-foreground">
-            Proxy OpenAI-compatível com sanitização de PII, multi-provider e autenticação por cliente.
-          </p>
-        </div>
-        <HomeConfigActions />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        {[
-          { icon: Shield, title: 'Sanitização PII', desc: '20+ regras built-in para documentos, credenciais e dados financeiros' },
-          { icon: Zap, title: 'Multi-provider', desc: 'OpenAI, Anthropic, Google, Mistral, OpenRouter, Ollama, LM Studio' },
-          { icon: Users, title: 'Por cliente', desc: 'API keys, rate limit, modelos permitidos e auditoria por usuário' },
-        ].map(({ icon: Icon, title, desc }) => (
-          <Card key={title}>
-            <CardContent className="pt-4">
-              <Icon className="mb-2 h-5 w-5 text-primary" />
-              <p className="font-medium text-sm">{title}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{desc}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div>
-        <h2 className="mb-3 text-lg font-semibold">Endpoints</h2>
-        <div className="space-y-2">
-          {endpoints.map(({ method, path, desc }) => (
-            <Card key={path}>
-              <CardContent className="flex items-start gap-3 py-3">
-                <span className="mt-0.5 rounded bg-primary/10 px-1.5 py-0.5 text-xs font-mono font-semibold text-primary">
+          <p className="text-section-title mb-4">Endpoints</p>
+          <div className="space-y-2">
+            {endpoints.map(({ method, path, desc }) => (
+              <div key={path} className="flex items-start gap-3 rounded-lg border border-border/50 bg-card px-4 py-3 shadow-card">
+                <span className="mt-0.5 shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-xs font-mono font-semibold text-primary">
                   {method}
                 </span>
                 <div>
                   <code className="text-sm font-mono">{path}</code>
-                  <p className="text-xs text-muted-foreground">{desc}</p>
+                  <p className="text-caption mt-0.5">{desc}</p>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div>
-        <h2 className="mb-3 text-lg font-semibold flex items-center gap-2">
-          <Terminal className="h-4 w-4" />
-          Exemplo de integração
-        </h2>
-        <Card>
-          <CardContent className="pt-4">
-            <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
-              <code>{curlExample}</code>
-            </pre>
-          </CardContent>
-        </Card>
+        {/* Curl example */}
+        <div>
+          <p className="text-section-title mb-4 flex items-center gap-2">
+            <Terminal className="h-3.5 w-3.5" />
+            Exemplo de integração
+          </p>
+          <Card className="shadow-card border-border/50">
+            <CardContent className="pt-4 pb-4">
+              <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
+                <code>{curlExample}</code>
+              </pre>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
