@@ -103,6 +103,29 @@ function convertMessagesToCore(messages: OpenAIMessage[]) {
   });
 }
 
+function extractTextFromResult(text: string | null | undefined): string | null {
+  if (!text) return null;
+  const trimmed = text.trim();
+  if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+    try {
+      const parsed: unknown = JSON.parse(trimmed);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const first = parsed[0] as Record<string, unknown>;
+        const candidate = first?.output ?? first?.text ?? first?.content ?? first?.message;
+        if (typeof candidate === 'string') return candidate;
+      }
+      if (parsed && typeof parsed === 'object') {
+        const obj = parsed as Record<string, unknown>;
+        const candidate = obj?.output ?? obj?.text ?? obj?.content ?? obj?.message;
+        if (typeof candidate === 'string') return candidate;
+      }
+    } catch {
+      // not JSON — return as-is
+    }
+  }
+  return text;
+}
+
 export class ChatService {
   async complete(opts: ChatServiceOptions): Promise<ChatServiceResult> {
     const requestId = uuidv4();
@@ -241,7 +264,7 @@ export class ChatService {
       tokenPreview,
       originalMessages: messages as Array<{ role: string; content: unknown }>,
       sanitizedMessages: sanitizedMessages as Array<{ role: string; content: unknown }>,
-      llmResponse: result.text ?? null,
+      llmResponse: extractTextFromResult(result.text),
       providerModel,
       blocked: false,
       promptTokens: result.usage?.promptTokens ?? 0,

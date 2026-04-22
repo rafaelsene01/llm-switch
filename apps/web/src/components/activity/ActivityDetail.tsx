@@ -1,13 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, ChevronDown } from 'lucide-react';
 import type { ActivityLogDetail } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { MessageList, tryParseMessages } from './MessageList';
 
 interface Props {
   detail: ActivityLogDetail;
@@ -18,6 +20,30 @@ const SECTION_TITLES: Record<string, string> = {
   'Sanitized Request': 'Sanitized Request',
   'LLM Response': 'LLM Response',
 };
+
+const REQUEST_SECTIONS = new Set(['Original Request', 'Sanitized Request']);
+
+function extractLlmText(content: string): string {
+  const trimmed = content.trim();
+  if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+    try {
+      const parsed: unknown = JSON.parse(trimmed);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const first = parsed[0] as Record<string, unknown>;
+        const candidate = first?.output ?? first?.text ?? first?.content ?? first?.message;
+        if (typeof candidate === 'string') return candidate;
+      }
+      if (parsed && typeof parsed === 'object') {
+        const obj = parsed as Record<string, unknown>;
+        const candidate = obj?.output ?? obj?.text ?? obj?.content ?? obj?.message;
+        if (typeof candidate === 'string') return candidate;
+      }
+    } catch {
+      // not JSON — fall through
+    }
+  }
+  return content;
+}
 
 function parseSections(markdown: string): Array<{ title: string; content: string }> {
   const parts = markdown.split(/^## /m);
@@ -36,6 +62,15 @@ export function ActivityDetail({ detail }: Props) {
   const router = useRouter();
   const { row, markdown } = detail;
   const sections = markdown ? parseSections(markdown) : [];
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
+  function toggle(title: string) {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      next.has(title) ? next.delete(title) : next.add(title);
+      return next;
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -94,21 +129,51 @@ export function ActivityDetail({ detail }: Props) {
         </div>
       ) : (
         <div className="space-y-4">
-          {sections.map((section) => (
-            <Card key={section.title}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold">{section.title}</CardTitle>
-              </CardHeader>
-              <Separator />
-              <CardContent className="pt-4">
-                <div className="prose prose-sm dark:prose-invert max-w-none
-                  prose-pre:bg-muted prose-pre:text-sm prose-pre:rounded-md
-                  prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:rounded">
-                  <ReactMarkdown>{section.content}</ReactMarkdown>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {sections.map((section) => {
+            const isCollapsed = collapsed.has(section.title);
+            return (
+              <Card key={section.title}>
+                <CardHeader
+                  className="p-3 cursor-pointer select-none"
+                  onClick={() => toggle(section.title)}
+                >
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-semibold">{section.title}</CardTitle>
+                    <ChevronDown
+                      className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}
+                    />
+                  </div>
+                </CardHeader>
+                {!isCollapsed && (
+                  <>
+                    <Separator />
+                    <CardContent className="pt-4">
+                      {REQUEST_SECTIONS.has(section.title) ? (
+                        (() => {
+                          const messages = tryParseMessages(section.content);
+                          return messages ? (
+                            <MessageList messages={messages} />
+                          ) : (
+                            <div className="prose prose-sm dark:prose-invert max-w-none
+                              prose-pre:bg-muted prose-pre:text-sm prose-pre:rounded-md
+                              prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:rounded">
+                              <ReactMarkdown>{section.content}</ReactMarkdown>
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        <div className="prose prose-sm dark:prose-invert max-w-none
+                          prose-pre:bg-muted prose-pre:text-sm prose-pre:rounded-md
+                          prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:rounded">
+                          <ReactMarkdown>{extractLlmText(section.content)}</ReactMarkdown>
+                        </div>
+                      )}
+                    </CardContent>
+                  </>
+                )}
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
