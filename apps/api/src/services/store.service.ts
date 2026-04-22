@@ -31,6 +31,12 @@ interface StoreData {
   providers: GatewayProvider[];
 }
 
+interface ProviderExportEntry {
+  id: string;
+  key?: string;
+  url?: string;
+}
+
 interface ExportPayload {
   _gateway_export: boolean;
   _module: string;
@@ -39,6 +45,7 @@ interface ExportPayload {
   blocklist?: BlocklistEntry[];
   models?: GatewayModel[];
   users?: GatewayUser[];
+  providers?: ProviderExportEntry[];
 }
 
 interface ImportReport {
@@ -324,6 +331,7 @@ function createStore(dataFile?: string) {
       blocklist: data.blocklist,
       models: data.models,
       users: data.users,
+      providers: data.providers.map((p) => ({ id: p.id, key: p.key, url: p.url })),
     };
   }
 
@@ -331,11 +339,26 @@ function createStore(dataFile?: string) {
     if (!payload?._gateway_export) {
       throw new Error('Arquivo inválido: não é uma exportação do LLM Gateway.');
     }
-    return _importModules(payload, ['blocklist', 'models', 'users'], mode);
+    const report = _importModules(payload, ['blocklist', 'models', 'users'], mode);
+    if (payload.providers) {
+      const provReport = _importProviders(payload.providers);
+      report.added['providers'] = provReport.added;
+      report.skipped['providers'] = provReport.skipped;
+    }
+    return report;
   }
 
-  function exportModule(module: 'blocklist' | 'models' | 'users'): ExportPayload {
+  function exportModule(module: 'blocklist' | 'models' | 'users' | 'providers'): ExportPayload {
     const data = load();
+    if (module === 'providers') {
+      return {
+        _gateway_export: true,
+        _module: 'providers',
+        _version: '1.0',
+        _exported_at: new Date().toISOString(),
+        providers: data.providers.map((p) => ({ id: p.id, key: p.key, url: p.url })),
+      };
+    }
     return {
       _gateway_export: true,
       _module: module,
@@ -347,7 +370,7 @@ function createStore(dataFile?: string) {
 
   function importModule(
     payload: ExportPayload,
-    module: 'blocklist' | 'models' | 'users',
+    module: 'blocklist' | 'models' | 'users' | 'providers',
     mode: 'merge' | 'replace' = 'merge'
   ): ImportReport {
     if (!payload?._gateway_export) {
@@ -356,7 +379,31 @@ function createStore(dataFile?: string) {
     if (!payload[module]) {
       throw new Error(`Arquivo não contém dados do módulo "${module}".`);
     }
+    if (module === 'providers') {
+      const provReport = _importProviders(payload.providers ?? []);
+      return { added: { providers: provReport.added }, skipped: { providers: provReport.skipped } };
+    }
     return _importModules(payload, [module], mode);
+  }
+
+  function _importProviders(entries: ProviderExportEntry[]): { added: number; skipped: number } {
+    const data = load();
+    let updated = 0;
+    let skipped = 0;
+    for (const entry of entries) {
+      const idx = data.providers.findIndex((p) => p.id === entry.id);
+      if (idx === -1) { skipped++; continue; }
+      const p = data.providers[idx];
+      const patch: Partial<GatewayProvider> = {};
+      if (entry.url !== undefined) patch.url = entry.url;
+      if (entry.key && entry.key !== '***') patch.key = entry.key;
+      data.providers[idx] = { ...p, ...patch };
+      data.providers[idx].configured =
+        p.type === 'cloud' ? Boolean(data.providers[idx].key) : Boolean(data.providers[idx].url);
+      updated++;
+    }
+    save(data);
+    return { added: updated, skipped };
   }
 
   function _importModules(

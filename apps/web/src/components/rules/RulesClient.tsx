@@ -35,6 +35,7 @@ import {
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { RuleActionsMenu } from './RuleActionsMenu';
+import { ImportExportActions } from '@/components/shared/ImportExportActions';
 import type { BlocklistMode, BlocklistCategory } from '@/types';
 
 const MODE_LABELS: Record<BlocklistMode, string> = {
@@ -99,10 +100,13 @@ export function RulesClient() {
             <h1 className="text-2xl font-bold">Regras de Sanitização</h1>
             <p className="text-sm text-muted-foreground">Gerencie regras de detecção de PII</p>
           </div>
-          <Button onClick={() => setOpen(true)} size="sm">
-            <Plus className="mr-1 h-4 w-4" />
-            Adicionar
-          </Button>
+          <div className="flex items-center gap-2">
+            <ImportExportActions module="blocklist" onImportSuccess={mutate} />
+            <Button onClick={() => setOpen(true)} size="sm">
+              <Plus className="mr-1 h-4 w-4" />
+              Adicionar
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (

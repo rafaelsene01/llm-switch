@@ -9,7 +9,7 @@ import { listProviderModels, testProviderConnection } from '../services/provider
 import { activityLog } from '../services/activity-log.service';
 
 const VALID_MODES = ['disabled', 'redact', 'block'];
-const MODULES = ['blocklist', 'models', 'users'] as const;
+const MODULES = ['blocklist', 'models', 'users', 'providers'] as const;
 type Module = (typeof MODULES)[number];
 
 function wrap(fn: (req: Request, res: Response) => Promise<void>) {

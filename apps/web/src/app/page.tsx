@@ -1,5 +1,6 @@
 import { Terminal, Zap, Shield, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { HomeConfigActions } from '@/components/home/HomeConfigActions';
 
 const endpoints = [
   {
@@ -22,11 +23,14 @@ const curlExample = `curl https://seu-gateway.com/v1/chat/completions \\
 export default function HomePage() {
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">LLM Gateway</h1>
-        <p className="mt-1 text-muted-foreground">
-          Proxy OpenAI-compatível com sanitização de PII, multi-provider e autenticação por cliente.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">LLM Gateway</h1>
+          <p className="mt-1 text-muted-foreground">
+            Proxy OpenAI-compatível com sanitização de PII, multi-provider e autenticação por cliente.
+          </p>
+        </div>
+        <HomeConfigActions />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">

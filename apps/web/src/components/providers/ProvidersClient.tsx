@@ -6,6 +6,7 @@ import { useProviders } from '@/hooks/useProviders';
 import type { GatewayProvider } from '@/types';
 import { ProviderCard } from './ProviderCard';
 import { ProviderConfigDialog } from './ProviderConfigDialog';
+import { ImportExportActions } from '@/components/shared/ImportExportActions';
 
 export function ProvidersClient() {
   const { data: providers, isLoading, error, mutate } = useProviders();
@@ -27,11 +28,14 @@ export function ProvidersClient() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold">Providers</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Gerencie as chaves de API e conexões dos providers de LLM.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Providers</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Gerencie as chaves de API e conexões dos providers de LLM.
+          </p>
+        </div>
+        <ImportExportActions module="providers" onImportSuccess={mutate} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

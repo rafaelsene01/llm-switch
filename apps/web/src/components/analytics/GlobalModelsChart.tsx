@@ -3,6 +3,7 @@
 import {
   BarChart,
   Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -12,6 +13,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { AnalyticsModelStat } from '@/types';
+import { modelColor, modelColorAlpha } from './palette';
 
 interface Props {
   data: AnalyticsModelStat[];
@@ -64,11 +66,12 @@ export function GlobalModelsChart({ data }: Props) {
     );
   }
 
-  const chartData = data.map((d) => ({
+  const chartData = data.map((d, i) => ({
     model: shortModel(d.model),
-    fullModel: d.model,
     Tokens: d.totalTokens,
     Requisições: d.requestCount,
+    color: modelColor(i),
+    colorAlpha: modelColorAlpha(i),
   }));
 
   return (
@@ -85,16 +88,19 @@ export function GlobalModelsChart({ data }: Props) {
           >
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" tickFormatter={formatTokens} tick={{ fontSize: 11 }} />
-            <YAxis
-              type="category"
-              dataKey="model"
-              width={160}
-              tick={{ fontSize: 11 }}
-            />
+            <YAxis type="category" dataKey="model" width={160} tick={{ fontSize: 11 }} />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
-            <Bar dataKey="Tokens" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-            <Bar dataKey="Requisições" fill="hsl(var(--muted-foreground))" radius={[0, 4, 4, 0]} />
+            <Bar dataKey="Tokens" radius={[0, 4, 4, 0]}>
+              {chartData.map((entry, i) => (
+                <Cell key={i} fill={entry.color} />
+              ))}
+            </Bar>
+            <Bar dataKey="Requisições" radius={[0, 4, 4, 0]}>
+              {chartData.map((entry, i) => (
+                <Cell key={i} fill={entry.colorAlpha} />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

@@ -28,6 +28,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { UserActionsMenu } from './UserActionsMenu';
 import { CreateUserDialog } from './CreateUserDialog';
 import { NO_MODEL } from './UserFormFields';
+import { ImportExportActions } from '@/components/shared/ImportExportActions';
 
 export function UsersClient() {
   const { data: users, isLoading, mutate } = useUsers();
@@ -70,10 +71,13 @@ export function UsersClient() {
             <h1 className="text-2xl font-bold">Usuários</h1>
             <p className="text-sm text-muted-foreground">Gerencie usuários e API keys</p>
           </div>
-          <Button onClick={() => setCreateOpen(true)} size="sm">
-            <Plus className="mr-1 h-4 w-4" />
-            Criar
-          </Button>
+          <div className="flex items-center gap-2">
+            <ImportExportActions module="users" onImportSuccess={mutate} />
+            <Button onClick={() => setCreateOpen(true)} size="sm">
+              <Plus className="mr-1 h-4 w-4" />
+              Criar
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (

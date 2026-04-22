@@ -34,6 +34,40 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+async function downloadExport(apiPath: string, filename: string): Promise<void> {
+  const res = await fetch(apiPath, {
+    headers: { Authorization: `Bearer ${ADMIN_KEY}` },
+  });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
+    throw new Error(data?.error?.message ?? `HTTP ${res.status}`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export type ImportModule = 'blocklist' | 'users' | 'providers';
+
+export interface ImportReport {
+  added: Record<string, number>;
+  skipped: Record<string, number>;
+}
+
+export interface ImportResult {
+  success: boolean;
+  mode: string;
+  report: ImportReport;
+}
+
 export const apiClient = {
   blocklist: {
     list: () => apiFetch<BlocklistEntry[]>('/admin/blocklist'),
@@ -126,12 +160,19 @@ export const apiClient = {
   },
 
   export: {
-    all: () => apiFetch<unknown>('/admin/export'),
+    all: () => downloadExport('/admin/export', `gateway-config-${today()}.json`),
+    module: (mod: ImportModule) =>
+      downloadExport(`/admin/export/${mod}`, `gateway-${mod}-${today()}.json`),
   },
 
   import: {
     all: (payload: unknown, mode: 'merge' | 'replace' = 'merge') =>
-      apiFetch<unknown>('/admin/import', {
+      apiFetch<ImportResult>('/admin/import', {
+        method: 'POST',
+        body: JSON.stringify({ payload, mode }),
+      }),
+    module: (payload: unknown, mod: ImportModule, mode: 'merge' | 'replace' = 'merge') =>
+      apiFetch<ImportResult>(`/admin/import/${mod}`, {
         method: 'POST',
         body: JSON.stringify({ payload, mode }),
       }),
