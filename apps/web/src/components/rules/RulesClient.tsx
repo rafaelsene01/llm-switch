@@ -33,19 +33,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 import { RuleActionsMenu } from './RuleActionsMenu';
 import type { BlocklistMode, BlocklistCategory } from '@/types';
 
 const MODE_LABELS: Record<BlocklistMode, string> = {
   disabled: 'Desativado',
-  redact: 'Redact',
-  block: 'Block',
+  redact: 'Substituir',
+  block: 'Bloquear',
 };
 
-const MODE_VARIANTS: Record<BlocklistMode, 'secondary' | 'outline' | 'destructive'> = {
-  disabled: 'secondary',
-  redact: 'outline',
-  block: 'destructive',
+const MODE_TRIGGER_CLASSES: Record<BlocklistMode, string> = {
+  disabled: 'border-muted-foreground/30 text-muted-foreground',
+  redact: 'border-amber-500/60 text-amber-500 bg-amber-500/10',
+  block: 'border-destructive/60 text-destructive bg-destructive/10',
 };
 
 export function RulesClient() {
@@ -144,7 +145,7 @@ export function RulesClient() {
                         value={rule.mode}
                         onValueChange={(v) => handleModeChange(rule.id, v as BlocklistMode)}
                       >
-                        <SelectTrigger className="h-7 w-28 text-xs">
+                        <SelectTrigger className={cn('h-7 w-28 text-xs', MODE_TRIGGER_CLASSES[rule.mode])}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -221,8 +222,8 @@ export function RulesClient() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="disabled">Desativado</SelectItem>
-                      <SelectItem value="redact">Redact</SelectItem>
-                      <SelectItem value="block">Block</SelectItem>
+                      <SelectItem value="redact">Substituir</SelectItem>
+                      <SelectItem value="block">Bloquear</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -56,6 +56,14 @@ export function createAdminRouter(): Router {
     })
   );
 
+  // Analytics
+  router.get(
+    '/analytics',
+    wrap(async (_req, res) => {
+      res.json(activityLog.analytics());
+    })
+  );
+
   // Blocklist
   router.get(
     '/blocklist',

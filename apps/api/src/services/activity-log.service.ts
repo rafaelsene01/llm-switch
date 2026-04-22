@@ -17,6 +17,21 @@ export interface ActivityLogEntry {
   totalTokens: number;
 }
 
+export interface ModelStat {
+  model: string;
+  requestCount: number;
+  totalTokens: number;
+  promptTokens: number;
+  completionTokens: number;
+}
+
+export interface UserStat {
+  user: string;
+  requestCount: number;
+  totalTokens: number;
+  models: { model: string; requestCount: number; totalTokens: number }[];
+}
+
 export interface ActivityLogRow {
   id: number;
   request_id: string;
@@ -269,7 +284,48 @@ export function createActivityLogService(
     }
   }
 
-  return { log, list, getById, deleteById, deleteAll, deleteOlderThan };
+  function analytics(): { byModel: ModelStat[]; byUser: UserStat[] } {
+    const db = getDb();
+
+    const byModel = db.prepare(`
+      SELECT provider_model AS model,
+             COUNT(*)                   AS requestCount,
+             SUM(total_tokens)          AS totalTokens,
+             SUM(prompt_tokens)         AS promptTokens,
+             SUM(completion_tokens)     AS completionTokens
+      FROM activity_logs
+      GROUP BY provider_model
+      ORDER BY totalTokens DESC
+    `).all() as ModelStat[];
+
+    type UserModelRow = { user: string; model: string; requestCount: number; totalTokens: number };
+    const userModelRows = db.prepare(`
+      SELECT user_name      AS user,
+             provider_model AS model,
+             COUNT(*)       AS requestCount,
+             SUM(total_tokens) AS totalTokens
+      FROM activity_logs
+      GROUP BY user_name, provider_model
+      ORDER BY user_name, totalTokens DESC
+    `).all() as UserModelRow[];
+
+    const userMap = new Map<string, UserStat>();
+    for (const row of userModelRows) {
+      if (!userMap.has(row.user)) {
+        userMap.set(row.user, { user: row.user, requestCount: 0, totalTokens: 0, models: [] });
+      }
+      const stat = userMap.get(row.user)!;
+      stat.requestCount += row.requestCount;
+      stat.totalTokens += row.totalTokens;
+      stat.models.push({ model: row.model, requestCount: row.requestCount, totalTokens: row.totalTokens });
+    }
+
+    const byUser = [...userMap.values()].sort((a, b) => b.totalTokens - a.totalTokens);
+
+    return { byModel, byUser };
+  }
+
+  return { log, list, getById, deleteById, deleteAll, deleteOlderThan, analytics };
 }
 
 export const activityLog = createActivityLogService();

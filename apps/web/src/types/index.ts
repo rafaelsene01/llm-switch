@@ -93,3 +93,23 @@ export interface ActivityLogDetail {
   row: ActivityLogRow;
   markdown: string | null;
 }
+
+export interface AnalyticsModelStat {
+  model: string;
+  requestCount: number;
+  totalTokens: number;
+  promptTokens: number;
+  completionTokens: number;
+}
+
+export interface AnalyticsUserStat {
+  user: string;
+  requestCount: number;
+  totalTokens: number;
+  models: { model: string; requestCount: number; totalTokens: number }[];
+}
+
+export interface AnalyticsData {
+  byModel: AnalyticsModelStat[];
+  byUser: AnalyticsUserStat[];
+}

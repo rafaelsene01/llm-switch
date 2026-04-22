@@ -176,8 +176,8 @@ export function RuleActionsMenu({ rule, onUpdated, onDeleted }: Props) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="disabled">Desativado</SelectItem>
-                    <SelectItem value="redact">Redact</SelectItem>
-                    <SelectItem value="block">Block</SelectItem>
+                    <SelectItem value="redact">Substituir</SelectItem>
+                    <SelectItem value="block">Bloquear</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

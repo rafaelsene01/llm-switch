@@ -1,6 +1,7 @@
 import type {
   ActivityLogDetail,
   ActivityLogPage,
+  AnalyticsData,
   BlocklistEntry,
   GatewayModel,
   GatewayProvider,
@@ -114,6 +115,10 @@ export const apiClient = {
       apiFetch<{ success: boolean }>(`/admin/activity/${id}`, { method: 'DELETE' }),
     removeAll: () =>
       apiFetch<{ deleted: number }>('/admin/activity', { method: 'DELETE' }),
+  },
+
+  analytics: {
+    get: () => apiFetch<AnalyticsData>('/admin/analytics'),
   },
 
   config: {
