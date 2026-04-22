@@ -21,7 +21,7 @@ const curlExample = `curl https://seu-gateway.com/v1/chat/completions \\
 
 export default function HomePage() {
   return (
-    <div className="max-w-4xl space-y-8">
+    <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">LLM Gateway</h1>
         <p className="mt-1 text-muted-foreground">
