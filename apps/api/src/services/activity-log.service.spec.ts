@@ -17,12 +17,14 @@ const baseEntry = {
   requestId: 'req-001',
   userName: 'alice',
   tokenPreview: 'abcd1234',
-  sanitizedMessages: [
-    { role: 'user', content: 'Hello, world!' },
-  ],
+  originalMessages: [{ role: 'user', content: 'Hello, world!' }],
+  sanitizedMessages: [{ role: 'user', content: 'Hello, world!' }],
   llmResponse: 'Hi there!',
   providerModel: 'openai:gpt-4o-mini',
   blocked: false,
+  promptTokens: 10,
+  completionTokens: 5,
+  totalTokens: 15,
 };
 
 describe('ActivityLogService', () => {
@@ -119,5 +121,38 @@ describe('ActivityLogService', () => {
   it('does not throw when log() fails internally', () => {
     const svc = makeService();
     expect(() => svc.log({ ...baseEntry, sanitizedMessages: null as unknown as [] })).not.toThrow();
+  });
+
+  it('list filters by userFilter (case-insensitive partial match)', () => {
+    const svc = makeService();
+    svc.log({ ...baseEntry, userName: 'alice', requestId: 'req-a' });
+    svc.log({ ...baseEntry, userName: 'bob', requestId: 'req-b' });
+    svc.log({ ...baseEntry, userName: 'alice2', requestId: 'req-a2' });
+    const { rows, total } = svc.list(1, 10, 'alic');
+    expect(total).toBe(2);
+    expect(rows.every((r) => r.user_name.toLowerCase().includes('alic'))).toBe(true);
+  });
+
+  it('deleteById removes the row and returns true', () => {
+    const svc = makeService();
+    svc.log(baseEntry);
+    const { rows } = svc.list(1, 10);
+    const id = rows[0].id;
+    expect(svc.deleteById(id)).toBe(true);
+    expect(svc.list(1, 10).total).toBe(0);
+  });
+
+  it('deleteById returns false for non-existent id', () => {
+    const svc = makeService();
+    expect(svc.deleteById(9999)).toBe(false);
+  });
+
+  it('deleteAll removes all rows and returns count', () => {
+    const svc = makeService();
+    svc.log({ ...baseEntry, requestId: 'req-1' });
+    svc.log({ ...baseEntry, requestId: 'req-2' });
+    const deleted = svc.deleteAll();
+    expect(deleted).toBe(2);
+    expect(svc.list(1, 10).total).toBe(0);
   });
 });

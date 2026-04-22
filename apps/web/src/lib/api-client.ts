@@ -103,10 +103,17 @@ export const apiClient = {
   },
 
   activity: {
-    list: (page = 1, limit = 50) =>
-      apiFetch<ActivityLogPage>(`/admin/activity?page=${page}&limit=${limit}`),
+    list: (page = 1, limit = 50, user?: string) => {
+      const qs = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (user) qs.set('user', user);
+      return apiFetch<ActivityLogPage>(`/admin/activity?${qs.toString()}`);
+    },
     get: (id: number) =>
       apiFetch<ActivityLogDetail>(`/admin/activity/${id}`),
+    remove: (id: number) =>
+      apiFetch<{ success: boolean }>(`/admin/activity/${id}`, { method: 'DELETE' }),
+    removeAll: () =>
+      apiFetch<{ deleted: number }>('/admin/activity', { method: 'DELETE' }),
   },
 
   config: {

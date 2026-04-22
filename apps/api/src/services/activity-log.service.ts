@@ -163,12 +163,35 @@ export function createActivityLogService(
     return { ...row, blocked: Boolean(row.blocked) };
   }
 
-  function list(page: number, limit: number): { rows: ActivityLogRow[]; total: number } {
+  function list(page: number, limit: number, userFilter?: string): { rows: ActivityLogRow[]; total: number } {
     const offset = (page - 1) * limit;
-    const { count } = getDb()
+    const db = getDb();
+
+    if (userFilter) {
+      const pattern = `%${userFilter}%`;
+      const { count } = db
+        .prepare('SELECT COUNT(*) as count FROM activity_logs WHERE user_name LIKE ?')
+        .get(pattern) as { count: number };
+      const rows = db
+        .prepare(
+          `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
+                  prompt_tokens, completion_tokens, total_tokens
+           FROM activity_logs
+           WHERE user_name LIKE ?
+           ORDER BY created_at DESC
+           LIMIT ? OFFSET ?`
+        )
+        .all(pattern, limit, offset) as ActivityLogRow[];
+      return {
+        rows: rows.map((r) => ({ ...r, blocked: Boolean(r.blocked) })),
+        total: count,
+      };
+    }
+
+    const { count } = db
       .prepare('SELECT COUNT(*) as count FROM activity_logs')
       .get() as { count: number };
-    const rows = getDb()
+    const rows = db
       .prepare(
         `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
                 prompt_tokens, completion_tokens, total_tokens
@@ -182,6 +205,31 @@ export function createActivityLogService(
       rows: rows.map((r) => ({ ...r, blocked: Boolean(r.blocked) })),
       total: count,
     };
+  }
+
+  function deleteById(id: number): boolean {
+    const row = getDb()
+      .prepare('SELECT file_path FROM activity_logs WHERE id = ?')
+      .get(id) as { file_path: string | null } | undefined;
+    if (!row) return false;
+    const { changes } = getDb()
+      .prepare('DELETE FROM activity_logs WHERE id = ?')
+      .run(id) as { changes: number };
+    if (changes === 0) return false;
+    if (row.file_path && existsSync(row.file_path)) {
+      try { rmSync(row.file_path); } catch { /* ignore */ }
+    }
+    return true;
+  }
+
+  function deleteAll(): number {
+    const { changes } = getDb()
+      .prepare('DELETE FROM activity_logs')
+      .run() as { changes: number };
+    if (existsSync(logsBase)) {
+      try { rmSync(logsBase, { recursive: true, force: true }); } catch { /* ignore */ }
+    }
+    return changes;
   }
 
   function deleteOlderThan(days: number): { rows: number; files: number } {
@@ -221,7 +269,7 @@ export function createActivityLogService(
     }
   }
 
-  return { log, list, getById, deleteOlderThan };
+  return { log, list, getById, deleteById, deleteAll, deleteOlderThan };
 }
 
 export const activityLog = createActivityLogService();

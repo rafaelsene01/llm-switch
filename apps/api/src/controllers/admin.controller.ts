@@ -424,7 +424,8 @@ export function createAdminRouter(): Router {
     wrap(async (req, res) => {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
-      const result = activityLog.list(page, limit);
+      const userFilter = (req.query.user as string | undefined) || undefined;
+      const result = activityLog.list(page, limit, userFilter);
       res.json({ ...result, page, limit });
     })
   );
@@ -441,6 +442,25 @@ export function createAdminRouter(): Router {
         markdown = readFileSync(row.file_path, 'utf8');
       }
       res.json({ row, markdown });
+    })
+  );
+
+  router.delete(
+    '/activity',
+    wrap(async (_req, res) => {
+      const deleted = activityLog.deleteAll();
+      res.json({ deleted });
+    })
+  );
+
+  router.delete(
+    '/activity/:id',
+    wrap(async (req, res) => {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) { res.status(400).json({ error: 'Invalid id' }); return; }
+      const ok = activityLog.deleteById(id);
+      if (!ok) { res.status(404).json({ error: 'Not found' }); return; }
+      res.json({ success: true });
     })
   );
 
