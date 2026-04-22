@@ -2,4 +2,10 @@ node_modules
 .env
 logs
 .specs
+temp
+.nx
+.next
+dist
+tmp
 data
+tsconfig.tsbuildinfo
