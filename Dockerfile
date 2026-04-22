@@ -4,7 +4,6 @@ WORKDIR /workspace
 COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
-COPY libs/shared/package.json ./libs/shared/
 RUN npm ci --ignore-scripts
 
 # Stage 2: build-api
