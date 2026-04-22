@@ -1,19 +1,9 @@
 'use client';
 
-import {
-  BarChart,
-  Bar,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
+import { BarChart, Bar, Rectangle, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { AnalyticsModelStat } from '@/types';
-import { modelColor, modelColorAlpha } from './palette';
+import { modelColor } from './palette';
 
 interface Props {
   data: AnalyticsModelStat[];
@@ -24,33 +14,11 @@ function shortModel(model: string): string {
   return part.length > 28 ? part.slice(0, 26) + '…' : part;
 }
 
-function formatTokens(value: number): string {
+function fmt(value: number): string {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
   if (value >= 1_000) return `${(value / 1_000).toFixed(1)}k`;
   return String(value);
 }
-
-const CustomTooltip = ({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: { name: string; value: number; color: string }[];
-  label?: string;
-}) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="rounded-lg border bg-popover p-3 text-sm shadow-md">
-      <p className="mb-2 font-medium">{label}</p>
-      {payload.map((p) => (
-        <p key={p.name} style={{ color: p.color }}>
-          {p.name}: {p.name === 'Tokens' ? formatTokens(p.value) : p.value.toLocaleString()}
-        </p>
-      ))}
-    </div>
-  );
-};
 
 export function GlobalModelsChart({ data }: Props) {
   if (data.length === 0) {
@@ -66,43 +34,71 @@ export function GlobalModelsChart({ data }: Props) {
     );
   }
 
+  const totalTokens = data.reduce((s, d) => s + d.totalTokens, 0);
+  const totalRequests = data.reduce((s, d) => s + d.requestCount, 0);
+
   const chartData = data.map((d, i) => ({
     model: shortModel(d.model),
     Tokens: d.totalTokens,
-    Requisições: d.requestCount,
+    requestCount: d.requestCount,
     color: modelColor(i),
-    colorAlpha: modelColorAlpha(i),
   }));
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Modelos mais utilizados</CardTitle>
+        <div className="flex items-start justify-between gap-4">
+          <CardTitle>Modelos mais utilizados</CardTitle>
+          <div className="flex gap-4 text-sm text-muted-foreground shrink-0">
+            <span>{fmt(totalTokens)} tokens</span>
+            <span>{totalRequests.toLocaleString()} requisições</span>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={Math.max(240, chartData.length * 52)}>
+        <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 44)}>
           <BarChart
             data={chartData}
             layout="vertical"
-            margin={{ top: 4, right: 32, left: 8, bottom: 4 }}
+            margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
+            barCategoryGap="35%"
           >
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-            <XAxis type="number" tickFormatter={formatTokens} tick={{ fontSize: 11 }} />
-            <YAxis type="category" dataKey="model" width={160} tick={{ fontSize: 11 }} />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            <Bar dataKey="Tokens" radius={[0, 4, 4, 0]}>
-              {chartData.map((entry, i) => (
-                <Cell key={i} fill={entry.color} />
-              ))}
-            </Bar>
-            <Bar dataKey="Requisições" radius={[0, 4, 4, 0]}>
-              {chartData.map((entry, i) => (
-                <Cell key={i} fill={entry.colorAlpha} />
-              ))}
-            </Bar>
+            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="currentColor" strokeOpacity={0.1} />
+            <XAxis type="number" tickFormatter={fmt} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis type="category" dataKey="model" width={170} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+            <Tooltip
+              cursor={{ fill: 'currentColor', fillOpacity: 0.05 }}
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+                const entry = chartData.find((d) => d.model === label);
+                return (
+                  <div className="rounded-lg border bg-popover p-3 text-sm shadow-md">
+                    <p className="mb-1.5 font-medium">{label}</p>
+                    <p style={{ color: payload[0].fill as string }}>Tokens: {fmt(payload[0].value as number)}</p>
+                    <p className="text-muted-foreground">Requisições: {entry?.requestCount.toLocaleString()}</p>
+                  </div>
+                );
+              }}
+            />
+            <Bar
+              dataKey="Tokens"
+              maxBarSize={18}
+              shape={(props: any) => (
+                <Rectangle {...props} fill={props.color} radius={[0, 4, 4, 0]} />
+              )}
+            />
           </BarChart>
         </ResponsiveContainer>
+
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+          {chartData.map((entry, i) => (
+            <div key={i} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
+              <span>{entry.model}</span>
+              <span className="text-[10px]">({entry.requestCount} req)</span>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
