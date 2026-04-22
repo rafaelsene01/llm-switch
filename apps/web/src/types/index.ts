@@ -77,6 +77,9 @@ export interface ActivityLogRow {
   blocked: boolean;
   file_path: string | null;
   created_at: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
 }
 
 export interface ActivityLogPage {
@@ -84,4 +87,9 @@ export interface ActivityLogPage {
   total: number;
   page: number;
   limit: number;
+}
+
+export interface ActivityLogDetail {
+  row: ActivityLogRow;
+  markdown: string | null;
 }

@@ -146,10 +146,14 @@ export class ChatService {
           requestId,
           userName: opts.user?.name ?? clientLabel,
           tokenPreview,
+          originalMessages: messages as Array<{ role: string; content: unknown }>,
           sanitizedMessages: sanitizedMessages as Array<{ role: string; content: unknown }>,
           llmResponse: null,
           providerModel,
           blocked: true,
+          promptTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0,
         });
         return {
           requestId,
@@ -181,10 +185,14 @@ export class ChatService {
         requestId,
         userName: opts.user?.name ?? clientLabel,
         tokenPreview,
+        originalMessages: messages as Array<{ role: string; content: unknown }>,
         sanitizedMessages: sanitizedMessages as Array<{ role: string; content: unknown }>,
         llmResponse: null,
         providerModel,
         blocked: true,
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
       });
       return {
         requestId,
@@ -231,10 +239,14 @@ export class ChatService {
       requestId,
       userName: opts.user?.name ?? clientLabel,
       tokenPreview,
+      originalMessages: messages as Array<{ role: string; content: unknown }>,
       sanitizedMessages: sanitizedMessages as Array<{ role: string; content: unknown }>,
       llmResponse: result.text ?? null,
       providerModel,
       blocked: false,
+      promptTokens: result.usage?.promptTokens ?? 0,
+      completionTokens: result.usage?.completionTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
     });
 
     return {

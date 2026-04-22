@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { RefreshCw } from 'lucide-react';
 import { useActivity } from '@/hooks/useActivity';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,7 @@ const PAGE_SIZE = 50;
 export function ActivityClient() {
   const [page, setPage] = useState(1);
   const { data, isLoading, mutate } = useActivity(page, PAGE_SIZE);
+  const router = useRouter();
 
   const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 1;
 
@@ -46,6 +48,7 @@ export function ActivityClient() {
               <TableHead>Token</TableHead>
               <TableHead className="w-[40%]">Mensagem</TableHead>
               <TableHead>Modelo</TableHead>
+              <TableHead>Tokens</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Data</TableHead>
             </TableRow>
@@ -54,7 +57,7 @@ export function ActivityClient() {
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 6 }).map((__, j) => (
+                  {Array.from({ length: 7 }).map((__, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
@@ -63,13 +66,17 @@ export function ActivityClient() {
               ))
             ) : !data?.rows.length ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
                   Nenhuma atividade registrada ainda.
                 </TableCell>
               </TableRow>
             ) : (
               data.rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => router.push(`/activity/${row.id}`)}
+                >
                   <TableCell className="font-medium">{row.user_name}</TableCell>
                   <TableCell>
                     <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
@@ -81,6 +88,9 @@ export function ActivityClient() {
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {row.provider_model}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground tabular-nums">
+                    {row.blocked ? '—' : row.total_tokens.toLocaleString('pt-BR')}
                   </TableCell>
                   <TableCell>
                     {row.blocked ? (

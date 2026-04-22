@@ -1,4 +1,5 @@
 import type {
+  ActivityLogDetail,
   ActivityLogPage,
   BlocklistEntry,
   GatewayModel,
@@ -104,6 +105,8 @@ export const apiClient = {
   activity: {
     list: (page = 1, limit = 50) =>
       apiFetch<ActivityLogPage>(`/admin/activity?page=${page}&limit=${limit}`),
+    get: (id: number) =>
+      apiFetch<ActivityLogDetail>(`/admin/activity/${id}`),
   },
 
   config: {

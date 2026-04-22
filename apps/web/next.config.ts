@@ -5,7 +5,12 @@ const nextConfig = {
   turbopack: {
     root: path.resolve(__dirname, '../..'),
   },
-async rewrites() {
+  experimental: {
+    staleTimes: {
+      dynamic: 0,
+    },
+  },
+  async rewrites() {
     const apiUrl = process.env.API_URL ?? 'http://localhost:3000';
     return [
       { source: '/admin/:path*', destination: `${apiUrl}/admin/:path*` },

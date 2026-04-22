@@ -1,13 +1,7 @@
-import type { Metadata } from 'next';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from 'sonner';
 import { Sidebar } from '@/components/layout/Sidebar';
 import './globals.css';
-
-export const metadata: Metadata = {
-  title: 'LLM Gateway',
-  description: 'Admin dashboard for LLM Gateway',
-};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

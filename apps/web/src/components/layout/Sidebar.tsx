@@ -8,12 +8,14 @@ import { useUsers } from '@/hooks/useUsers';
 import { useModels } from '@/hooks/useModels';
 import { useRules } from '@/hooks/useRules';
 import { useProviders } from '@/hooks/useProviders';
+import { useActivity } from '@/hooks/useActivity';
 
 export function Sidebar() {
   const { data: users } = useUsers();
   const { data: models } = useModels();
   const { data: rules } = useRules();
   const { data: providers } = useProviders();
+  const { data: activityPage } = useActivity(1, 1);
 
   const activeUsers = users?.filter((u) => u.active).length;
   const activeModels = models?.filter((m) => m.active).length;
@@ -35,7 +37,7 @@ export function Sidebar() {
         <NavItem href="/models" label="Modelos" icon={Cpu} badge={activeModels} />
         <NavItem href="/users" label="Usuários" icon={Users} badge={activeUsers} />
         <NavItem href="/providers" label="Providers" icon={Plug} badge={configuredProviders} />
-        <NavItem href="/activity" label="Atividade" icon={Activity} />
+        <NavItem href="/activity" label="Atividade" icon={Activity} badge={activityPage?.total} />
       </nav>
 
       <Separator />

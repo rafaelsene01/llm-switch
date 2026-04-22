@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { randomBytes } from 'crypto';
+import { readFileSync, existsSync } from 'fs';
 import type { Request, Response } from 'express';
 import { store } from '../services/store.service';
 import { env } from '../config/env';
@@ -425,6 +426,21 @@ export function createAdminRouter(): Router {
       const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
       const result = activityLog.list(page, limit);
       res.json({ ...result, page, limit });
+    })
+  );
+
+  router.get(
+    '/activity/:id',
+    wrap(async (req, res) => {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) { res.status(400).json({ error: 'Invalid id' }); return; }
+      const row = activityLog.getById(id);
+      if (!row) { res.status(404).json({ error: 'Not found' }); return; }
+      let markdown: string | null = null;
+      if (row.file_path && existsSync(row.file_path)) {
+        markdown = readFileSync(row.file_path, 'utf8');
+      }
+      res.json({ row, markdown });
     })
   );
 

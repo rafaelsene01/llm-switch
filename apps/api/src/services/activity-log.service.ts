@@ -7,10 +7,14 @@ export interface ActivityLogEntry {
   requestId: string;
   userName: string;
   tokenPreview: string;
+  originalMessages: Array<{ role: string; content: unknown }>;
   sanitizedMessages: Array<{ role: string; content: unknown }>;
   llmResponse: string | null;
   providerModel: string;
   blocked: boolean;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
 }
 
 export interface ActivityLogRow {
@@ -23,6 +27,9 @@ export interface ActivityLogRow {
   blocked: boolean;
   file_path: string | null;
   created_at: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
 }
 
 function initDb(dbPath: string): Database.Database {
@@ -30,18 +37,29 @@ function initDb(dbPath: string): Database.Database {
   const db = new Database(dbPath);
   db.exec(`
     CREATE TABLE IF NOT EXISTS activity_logs (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
-      request_id    TEXT NOT NULL,
-      user_name     TEXT NOT NULL,
-      token_preview TEXT NOT NULL,
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      request_id      TEXT NOT NULL,
+      user_name       TEXT NOT NULL,
+      token_preview   TEXT NOT NULL,
       message_preview TEXT NOT NULL,
       provider_model  TEXT NOT NULL,
-      blocked       INTEGER NOT NULL DEFAULT 0,
-      file_path     TEXT,
-      created_at    TEXT NOT NULL
+      blocked         INTEGER NOT NULL DEFAULT 0,
+      file_path       TEXT,
+      created_at      TEXT NOT NULL,
+      prompt_tokens     INTEGER NOT NULL DEFAULT 0,
+      completion_tokens INTEGER NOT NULL DEFAULT 0,
+      total_tokens      INTEGER NOT NULL DEFAULT 0
     );
     CREATE INDEX IF NOT EXISTS idx_activity_created_at ON activity_logs(created_at);
   `);
+  // Migrate existing databases that lack token columns
+  for (const col of ['prompt_tokens', 'completion_tokens', 'total_tokens']) {
+    try {
+      db.exec(`ALTER TABLE activity_logs ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`);
+    } catch {
+      // Column already exists — safe to ignore
+    }
+  }
   return db;
 }
 
@@ -65,6 +83,13 @@ function buildMarkdown(entry: ActivityLogEntry, now: string): string {
 **Model**: ${entry.providerModel}
 **Date**: ${now}
 **Status**: ${status}
+**Tokens**: ${entry.promptTokens} prompt / ${entry.completionTokens} completion / ${entry.totalTokens} total
+
+## Original Request
+
+\`\`\`json
+${JSON.stringify(entry.originalMessages, null, 2)}
+\`\`\`
 
 ## Sanitized Request
 
@@ -105,8 +130,9 @@ export function createActivityLogService(
       const preview = extractMessagePreview(entry.sanitizedMessages);
       getDb().prepare(
         `INSERT INTO activity_logs
-         (request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+         (request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
+          prompt_tokens, completion_tokens, total_tokens)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         entry.requestId,
         entry.userName,
@@ -115,11 +141,26 @@ export function createActivityLogService(
         entry.providerModel,
         entry.blocked ? 1 : 0,
         filePath,
-        now
+        now,
+        entry.promptTokens,
+        entry.completionTokens,
+        entry.totalTokens
       );
     } catch (err) {
       logger.error('[activity-log] failed to log entry', { error: (err as Error).message });
     }
+  }
+
+  function getById(id: number): ActivityLogRow | null {
+    const row = getDb()
+      .prepare(
+        `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
+                prompt_tokens, completion_tokens, total_tokens
+         FROM activity_logs WHERE id = ?`
+      )
+      .get(id) as ActivityLogRow | undefined;
+    if (!row) return null;
+    return { ...row, blocked: Boolean(row.blocked) };
   }
 
   function list(page: number, limit: number): { rows: ActivityLogRow[]; total: number } {
@@ -129,7 +170,8 @@ export function createActivityLogService(
       .get() as { count: number };
     const rows = getDb()
       .prepare(
-        `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at
+        `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
+                prompt_tokens, completion_tokens, total_tokens
          FROM activity_logs
          ORDER BY created_at DESC
          LIMIT ? OFFSET ?`
@@ -179,7 +221,7 @@ export function createActivityLogService(
     }
   }
 
-  return { log, list, deleteOlderThan };
+  return { log, list, getById, deleteOlderThan };
 }
 
 export const activityLog = createActivityLogService();
