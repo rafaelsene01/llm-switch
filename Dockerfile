@@ -36,9 +36,9 @@ COPY --from=api-prod-deps /app/node_modules ./node_modules
 
 RUN mkdir -p data logs
 EXPOSE 3000
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
 
-# Stage 5: web-runner — lean production image for Next.js standalone
+# Stage 6: web-runner — lean production image for Next.js standalone
 FROM node:22-alpine AS web-runner
 WORKDIR /app
 ENV NODE_ENV=production
