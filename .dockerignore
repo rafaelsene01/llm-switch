@@ -2,6 +2,5 @@ node_modules
 .git
 .nx/cache
 dist
-pnpm-lock.yaml
 *.log
 .env
