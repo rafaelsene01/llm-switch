@@ -45,9 +45,11 @@ ENV NODE_ENV=production
 ENV PORT=3001
 ENV HOSTNAME=0.0.0.0
 
+# outputFileTracingRoot is set to the workspace root, so standalone output
+# mirrors the monorepo layout: server.js lives at apps/web/server.js
 COPY --from=build-web /workspace/apps/web/.next/standalone ./
-COPY --from=build-web /workspace/apps/web/.next/static ./.next/static
-COPY --from=build-web /workspace/apps/web/public ./public
+COPY --from=build-web /workspace/apps/web/.next/static ./apps/web/.next/static
+COPY --from=build-web /workspace/apps/web/public ./apps/web/public
 
 EXPOSE 3001
-CMD ["node", "server.js"]
+CMD ["node", "apps/web/server.js"]
