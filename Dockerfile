@@ -18,7 +18,7 @@ FROM deps AS build-web
 ARG API_URL=http://api:3000
 ENV API_URL=${API_URL}
 COPY . .
-RUN cd apps/web && node_modules/.bin/next build
+RUN cd apps/web && node_modules/.bin/next build && mkdir -p public
 
 # Stage 4: api-runner — lean production image for the Express API
 FROM node:22-alpine AS api-runner
