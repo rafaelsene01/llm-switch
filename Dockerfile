@@ -1,10 +1,11 @@
 # Stage 1: deps — installs all packages, shared by build stages
 FROM node:22-alpine AS deps
+RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /workspace
-COPY package.json package-lock.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
-RUN pnpm i
+RUN pnpm i --frozen-lockfile
 
 # Stage 2: build-api
 FROM deps AS build-api
