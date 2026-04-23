@@ -4,7 +4,7 @@ WORKDIR /workspace
 COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
-RUN npm ci --legacy-peer-deps
+RUN npm ci
 
 # Stage 2: build-api
 FROM deps AS build-api
@@ -16,9 +16,7 @@ FROM deps AS build-web
 ARG API_URL=http://api:3000
 ENV API_URL=${API_URL}
 COPY . .
-WORKDIR /workspace/apps/web
-RUN echo "node: $(node --version)" && echo "npm: $(npm --version)" && ls /workspace/node_modules/.bin/next || echo "NEXT NOT FOUND IN ROOT" && ls node_modules/.bin/next 2>/dev/null || echo "NEXT NOT FOUND IN LOCAL"
-RUN NODE_OPTIONS="--max-old-space-size=4096" npx next build 2>&1
+RUN npx nx run web:build --configuration=production
 
 # Stage 4: api-runner — lean production image for the Express API
 FROM node:22-alpine AS api-runner
