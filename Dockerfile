@@ -17,7 +17,8 @@ ARG API_URL=http://api:3000
 ENV API_URL=${API_URL}
 COPY . .
 WORKDIR /workspace/apps/web
-RUN NODE_OPTIONS="--max-old-space-size=4096" npx next build > /tmp/build.log 2>&1 || (cat /tmp/build.log && exit 1)
+RUN echo "node: $(node --version)" && echo "npm: $(npm --version)" && ls /workspace/node_modules/.bin/next || echo "NEXT NOT FOUND IN ROOT" && ls node_modules/.bin/next 2>/dev/null || echo "NEXT NOT FOUND IN LOCAL"
+RUN NODE_OPTIONS="--max-old-space-size=4096" npx next build 2>&1
 
 # Stage 4: api-runner — lean production image for the Express API
 FROM node:22-alpine AS api-runner
