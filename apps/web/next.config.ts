@@ -2,14 +2,9 @@ import path from 'path';
 
 const nextConfig = {
   output: 'standalone',
+  outputFileTracingRoot: path.resolve(__dirname, '../..'),
   typescript: {
     ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  turbopack: {
-    root: path.resolve(__dirname, '../..'),
   },
   experimental: {
     staleTimes: {

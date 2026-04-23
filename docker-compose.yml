@@ -2,7 +2,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
       target: deps
     command: npx nx run api:serve
     ports:
@@ -22,7 +22,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
       target: deps
     command: npx nx run web:dev
     ports:
