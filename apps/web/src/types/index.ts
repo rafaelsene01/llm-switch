@@ -25,6 +25,8 @@ export interface GatewayModel {
   value: string;
   label: string;
   active: boolean;
+  inputCostPer1M?: number;
+  outputCostPer1M?: number;
 }
 
 export interface GatewayUser {

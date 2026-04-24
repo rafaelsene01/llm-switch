@@ -89,12 +89,14 @@ export const apiClient = {
     list: () => apiFetch<GatewayModel[]>('/admin/models'),
     add: (body: { value: string; label?: string }) =>
       apiFetch<GatewayModel>('/admin/models', { method: 'POST', body: JSON.stringify(body) }),
-    update: (id: string, patch: { active?: boolean }) =>
+    update: (id: string, patch: { active?: boolean; inputCostPer1M?: number; outputCostPer1M?: number }) =>
       apiFetch<GatewayModel>(`/admin/models/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
     remove: (id: string) =>
       apiFetch<{ success: boolean }>(`/admin/models/${id}`, { method: 'DELETE' }),
     sync: () =>
       apiFetch<{ synced: number; added: number; removed: number }>('/admin/models/sync', { method: 'POST' }),
+    syncPrices: () =>
+      apiFetch<{ updated: number; total: number; notFound: string[] }>('/admin/models/sync-prices', { method: 'POST' }),
   },
 
   users: {

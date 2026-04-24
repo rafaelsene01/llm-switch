@@ -6,6 +6,8 @@ import { store } from '../services/store.service';
 import { env } from '../config/env';
 import type { BlocklistCategory, BlocklistMode } from '../types';
 import { listProviderModels, testProviderConnection } from '../services/providers.service';
+import { getPricingForModel, buildPricingMap } from '../services/pricing.service';
+
 import { activityLog } from '../services/activity-log.service';
 
 const VALID_MODES = ['disabled', 'redact', 'block'];
@@ -178,11 +180,35 @@ export function createAdminRouter(): Router {
     })
   );
 
+  router.post(
+    '/models/sync-prices',
+    wrap(async (_req, res) => {
+      const litellmMap = await buildPricingMap();
+      const models = store.getModels();
+      const notFound: string[] = [];
+      let updated = 0;
+      for (const model of models) {
+        const pricing = getPricingForModel(model.value, litellmMap);
+        if (pricing) {
+          store.updateModel(model.id, pricing);
+          updated++;
+        } else {
+          notFound.push(model.label);
+        }
+      }
+      res.json({ updated, total: models.length, notFound });
+    })
+  );
+
   router.patch(
     '/models/:id',
     wrap(async (req, res) => {
-      const { active } = req.body as { active?: boolean };
-      const model = store.updateModel(req.params.id, { active });
+      const { active, inputCostPer1M, outputCostPer1M } = req.body as {
+        active?: boolean;
+        inputCostPer1M?: number;
+        outputCostPer1M?: number;
+      };
+      const model = store.updateModel(req.params.id, { active, inputCostPer1M, outputCostPer1M });
       if (!model) {
         res.status(404).json({ error: { message: 'Modelo não encontrado.' } });
         return;

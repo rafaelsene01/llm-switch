@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, RefreshCw, Cpu } from 'lucide-react';
+import { Plus, RefreshCw, Cpu, TrendingDown, Pencil, Check, X, Search, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { useModels } from '@/hooks/useModels';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
@@ -27,12 +27,61 @@ import {
 } from '@/components/ui/dialog';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { cn } from '@/lib/utils';
+import type { GatewayModel } from '@/types';
 
-const QUICK_ADD = [
-  { value: 'openai:gpt-4o', label: 'GPT-4o' },
-  { value: 'anthropic:claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
-  { value: 'google:gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
+
+interface ProviderColors {
+  chipActive: string;
+  chipInactive: string;
+  providerText: string;
+  row: string;
+}
+
+const PROVIDER_COLOR_MAP: Record<string, ProviderColors> = {
+  openai:    { chipActive: 'bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600',    chipInactive: 'border-emerald-500/40 text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20',    providerText: 'text-emerald-500',  row: 'bg-emerald-500/[0.04]' },
+  anthropic: { chipActive: 'bg-orange-500 border-orange-500 text-white hover:bg-orange-600',       chipInactive: 'border-orange-500/40 text-orange-500 bg-orange-500/10 hover:bg-orange-500/20',       providerText: 'text-orange-500',   row: 'bg-orange-500/[0.04]' },
+  google:    { chipActive: 'bg-blue-500 border-blue-500 text-white hover:bg-blue-600',             chipInactive: 'border-blue-500/40 text-blue-500 bg-blue-500/10 hover:bg-blue-500/20',             providerText: 'text-blue-500',     row: 'bg-blue-500/[0.04]' },
+  mistral:   { chipActive: 'bg-violet-500 border-violet-500 text-white hover:bg-violet-600',       chipInactive: 'border-violet-500/40 text-violet-500 bg-violet-500/10 hover:bg-violet-500/20',       providerText: 'text-violet-500',   row: 'bg-violet-500/[0.04]' },
+  cohere:    { chipActive: 'bg-teal-500 border-teal-500 text-white hover:bg-teal-600',             chipInactive: 'border-teal-500/40 text-teal-500 bg-teal-500/10 hover:bg-teal-500/20',             providerText: 'text-teal-500',     row: 'bg-teal-500/[0.04]' },
+  meta:      { chipActive: 'bg-indigo-500 border-indigo-500 text-white hover:bg-indigo-600',       chipInactive: 'border-indigo-500/40 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20',       providerText: 'text-indigo-500',   row: 'bg-indigo-500/[0.04]' },
+  groq:      { chipActive: 'bg-amber-500 border-amber-500 text-white hover:bg-amber-600',          chipInactive: 'border-amber-500/40 text-amber-500 bg-amber-500/10 hover:bg-amber-500/20',          providerText: 'text-amber-500',    row: 'bg-amber-500/[0.04]' },
+  bedrock:   { chipActive: 'bg-rose-500 border-rose-500 text-white hover:bg-rose-600',             chipInactive: 'border-rose-500/40 text-rose-500 bg-rose-500/10 hover:bg-rose-500/20',             providerText: 'text-rose-500',     row: 'bg-rose-500/[0.04]' },
+  azure:     { chipActive: 'bg-sky-500 border-sky-500 text-white hover:bg-sky-600',                chipInactive: 'border-sky-500/40 text-sky-500 bg-sky-500/10 hover:bg-sky-500/20',                providerText: 'text-sky-500',      row: 'bg-sky-500/[0.04]' },
+  ollama:    { chipActive: 'bg-slate-500 border-slate-500 text-white hover:bg-slate-600',          chipInactive: 'border-slate-400/40 text-slate-400 bg-slate-500/10 hover:bg-slate-500/20',          providerText: 'text-slate-400',    row: 'bg-slate-500/[0.04]' },
+};
+
+const FALLBACK_PALETTE: ProviderColors[] = [
+  { chipActive: 'bg-pink-500 border-pink-500 text-white hover:bg-pink-600',     chipInactive: 'border-pink-500/40 text-pink-500 bg-pink-500/10 hover:bg-pink-500/20',     providerText: 'text-pink-500',    row: 'bg-pink-500/[0.04]' },
+  { chipActive: 'bg-cyan-500 border-cyan-500 text-white hover:bg-cyan-600',     chipInactive: 'border-cyan-500/40 text-cyan-500 bg-cyan-500/10 hover:bg-cyan-500/20',     providerText: 'text-cyan-500',    row: 'bg-cyan-500/[0.04]' },
+  { chipActive: 'bg-lime-500 border-lime-500 text-white hover:bg-lime-600',     chipInactive: 'border-lime-500/40 text-lime-500 bg-lime-500/10 hover:bg-lime-500/20',     providerText: 'text-lime-500',    row: 'bg-lime-500/[0.04]' },
+  { chipActive: 'bg-fuchsia-500 border-fuchsia-500 text-white hover:bg-fuchsia-600', chipInactive: 'border-fuchsia-500/40 text-fuchsia-500 bg-fuchsia-500/10 hover:bg-fuchsia-500/20', providerText: 'text-fuchsia-500', row: 'bg-fuchsia-500/[0.04]' },
+  { chipActive: 'bg-red-500 border-red-500 text-white hover:bg-red-600',        chipInactive: 'border-red-500/40 text-red-500 bg-red-500/10 hover:bg-red-500/20',        providerText: 'text-red-500',     row: 'bg-red-500/[0.04]' },
 ];
+
+function getProviderColors(provider: string, fallbackIndex: number): ProviderColors {
+  return PROVIDER_COLOR_MAP[provider] ?? FALLBACK_PALETTE[fallbackIndex % FALLBACK_PALETTE.length];
+}
+
+function CostCell({ value }: { value?: number }) {
+  if (value === undefined || value === null) {
+    return <span className="text-xs text-muted-foreground/50 italic">não definido</span>;
+  }
+  if (value === 0) {
+    return <span className="text-xs text-muted-foreground">Grátis</span>;
+  }
+  const formatted = `$${value.toFixed(value < 0.01 ? 4 : value < 1 ? 3 : 2)}`;
+  return <span className="font-mono text-sm">{formatted}</span>;
+}
+
+type SortKey = 'label' | 'value' | 'inputCostPer1M' | 'outputCostPer1M' | 'active';
+type SortDir = 'asc' | 'desc';
+
+interface PriceEditState {
+  modelId: string;
+  input: string;
+  output: string;
+}
 
 export function ModelsClient() {
   const { data: models, isLoading, mutate } = useModels();
@@ -41,6 +90,72 @@ export function ModelsClient() {
   const [label, setLabel] = useState('');
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [syncingPrices, setSyncingPrices] = useState(false);
+  const [priceEdit, setPriceEdit] = useState<PriceEditState | null>(null);
+  const [savingPrice, setSavingPrice] = useState(false);
+  const [filter, setFilter] = useState('');
+  const [selectedProviders, setSelectedProviders] = useState<Set<string>>(new Set());
+  const [sortKey, setSortKey] = useState<SortKey>('label');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  const availableProviders: string[] = models?.length
+    ? [...new Set(models.map((m) => m.value.split(':')[0]).filter(Boolean))].sort()
+    : [];
+
+  const providerColorsMap = Object.fromEntries(
+    availableProviders.map((p, i) => [p, getProviderColors(p, i)])
+  );
+
+  function toggleProvider(p: string) {
+    setSelectedProviders((prev) => {
+      const next = new Set(prev);
+      next.has(p) ? next.delete(p) : next.add(p);
+      return next;
+    });
+  }
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  }
+
+  const filteredModels = (() => {
+    if (!models?.length) return models;
+    let result = models;
+    if (filter.trim()) {
+      try {
+        const re = new RegExp(filter, 'i');
+        result = result.filter((m) => re.test(m.label) || re.test(m.value));
+      } catch { /* invalid regex — skip */ }
+    }
+    if (selectedProviders.size > 0) {
+      result = result.filter((m) => selectedProviders.has(m.value.split(':')[0]));
+    }
+    return result;
+  })();
+
+  const isFilterInvalid = (() => {
+    if (!filter.trim()) return false;
+    try { new RegExp(filter); return false; } catch { return true; }
+  })();
+
+  const sortedModels = (() => {
+    if (!filteredModels?.length) return filteredModels;
+    return [...filteredModels].sort((a, b) => {
+      const dir = sortDir === 'asc' ? 1 : -1;
+      if (sortKey === 'label') return dir * a.label.localeCompare(b.label);
+      if (sortKey === 'value') return dir * a.value.localeCompare(b.value);
+      if (sortKey === 'active') return dir * (Number(a.active) - Number(b.active));
+      // numeric columns — undefined/null sorts last regardless of direction
+      const aVal = a[sortKey] ?? (sortDir === 'asc' ? Infinity : -Infinity);
+      const bVal = b[sortKey] ?? (sortDir === 'asc' ? Infinity : -Infinity);
+      return dir * (aVal - bVal);
+    });
+  })();
 
   async function handleAdd() {
     if (!value.trim()) {
@@ -75,6 +190,27 @@ export function ModelsClient() {
     }
   }
 
+  async function handleSyncPrices() {
+    setSyncingPrices(true);
+    try {
+      const result = await apiClient.models.syncPrices();
+      await mutate();
+      if (result.notFound.length > 0) {
+        toast.success(`${result.updated} de ${result.total} modelos atualizados`);
+        toast.warning(
+          `Sem preço para: ${result.notFound.join(', ')}`,
+          { duration: 8000 }
+        );
+      } else {
+        toast.success(`Todos os ${result.updated} modelos atualizados`);
+      }
+    } catch (err) {
+      toast.error(`Não foi possível buscar preços: ${(err as Error).message}`);
+    } finally {
+      setSyncingPrices(false);
+    }
+  }
+
   async function handleToggleActive(id: string, active: boolean) {
     try {
       await apiClient.models.update(id, { active });
@@ -82,6 +218,38 @@ export function ModelsClient() {
       toast.success(active ? 'Modelo ativado' : 'Modelo desativado');
     } catch (err) {
       toast.error((err as Error).message);
+    }
+  }
+
+  function startPriceEdit(model: GatewayModel) {
+    setPriceEdit({
+      modelId: model.id,
+      input: model.inputCostPer1M !== undefined ? String(model.inputCostPer1M) : '',
+      output: model.outputCostPer1M !== undefined ? String(model.outputCostPer1M) : '',
+    });
+  }
+
+  async function savePriceEdit() {
+    if (!priceEdit) return;
+    const inputCostPer1M = priceEdit.input === '' ? undefined : parseFloat(priceEdit.input);
+    const outputCostPer1M = priceEdit.output === '' ? undefined : parseFloat(priceEdit.output);
+    if (
+      (inputCostPer1M !== undefined && isNaN(inputCostPer1M)) ||
+      (outputCostPer1M !== undefined && isNaN(outputCostPer1M))
+    ) {
+      toast.error('Valor de preço inválido');
+      return;
+    }
+    setSavingPrice(true);
+    try {
+      await apiClient.models.update(priceEdit.modelId, { inputCostPer1M, outputCostPer1M });
+      await mutate();
+      toast.success('Preço atualizado');
+      setPriceEdit(null);
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSavingPrice(false);
     }
   }
 
@@ -93,6 +261,15 @@ export function ModelsClient() {
           description="Gerencie os modelos disponíveis"
           actions={
             <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSyncPrices}
+                disabled={syncingPrices}
+              >
+                <TrendingDown className={`mr-1.5 h-4 w-4${syncingPrices ? ' animate-pulse' : ''}`} />
+                {syncingPrices ? 'Buscando preços...' : 'Atualizar preços'}
+              </Button>
               <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
                 <RefreshCw className={`mr-1.5 h-4 w-4${syncing ? ' animate-spin' : ''}`} />
                 {syncing ? 'Sincronizando...' : 'Sincronizar'}
@@ -105,6 +282,51 @@ export function ModelsClient() {
           }
         />
 
+        <div className="space-y-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              className={cn('pl-9 h-9', isFilterInvalid && 'border-destructive focus-visible:ring-destructive')}
+              placeholder="Filtrar por regex — label ou provider:model"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
+            {isFilterInvalid && (
+              <p className="mt-1 text-xs text-destructive">Regex inválida</p>
+            )}
+          </div>
+
+          {availableProviders.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {availableProviders.map((p) => {
+                const active = selectedProviders.has(p);
+                const colors = providerColorsMap[p];
+                return (
+                  <button
+                    key={p}
+                    onClick={() => toggleProvider(p)}
+                    className={cn(
+                      'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors cursor-pointer select-none',
+                      active ? colors.chipActive : colors.chipInactive
+                    )}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+              {selectedProviders.size > 0 && (
+                <button
+                  onClick={() => setSelectedProviders(new Set())}
+                  className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors cursor-pointer select-none border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                >
+                  <X className="mr-1 h-3 w-3" />
+                  Limpar
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         {isLoading ? (
           <div className="rounded-lg border overflow-hidden">
             <div className="bg-muted/40 px-4 py-2.5 border-b">
@@ -115,48 +337,158 @@ export function ModelsClient() {
                 <div key={i} className="flex items-center gap-8 px-4 py-3">
                   <Skeleton className="h-4 w-40" />
                   <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-16" />
                   <Skeleton className="h-5 w-9 rounded-full" />
                 </div>
               ))}
             </div>
           </div>
-        ) : !models?.length ? (
+        ) : !filteredModels?.length ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
             <Cpu className="mb-3 h-10 w-10 text-muted-foreground/30" />
-            <p className="font-medium text-sm">Nenhum modelo cadastrado</p>
-            <p className="mt-1 text-caption">Adicione um modelo para começar a rotear requisições</p>
-            <Button onClick={() => setOpen(true)} size="sm" className="mt-4">
-              <Plus className="mr-1.5 h-4 w-4" />
-              Adicionar modelo
-            </Button>
+            <p className="font-medium text-sm">
+              {filter.trim() || selectedProviders.size > 0
+                ? 'Nenhum modelo corresponde ao filtro'
+                : 'Nenhum modelo cadastrado'}
+            </p>
+            {!filter.trim() && selectedProviders.size === 0 && (
+              <>
+                <p className="mt-1 text-caption">Adicione um modelo para começar a rotear requisições</p>
+                <Button onClick={() => setOpen(true)} size="sm" className="mt-4">
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  Adicionar modelo
+                </Button>
+              </>
+            )}
           </div>
         ) : (
           <div className="rounded-lg border overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/40 hover:bg-muted/40">
-                  <TableHead className="text-section-title h-10">Label</TableHead>
-                  <TableHead className="text-section-title h-10">Provider:Model</TableHead>
-                  <TableHead className="text-section-title h-10">Ativo</TableHead>
+                  {(
+                    [
+                      { key: 'label', label: 'Label', className: '' },
+                      { key: 'value', label: 'Provider:Model', className: '' },
+                      { key: 'inputCostPer1M', label: 'Input /1M', className: 'text-right' },
+                      { key: 'outputCostPer1M', label: 'Output /1M', className: 'text-right' },
+                    ] as { key: SortKey; label: string; className: string }[]
+                  ).map(({ key, label: colLabel, className }) => {
+                    const active = sortKey === key;
+                    const Icon = active ? (sortDir === 'asc' ? ChevronUp : ChevronDown) : ChevronsUpDown;
+                    return (
+                      <TableHead
+                        key={key}
+                        className={cn('text-section-title h-10 cursor-pointer select-none', className)}
+                        onClick={() => toggleSort(key)}
+                      >
+                        <span className={cn('inline-flex items-center gap-1', className === 'text-right' && 'flex-row-reverse w-full')}>
+                          {colLabel}
+                          <Icon className={cn('h-3.5 w-3.5', active ? 'text-foreground' : 'text-muted-foreground/50')} />
+                        </span>
+                      </TableHead>
+                    );
+                  })}
+                  <TableHead className="text-section-title h-10 w-8" />
+                  <TableHead
+                    className="text-section-title h-10 cursor-pointer select-none"
+                    onClick={() => toggleSort('active')}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Ativo
+                      {sortKey === 'active'
+                        ? (sortDir === 'asc' ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />)
+                        : <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />}
+                    </span>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {models.map((model) => (
-                  <TableRow key={model.id} className="group hover:bg-muted/30 transition-colors duration-150">
-                    <TableCell className="font-medium">{model.label}</TableCell>
-                    <TableCell>
-                      <code className="text-caption font-mono bg-muted px-1.5 py-0.5 rounded">
-                        {model.value}
-                      </code>
-                    </TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={model.active}
-                        onCheckedChange={(checked) => handleToggleActive(model.id, checked)}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {sortedModels!.map((model) => {
+                  const isEditing = priceEdit?.modelId === model.id;
+                  const [providerPart, ...modelParts] = model.value.split(':');
+                  const modelPart = modelParts.join(':');
+                  const colors = providerColorsMap[providerPart];
+                  return (
+                    <TableRow key={model.id} className={cn('group hover:bg-muted/30 transition-colors duration-150', colors?.row)}>
+                      <TableCell className="font-medium">{model.label}</TableCell>
+                      <TableCell>
+                        <code className="text-caption font-mono bg-muted px-1.5 py-0.5 rounded">
+                          <span className={colors?.providerText}>{providerPart}</span>
+                          {modelPart && <span className="text-muted-foreground">:{modelPart}</span>}
+                        </code>
+                      </TableCell>
+                      {isEditing ? (
+                        <>
+                          <TableCell className="text-right py-1.5">
+                            <Input
+                              className="h-7 w-24 text-right font-mono text-xs ml-auto"
+                              value={priceEdit.input}
+                              onChange={(e) => setPriceEdit({ ...priceEdit, input: e.target.value })}
+                              placeholder="0.00"
+                              autoFocus
+                            />
+                          </TableCell>
+                          <TableCell className="text-right py-1.5">
+                            <Input
+                              className="h-7 w-24 text-right font-mono text-xs ml-auto"
+                              value={priceEdit.output}
+                              onChange={(e) => setPriceEdit({ ...priceEdit, output: e.target.value })}
+                              placeholder="0.00"
+                            />
+                          </TableCell>
+                          <TableCell className="w-8 py-1.5">
+                            <div className="flex gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-green-500 hover:text-green-400"
+                                onClick={savePriceEdit}
+                                disabled={savingPrice}
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7"
+                                onClick={() => setPriceEdit(null)}
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </>
+                      ) : (
+                        <>
+                          <TableCell className="text-right">
+                            <CostCell value={model.inputCostPer1M} />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <CostCell value={model.outputCostPer1M} />
+                          </TableCell>
+                          <TableCell className="w-8">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => startPriceEdit(model)}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          </TableCell>
+                        </>
+                      )}
+                      <TableCell>
+                        <Switch
+                          checked={model.active}
+                          onCheckedChange={(checked) => handleToggleActive(model.id, checked)}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
@@ -186,21 +518,7 @@ export function ModelsClient() {
                   className="mt-1.5"
                 />
               </div>
-              <div>
-                <p className="mb-2 text-caption">Adicionar rapidamente:</p>
-                <div className="flex flex-wrap gap-2">
-                  {QUICK_ADD.map((q) => (
-                    <Button
-                      key={q.value}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => { setValue(q.value); setLabel(q.label); }}
-                    >
-                      {q.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+
             </div>
             <DialogFooter className="border-t border-border pt-4 mt-2">
               <Button variant="outline" onClick={() => setOpen(false)}>

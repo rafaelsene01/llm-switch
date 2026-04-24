@@ -194,7 +194,7 @@ function createStore(dataFile?: string) {
     return { added, removed, models: data.models };
   }
 
-  function updateModel(id: string, patch: Partial<Pick<GatewayModel, 'active' | 'label'>>): GatewayModel | null {
+  function updateModel(id: string, patch: Partial<Pick<GatewayModel, 'active' | 'label' | 'inputCostPer1M' | 'outputCostPer1M'>>): GatewayModel | null {
     const data = load();
     const idx = data.models.findIndex((m) => m.id === id);
     if (idx === -1) return null;
