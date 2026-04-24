@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useSWRConfig } from 'swr';
 import { toast } from 'sonner';
 import { Download, Upload } from 'lucide-react';
 import { apiClient, type ImportModule, type ImportResult } from '@/lib/api-client';
@@ -37,6 +38,7 @@ interface ImportExportActionsProps {
 }
 
 export function ImportExportActions({ module, onImportSuccess, className }: ImportExportActionsProps) {
+  const { mutate: globalMutate } = useSWRConfig();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -120,6 +122,7 @@ export function ImportExportActions({ module, onImportSuccess, className }: Impo
         .join(' · ') || 'Nenhuma alteração';
       toast.success(`Importação concluída: ${summary}`);
       setDialogOpen(false);
+      await globalMutate((key) => typeof key === 'string' && key.startsWith('/admin/'));
       onImportSuccess?.();
     } catch (err) {
       toast.error(`Erro ao importar: ${(err as Error).message}`);
