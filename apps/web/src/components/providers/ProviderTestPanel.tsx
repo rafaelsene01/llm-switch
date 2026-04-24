@@ -1,14 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { Loader2, CheckCircle2, XCircle, Zap } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { apiClient } from '@/lib/api-client';
 import type { ProviderModelInfo, TestResult } from '@/types';
-
-type PanelState = 'idle' | 'loading-models' | 'model-select' | 'testing' | 'result';
 
 interface ProviderTestPanelProps {
   providerId: string;
@@ -17,33 +15,55 @@ interface ProviderTestPanelProps {
 }
 
 export function ProviderTestPanel({ providerId, candidateKey, candidateUrl }: ProviderTestPanelProps) {
-  const [panelState, setPanelState] = useState<PanelState>('idle');
   const [models, setModels] = useState<ProviderModelInfo[]>([]);
-  const [selectedModel, setSelectedModel] = useState('');
+  const [loadingModels, setLoadingModels] = useState(false);
   const [modelsError, setModelsError] = useState('');
+  const [selectedModel, setSelectedModel] = useState('');
+  const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  async function handleFetchModels() {
-    setPanelState('loading-models');
-    setModelsError('');
-    setTestResult(null);
-    try {
-      const list = await apiClient.providers.listModels(providerId, {
-        key: candidateKey,
-        url: candidateUrl,
-      });
-      setModels(list);
-      setSelectedModel(list[0]?.id ?? '');
-      setPanelState('model-select');
-    } catch (err) {
-      setModelsError(err instanceof Error ? err.message : 'Não foi possível conectar ao provider.');
-      setPanelState('idle');
+  // Auto-fetch models when key/url changes, with debounce
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    const hasInput = Boolean(candidateKey?.trim()) || Boolean(candidateUrl?.trim());
+    if (!hasInput) {
+      setModels([]);
+      setSelectedModel('');
+      setModelsError('');
+      setTestResult(null);
+      return;
     }
-  }
+
+    debounceRef.current = setTimeout(async () => {
+      setLoadingModels(true);
+      setModelsError('');
+      setTestResult(null);
+      try {
+        const list = await apiClient.providers.listModels(providerId, {
+          key: candidateKey,
+          url: candidateUrl,
+        });
+        setModels(list);
+        setSelectedModel(list[0]?.id ?? '');
+      } catch (err) {
+        setModelsError(err instanceof Error ? err.message : 'Não foi possível conectar ao provider.');
+        setModels([]);
+        setSelectedModel('');
+      } finally {
+        setLoadingModels(false);
+      }
+    }, 600);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [candidateKey, candidateUrl, providerId]);
 
   async function handleRunTest() {
     if (!selectedModel) return;
-    setPanelState('testing');
+    setTesting(true);
     setTestResult(null);
     const result = await apiClient.providers.test(providerId, {
       model: selectedModel,
@@ -51,25 +71,26 @@ export function ProviderTestPanel({ providerId, candidateKey, candidateUrl }: Pr
       url: candidateUrl,
     });
     setTestResult(result);
-    setPanelState('result');
+    setTesting(false);
   }
+
+  const hasInput = Boolean(candidateKey?.trim()) || Boolean(candidateUrl?.trim());
 
   return (
     <div className="flex flex-col gap-3 rounded-md border p-3">
       <p className="text-sm font-medium">Testar conexão</p>
 
-      {panelState === 'idle' && (
-        <Button type="button" variant="outline" size="sm" onClick={handleFetchModels}>
-          <Zap className="mr-2 h-3.5 w-3.5" />
-          Buscar modelos disponíveis
-        </Button>
+      {!hasInput && (
+        <p className="text-xs text-muted-foreground">
+          Informe a chave ou URL para ver os modelos disponíveis.
+        </p>
       )}
 
-      {panelState === 'loading-models' && (
-        <Button type="button" variant="outline" size="sm" disabled>
-          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-          Conectando...
-        </Button>
+      {loadingModels && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          Carregando modelos...
+        </div>
       )}
 
       {modelsError && (
@@ -79,10 +100,10 @@ export function ProviderTestPanel({ providerId, candidateKey, candidateUrl }: Pr
         </div>
       )}
 
-      {(panelState === 'model-select' || panelState === 'testing' || panelState === 'result') && (
+      {models.length > 0 && (
         <div className="flex flex-col gap-2">
-          <Label className="text-xs">Modelo para teste</Label>
-          <Select value={selectedModel} onValueChange={setSelectedModel} disabled={panelState === 'testing'}>
+          <Label className="text-xs">{models.length} modelo{models.length !== 1 ? 's' : ''} disponível{models.length !== 1 ? 'is' : ''}</Label>
+          <Select value={selectedModel} onValueChange={setSelectedModel} disabled={testing}>
             <SelectTrigger className="h-8 text-xs">
               <SelectValue placeholder="Selecione um modelo" />
             </SelectTrigger>
@@ -98,10 +119,11 @@ export function ProviderTestPanel({ providerId, candidateKey, candidateUrl }: Pr
           <Button
             type="button"
             size="sm"
+            variant="outline"
             onClick={handleRunTest}
-            disabled={!selectedModel || panelState === 'testing'}
+            disabled={!selectedModel || testing}
           >
-            {panelState === 'testing' ? (
+            {testing ? (
               <>
                 <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                 Testando...
@@ -113,14 +135,12 @@ export function ProviderTestPanel({ providerId, candidateKey, candidateUrl }: Pr
         </div>
       )}
 
-      {testResult && panelState === 'result' && (
-        <div
-          className={`flex items-start gap-2 rounded-md p-2 text-xs ${
-            testResult.success
-              ? 'bg-green-500/10 text-green-700 dark:text-green-400'
-              : 'bg-destructive/10 text-destructive'
-          }`}
-        >
+      {testResult && (
+        <div className={`flex items-start gap-2 rounded-md p-2 text-xs ${
+          testResult.success
+            ? 'bg-green-500/10 text-green-700 dark:text-green-400'
+            : 'bg-destructive/10 text-destructive'
+        }`}>
           {testResult.success ? (
             <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           ) : (
@@ -137,16 +157,6 @@ export function ProviderTestPanel({ providerId, candidateKey, candidateUrl }: Pr
             )}
           </div>
         </div>
-      )}
-
-      {(panelState === 'model-select' || panelState === 'result') && (
-        <button
-          type="button"
-          className="self-start text-xs text-muted-foreground underline underline-offset-2"
-          onClick={() => { setPanelState('idle'); setModels([]); setTestResult(null); }}
-        >
-          Resetar teste
-        </button>
       )}
     </div>
   );

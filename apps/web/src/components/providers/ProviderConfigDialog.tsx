@@ -20,12 +20,17 @@ import { CloudProviderForm } from './CloudProviderForm';
 import { LocalProviderForm } from './LocalProviderForm';
 import { ProviderTestPanel } from './ProviderTestPanel';
 
+// Providers whose model list is static (no API call) — listModels alone can't validate the key
+const STATIC_PROVIDERS = new Set(['anthropic', 'google']);
+
 interface ProviderConfigDialogProps {
   provider: GatewayProvider;
   open: boolean;
   onClose: () => void;
   onSaved: () => void;
 }
+
+type SaveStage = 'idle' | 'validating' | 'saving';
 
 export function ProviderConfigDialog({ provider, open, onClose, onSaved }: ProviderConfigDialogProps) {
   const [apiKey, setApiKey] = useState('');
@@ -34,10 +39,12 @@ export function ProviderConfigDialog({ provider, open, onClose, onSaved }: Provi
   const [enabled, setEnabled] = useState(provider.configured ? provider.enabled : true);
   const [keyError, setKeyError] = useState('');
   const [urlError, setUrlError] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [saveStage, setSaveStage] = useState<SaveStage>('idle');
   const [removing, setRemoving] = useState(false);
 
-  function validate(): boolean {
+  const isSaving = saveStage !== 'idle';
+
+  function validateForm(): boolean {
     let ok = true;
     if (provider.type === 'cloud' && !apiKey.trim()) {
       setKeyError('API key obrigatória.');
@@ -54,9 +61,51 @@ export function ProviderConfigDialog({ provider, open, onClose, onSaved }: Provi
     return ok;
   }
 
+  async function validateCredentials(): Promise<boolean> {
+    const candidateKey = apiKey.trim() || undefined;
+    const candidateUrl = provider.type === 'local'
+      ? url.trim().replace(/\/$/, '') || undefined
+      : undefined;
+
+    try {
+      // List models first — for dynamic providers this validates the key via real API call
+      const models = await apiClient.providers.listModels(provider.id, { key: candidateKey, url: candidateUrl });
+
+      if (STATIC_PROVIDERS.has(provider.id) && models.length > 0) {
+        // Static providers return a pre-defined list — need a real completion to validate the key
+        const model = models[models.length - 1].id; // use last (typically smallest/cheapest)
+        const result = await apiClient.providers.test(provider.id, { model, key: candidateKey, url: candidateUrl });
+        if (!result.success) {
+          setKeyError(result.error ?? 'Chave inválida ou sem permissão.');
+          return false;
+        }
+      }
+      return true;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Não foi possível validar a chave.';
+      if (provider.type === 'cloud') setKeyError(msg);
+      else setUrlError(msg);
+      return false;
+    }
+  }
+
   async function handleSave() {
-    if (!validate()) return;
-    setSaving(true);
+    if (!validateForm()) return;
+
+    const hasNewKey = Boolean(apiKey.trim());
+    const hasUrlChange = provider.type === 'local' &&
+      url.trim().replace(/\/$/, '') !== (provider.url ?? '').replace(/\/$/, '');
+
+    if (hasNewKey || hasUrlChange) {
+      setSaveStage('validating');
+      const valid = await validateCredentials();
+      if (!valid) {
+        setSaveStage('idle');
+        return;
+      }
+    }
+
+    setSaveStage('saving');
     try {
       const body: { key?: string; url?: string; enabled?: boolean } = { enabled };
       if (apiKey.trim()) body.key = apiKey.trim();
@@ -68,7 +117,7 @@ export function ProviderConfigDialog({ provider, open, onClose, onSaved }: Provi
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao salvar configuração.');
     } finally {
-      setSaving(false);
+      setSaveStage('idle');
     }
   }
 
@@ -86,6 +135,12 @@ export function ProviderConfigDialog({ provider, open, onClose, onSaved }: Provi
       setRemoving(false);
     }
   }
+
+  const saveLabel = saveStage === 'validating'
+    ? 'Validando...'
+    : saveStage === 'saving'
+    ? 'Salvando...'
+    : 'Salvar';
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -153,11 +208,11 @@ export function ProviderConfigDialog({ provider, open, onClose, onSaved }: Provi
             </Button>
           )}
           <div className="flex gap-2 sm:ml-auto">
-            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>
               Cancelar
             </Button>
-            <Button type="button" onClick={handleSave} disabled={saving}>
-              {saving ? 'Salvando...' : 'Salvar'}
+            <Button type="button" onClick={handleSave} disabled={isSaving}>
+              {saveLabel}
             </Button>
           </div>
         </DialogFooter>
