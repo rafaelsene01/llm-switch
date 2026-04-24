@@ -1,8 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
+import { mutate as globalMutate } from 'swr';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useProviders } from '@/hooks/useProviders';
+import { apiClient } from '@/lib/api-client';
 import type { GatewayProvider } from '@/types';
 import { ProviderCard } from './ProviderCard';
 import { ProviderConfigDialog } from './ProviderConfigDialog';
@@ -12,6 +15,17 @@ import { PageHeader } from '@/components/layout/PageHeader';
 export function ProvidersClient() {
   const { data: providers, isLoading, error, mutate } = useProviders();
   const [selected, setSelected] = useState<GatewayProvider | null>(null);
+
+  async function handleToggleEnabled(provider: GatewayProvider, enabled: boolean) {
+    try {
+      await apiClient.providers.update(provider.id, { enabled });
+      await mutate();
+      await globalMutate('/admin/models');
+      toast.success(enabled ? `${provider.name} ativado` : `${provider.name} desativado`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao atualizar provider.');
+    }
+  }
 
   if (error) {
     return (
@@ -45,6 +59,7 @@ export function ProvidersClient() {
                 key={provider.id}
                 provider={provider}
                 onConfigure={() => setSelected(provider)}
+                onToggleEnabled={(enabled) => handleToggleEnabled(provider, enabled)}
               />
             ))}
       </div>
@@ -54,7 +69,7 @@ export function ProvidersClient() {
           provider={selected}
           open={!!selected}
           onClose={() => setSelected(null)}
-          onSaved={() => mutate()}
+          onSaved={async () => { await mutate(); await globalMutate('/admin/models'); }}
         />
       )}
     </div>

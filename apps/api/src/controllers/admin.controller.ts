@@ -301,8 +301,10 @@ export function createAdminRouter(): Router {
   router.patch(
     '/providers/:id',
     wrap(async (req, res) => {
-      const { key, url } = req.body as { key?: string; url?: string };
-      const provider = store.updateProvider(req.params.id, { key, url });
+      const { key, url, enabled } = req.body as { key?: string; url?: string; enabled?: boolean };
+      const patch: { key?: string; url?: string; enabled?: boolean } = { key, url };
+      if (enabled !== undefined) patch.enabled = enabled;
+      const provider = store.updateProvider(req.params.id, patch);
       if (!provider) {
         res.status(404).json({ error: { message: 'Provider não encontrado.' } });
         return;

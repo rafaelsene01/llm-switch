@@ -115,7 +115,7 @@ export const apiClient = {
 
   providers: {
     list: () => apiFetch<{ providers: GatewayProvider[] }>('/admin/providers').then((r) => r.providers),
-    update: (id: string, body: { key?: string; url?: string }) =>
+    update: (id: string, body: { key?: string; url?: string; enabled?: boolean }) =>
       apiFetch<{ provider: GatewayProvider }>(`/admin/providers/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(body),

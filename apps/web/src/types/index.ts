@@ -48,6 +48,7 @@ export interface GatewayProvider {
   key?: string;
   url?: string;
   configured: boolean;
+  enabled: boolean;
 }
 
 export interface ProviderModelInfo {

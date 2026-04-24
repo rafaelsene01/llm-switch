@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Plus, RefreshCw, Cpu, TrendingDown, Pencil, Check, X, Search, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { useModels } from '@/hooks/useModels';
+import { useProviders } from '@/hooks/useProviders';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -85,6 +86,7 @@ interface PriceEditState {
 
 export function ModelsClient() {
   const { data: models, isLoading, mutate } = useModels();
+  const { data: providers } = useProviders();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
   const [label, setLabel] = useState('');
@@ -96,6 +98,12 @@ export function ModelsClient() {
   const [filter, setFilter] = useState('');
   const [selectedProviders, setSelectedProviders] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>('label');
+
+  useEffect(() => {
+    apiClient.models.sync()
+      .then(() => mutate())
+      .catch(() => {});
+  }, []);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   const availableProviders: string[] = models?.length
@@ -123,9 +131,16 @@ export function ModelsClient() {
     }
   }
 
+  const activeProviderIds = providers
+    ? new Set(providers.filter((p) => p.configured && p.enabled !== false).map((p) => p.id))
+    : null;
+
   const filteredModels = (() => {
     if (!models?.length) return models;
     let result = models;
+    if (activeProviderIds) {
+      result = result.filter((m) => activeProviderIds.has(m.value.split(':')[0]));
+    }
     if (filter.trim()) {
       try {
         const re = new RegExp(filter, 'i');

@@ -15,13 +15,13 @@ import type { ProviderModelInfo } from './providers.service';
 const VALID_MODES: BlocklistMode[] = ['disabled', 'redact', 'block'];
 
 const DEFAULT_PROVIDERS: GatewayProvider[] = [
-  { id: 'openai',     name: 'OpenAI',      type: 'cloud', configured: false },
-  { id: 'anthropic',  name: 'Anthropic',   type: 'cloud', configured: false },
-  { id: 'google',     name: 'Google',      type: 'cloud', configured: false },
-  { id: 'mistral',    name: 'Mistral',     type: 'cloud', configured: false },
-  { id: 'openrouter', name: 'OpenRouter',  type: 'cloud', configured: false },
-  { id: 'ollama',     name: 'Ollama',      type: 'local', url: 'http://localhost:11434', configured: false },
-  { id: 'lmstudio',   name: 'LM Studio',   type: 'local', url: 'http://localhost:1234',  configured: false },
+  { id: 'openai',     name: 'OpenAI',      type: 'cloud', configured: false, enabled: false },
+  { id: 'anthropic',  name: 'Anthropic',   type: 'cloud', configured: false, enabled: false },
+  { id: 'google',     name: 'Google',      type: 'cloud', configured: false, enabled: false },
+  { id: 'mistral',    name: 'Mistral',     type: 'cloud', configured: false, enabled: false },
+  { id: 'openrouter', name: 'OpenRouter',  type: 'cloud', configured: false, enabled: false },
+  { id: 'ollama',     name: 'Ollama',      type: 'local', url: 'http://localhost:11434', configured: false, enabled: false },
+  { id: 'lmstudio',   name: 'LM Studio',   type: 'local', url: 'http://localhost:1234',  configured: false, enabled: false },
 ];
 
 interface StoreData {
@@ -287,17 +287,36 @@ function createStore(dataFile?: string) {
   // ── Providers ──────────────────────────────────────────────────────────────
 
   function getProviders(): GatewayProvider[] {
-    return load().providers;
+    return load().providers.map((p) => ({
+      ...p,
+      // backward compat: old entries without enabled field default to configured state
+      enabled: p.enabled !== undefined ? p.enabled : p.configured,
+    }));
   }
 
-  function updateProvider(id: string, patch: Partial<Pick<GatewayProvider, 'key' | 'url'>>): GatewayProvider | null {
+  function updateProvider(id: string, patch: Partial<Pick<GatewayProvider, 'key' | 'url' | 'enabled'>>): GatewayProvider | null {
     const data = load();
     const idx = data.providers.findIndex((p) => p.id === id);
     if (idx === -1) return null;
-    const updated = { ...data.providers[idx], ...patch };
+    const current = data.providers[idx];
+    const updated = { ...current, ...patch };
+    const wasConfigured = current.configured;
     updated.configured = updated.type === 'cloud'
       ? Boolean(updated.key)
       : Boolean(updated.url);
+
+    const explicitEnabled = 'enabled' in patch ? patch.enabled : undefined;
+    if (explicitEnabled !== undefined) {
+      // Respect explicit toggle, but can only be enabled if configured
+      updated.enabled = explicitEnabled && updated.configured;
+    } else if (!wasConfigured && updated.configured) {
+      // Just became configured → auto-enable
+      updated.enabled = true;
+    } else {
+      // Preserve current enabled, defaulting to configured state for old entries
+      updated.enabled = current.enabled !== undefined ? current.enabled : current.configured;
+    }
+
     data.providers[idx] = updated;
     save(data);
     return updated;
@@ -314,6 +333,7 @@ function createStore(dataFile?: string) {
         ? DEFAULT_PROVIDERS.find((p) => p.id === id)?.url
         : undefined,
       configured: false,
+      enabled: false,
     };
     save(data);
     return true;

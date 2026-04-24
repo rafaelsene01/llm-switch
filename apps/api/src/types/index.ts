@@ -73,6 +73,7 @@ export interface GatewayProvider {
   key?: string;
   url?: string;
   configured: boolean;
+  enabled: boolean;
 }
 
 // Chat

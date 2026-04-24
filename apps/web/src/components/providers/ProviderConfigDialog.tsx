@@ -11,7 +11,9 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { apiClient } from '@/lib/api-client';
 import type { GatewayProvider } from '@/types';
 import { CloudProviderForm } from './CloudProviderForm';
@@ -28,6 +30,8 @@ interface ProviderConfigDialogProps {
 export function ProviderConfigDialog({ provider, open, onClose, onSaved }: ProviderConfigDialogProps) {
   const [apiKey, setApiKey] = useState('');
   const [url, setUrl] = useState(provider.url ?? '');
+  // Unconfigured providers will auto-enable on first configure; configured ones respect stored state
+  const [enabled, setEnabled] = useState(provider.configured ? provider.enabled : true);
   const [keyError, setKeyError] = useState('');
   const [urlError, setUrlError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -54,7 +58,7 @@ export function ProviderConfigDialog({ provider, open, onClose, onSaved }: Provi
     if (!validate()) return;
     setSaving(true);
     try {
-      const body: { key?: string; url?: string } = {};
+      const body: { key?: string; url?: string; enabled?: boolean } = { enabled };
       if (apiKey.trim()) body.key = apiKey.trim();
       if (provider.type === 'local') body.url = url.trim().replace(/\/$/, '');
       await apiClient.providers.update(provider.id, body);
@@ -91,6 +95,22 @@ export function ProviderConfigDialog({ provider, open, onClose, onSaved }: Provi
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-2">
+          <div className="flex items-center justify-between rounded-md border px-3 py-2.5">
+            <div>
+              <Label className="text-sm font-medium">Provider ativo</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {provider.configured
+                  ? 'Quando inativo, os modelos deste provider ficam ocultos'
+                  : 'Será ativado automaticamente ao salvar a configuração'}
+              </p>
+            </div>
+            <Switch
+              checked={enabled}
+              onCheckedChange={setEnabled}
+              disabled={!provider.configured}
+            />
+          </div>
+
           {provider.type === 'cloud' ? (
             <CloudProviderForm
               providerName={provider.name}
