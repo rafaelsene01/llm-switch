@@ -79,9 +79,9 @@ function initDb(dbPath: string): Database.Database {
 }
 
 function extractMessagePreview(messages: Array<{ role: string; content: unknown }>): string {
-  const last = [...messages].reverse().find((m) => m.role === 'user');
-  if (!last) return '';
-  const text = typeof last.content === 'string' ? last.content : JSON.stringify(last.content);
+  const first = messages.find((m) => m.role === 'user');
+  if (!first) return '';
+  const text = typeof first.content === 'string' ? first.content : JSON.stringify(first.content);
   return text.length > 200 ? text.slice(0, 200) + '...' : text;
 }
 
@@ -142,7 +142,7 @@ export function createActivityLogService(
 
       writeFileSync(filePath, buildMarkdown(entry, now), 'utf8');
 
-      const preview = extractMessagePreview(entry.sanitizedMessages);
+      const preview = extractMessagePreview(entry.originalMessages);
       getDb().prepare(
         `INSERT INTO activity_logs
          (request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
