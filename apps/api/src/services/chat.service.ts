@@ -4,7 +4,8 @@ import { resolveModel } from '../providers';
 import { sanitizer } from './sanitizer.service';
 import { logRequest } from '../utils/logger';
 import { activityLog } from './activity-log.service';
-import type { OpenAIMessage, OpenAITool, BlocklistFinding, SanitizeFinding } from '../types';
+import type { OpenAIMessage, OpenAITool, BlocklistFinding, SanitizeFinding, SanitizationRoles } from '../types';
+import { DEFAULT_SANITIZATION_ROLES } from '../types';
 
 export interface ChatServiceOptions {
   messages: OpenAIMessage[];
@@ -16,6 +17,7 @@ export interface ChatServiceOptions {
     name: string;
     model: string | null;
     allowedModels: string[];
+    sanitizationRoles: SanitizationRoles;
   } | null;
   system?: string;
   tools?: OpenAITool[];
@@ -143,14 +145,27 @@ export class ChatService {
       maxTokens,
     } = opts;
 
+    const roles: SanitizationRoles = opts.user?.sanitizationRoles ?? DEFAULT_SANITIZATION_ROLES;
     const model = resolveModel(providerModel);
 
-    // Sanitize messages
+    // Sanitize messages (only for enabled roles)
     const { messages: sanitizedMessages, report, blocked, blockFindings } =
-      sanitizer.sanitizeMessages(messages as Array<{ role: string; content: unknown }>);
+      sanitizer.sanitizeMessages(messages as Array<{ role: string; content: unknown }>, roles);
+
+    // For sanitized log: only include messages whose role had sanitization enabled
+    function filterSanitizedForLog(
+      msgs: Array<{ role: string; content: unknown }>
+    ): Array<{ role: string; content: unknown }> {
+      return msgs.filter((m) => {
+        if (m.role === 'system') return roles.system;
+        if (m.role === 'user')   return roles.user;
+        if (m.role === 'tool')   return roles.tool;
+        return false;
+      });
+    }
 
     let sanitizedSystem = system;
-    if (system) {
+    if (system && roles.system) {
       const result = sanitizer.sanitizeText(system);
       sanitizedSystem = result.sanitized;
       if (result.blocked) {
@@ -170,7 +185,7 @@ export class ChatService {
           userName: opts.user?.name ?? clientLabel,
           tokenPreview,
           originalMessages: messages as Array<{ role: string; content: unknown }>,
-          sanitizedMessages: sanitizedMessages as Array<{ role: string; content: unknown }>,
+          sanitizedMessages: filterSanitizedForLog(sanitizedMessages as Array<{ role: string; content: unknown }>),
           llmResponse: null,
           providerModel,
           blocked: true,
@@ -209,7 +224,7 @@ export class ChatService {
         userName: opts.user?.name ?? clientLabel,
         tokenPreview,
         originalMessages: messages as Array<{ role: string; content: unknown }>,
-        sanitizedMessages: sanitizedMessages as Array<{ role: string; content: unknown }>,
+        sanitizedMessages: filterSanitizedForLog(sanitizedMessages as Array<{ role: string; content: unknown }>),
         llmResponse: null,
         providerModel,
         blocked: true,
@@ -263,7 +278,7 @@ export class ChatService {
       userName: opts.user?.name ?? clientLabel,
       tokenPreview,
       originalMessages: messages as Array<{ role: string; content: unknown }>,
-      sanitizedMessages: sanitizedMessages as Array<{ role: string; content: unknown }>,
+      sanitizedMessages: filterSanitizedForLog(sanitizedMessages as Array<{ role: string; content: unknown }>),
       llmResponse: extractTextFromResult(result.text),
       providerModel,
       blocked: false,

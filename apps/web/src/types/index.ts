@@ -29,6 +29,12 @@ export interface GatewayModel {
   outputCostPer1M?: number;
 }
 
+export interface SanitizationRoles {
+  system: boolean;
+  user: boolean;
+  tool: boolean;
+}
+
 export interface GatewayUser {
   id: string;
   name: string;
@@ -37,6 +43,7 @@ export interface GatewayUser {
   allowedModels: string[];
   createdAt: string;
   active: boolean;
+  sanitizationRoles?: SanitizationRoles;
 }
 
 export type ProviderType = 'cloud' | 'local';
@@ -68,6 +75,7 @@ export interface UserPublic {
   allowedModels: string[];
   createdAt: string;
   active: boolean;
+  sanitizationRoles: SanitizationRoles;
 }
 
 export interface ActivityLogRow {

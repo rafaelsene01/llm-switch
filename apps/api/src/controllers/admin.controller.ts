@@ -4,7 +4,8 @@ import { readFileSync, existsSync } from 'fs';
 import type { Request, Response } from 'express';
 import { store } from '../services/store.service';
 import { env } from '../config/env';
-import type { BlocklistCategory, BlocklistMode } from '../types';
+import type { BlocklistCategory, BlocklistMode, SanitizationRoles } from '../types';
+import { DEFAULT_SANITIZATION_ROLES } from '../types';
 import { listProviderModels, testProviderConnection } from '../services/providers.service';
 import { getPricingForModel, buildPricingMap } from '../services/pricing.service';
 
@@ -243,11 +244,12 @@ export function createAdminRouter(): Router {
   router.post(
     '/users',
     wrap(async (req, res) => {
-      const { name, key, model, allowedModels } = req.body as {
+      const { name, key, model, allowedModels, sanitizationRoles } = req.body as {
         name?: string;
         key?: string;
         model?: string;
         allowedModels?: string[];
+        sanitizationRoles?: SanitizationRoles;
       };
       if (!name) {
         res.status(400).json({ error: { message: "Campo 'name' obrigatório." } });
@@ -258,7 +260,7 @@ export function createAdminRouter(): Router {
         return;
       }
       res.status(201).json(
-        store.addUser({ name, key, model: model ?? null, allowedModels: allowedModels ?? [] })
+        store.addUser({ name, key, model: model ?? null, allowedModels: allowedModels ?? [], sanitizationRoles: sanitizationRoles ?? DEFAULT_SANITIZATION_ROLES })
       );
     })
   );

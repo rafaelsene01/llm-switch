@@ -10,6 +10,7 @@ import type {
   GatewayUser,
   UserPublic,
 } from '../types';
+import { DEFAULT_SANITIZATION_ROLES } from '../types';
 import type { ProviderModelInfo } from './providers.service';
 
 const VALID_MODES: BlocklistMode[] = ['disabled', 'redact', 'block'];
@@ -236,6 +237,7 @@ function createStore(dataFile?: string) {
     return load().users.map(({ key, ...rest }) => ({
       ...rest,
       keyPreview: key ? key.slice(0, 8) + '...' : '???',
+      sanitizationRoles: rest.sanitizationRoles ?? DEFAULT_SANITIZATION_ROLES,
     }));
   }
 
@@ -259,6 +261,7 @@ function createStore(dataFile?: string) {
       allowedModels: Array.isArray(user.allowedModels) ? user.allowedModels : [],
       createdAt: new Date().toISOString(),
       active: true,
+      sanitizationRoles: user.sanitizationRoles ?? DEFAULT_SANITIZATION_ROLES,
     };
     data.users.push(newUser);
     save(data);

@@ -11,6 +11,7 @@ declare global {
         name: string;
         model: string | null;
         allowedModels: string[];
+        sanitizationRoles: import('./index').SanitizationRoles;
       } | null;
     }
   }

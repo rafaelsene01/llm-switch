@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { store } from '../services/store.service';
+import { DEFAULT_SANITIZATION_ROLES } from '../types';
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers['authorization'] ?? '';
@@ -39,6 +40,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
     name: user.name,
     model: user.model ?? null,
     allowedModels: Array.isArray(user.allowedModels) ? user.allowedModels : [],
+    sanitizationRoles: user.sanitizationRoles ?? DEFAULT_SANITIZATION_ROLES,
   };
 
   next();

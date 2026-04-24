@@ -20,7 +20,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { UserFormFields, NO_MODEL } from './UserFormFields';
+import { UserFormFields, NO_MODEL, DEFAULT_SANITIZATION_ROLES } from './UserFormFields';
+import type { SanitizationRoles } from '@/types';
 
 interface Props {
   open: boolean;
@@ -33,9 +34,10 @@ interface FormState {
   key: string;
   model: string;
   allowedModels: string[];
+  sanitizationRoles: SanitizationRoles;
 }
 
-const emptyForm: FormState = { name: '', key: '', model: '', allowedModels: [] };
+const emptyForm: FormState = { name: '', key: '', model: '', allowedModels: [], sanitizationRoles: DEFAULT_SANITIZATION_ROLES };
 
 export function CreateUserDialog({ open, onOpenChange, onCreated }: Props) {
   const { data: models } = useModels();
@@ -89,6 +91,7 @@ export function CreateUserDialog({ open, onOpenChange, onCreated }: Props) {
         key: form.key,
         model: form.model || null,
         allowedModels: form.allowedModels,
+        sanitizationRoles: form.sanitizationRoles,
       });
       toast.success('Usuário criado');
       onCreated();
@@ -157,8 +160,10 @@ export function CreateUserDialog({ open, onOpenChange, onCreated }: Props) {
             allowedModels={form.allowedModels}
             activeModels={activeModels}
             idPrefix="create"
+            sanitizationRoles={form.sanitizationRoles}
             onModelChange={handleModelChange}
             onAllowedModelsChange={handleAllowedModelsChange}
+            onSanitizationRolesChange={(roles) => setForm((f) => ({ ...f, sanitizationRoles: roles }))}
           />
         </div>
         <DialogFooter className="border-t border-border pt-4 mt-2">

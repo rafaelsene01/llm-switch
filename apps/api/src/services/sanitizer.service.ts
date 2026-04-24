@@ -70,12 +70,24 @@ export class SanitizerService {
     return { sanitized, findings, blocked, blockFindings };
   }
 
-  sanitizeMessages(messages: Array<{ role: string; content: unknown }>): SanitizeMessagesResult {
+  sanitizeMessages(
+    messages: Array<{ role: string; content: unknown }>,
+    enabledRoles?: { system?: boolean; user?: boolean; tool?: boolean }
+  ): SanitizeMessagesResult {
     const report: SanitizeMessageResult[] = [];
     const blockFindings: BlocklistFinding[] = [];
     let blocked = false;
 
     const sanitizedMessages = messages.map((msg, idx) => {
+      const roleEnabled =
+        !enabledRoles ||
+        (msg.role === 'system' ? (enabledRoles.system ?? true) :
+         msg.role === 'user'   ? (enabledRoles.user   ?? true) :
+         msg.role === 'tool'   ? (enabledRoles.tool   ?? true) :
+         false);
+
+      if (!roleEnabled) return { ...msg, content: msg.content as string | null };
+
       const content =
         typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
 

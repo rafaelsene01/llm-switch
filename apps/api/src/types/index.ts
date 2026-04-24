@@ -43,6 +43,18 @@ export interface GatewayModel {
 }
 
 // Users
+export interface SanitizationRoles {
+  system: boolean;
+  user: boolean;
+  tool: boolean;
+}
+
+export const DEFAULT_SANITIZATION_ROLES: SanitizationRoles = {
+  system: true,
+  user: true,
+  tool: true,
+};
+
 export interface GatewayUser {
   id: string;
   name: string;
@@ -51,6 +63,7 @@ export interface GatewayUser {
   allowedModels: string[];
   createdAt: string;
   active: boolean;
+  sanitizationRoles?: SanitizationRoles;
 }
 
 export interface UserPublic {
@@ -61,6 +74,7 @@ export interface UserPublic {
   allowedModels: string[];
   createdAt: string;
   active: boolean;
+  sanitizationRoles: SanitizationRoles;
 }
 
 // Providers
