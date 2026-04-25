@@ -209,7 +209,11 @@ export function createAdminRouter(): Router {
         inputCostPer1M?: number;
         outputCostPer1M?: number;
       };
-      const model = store.updateModel(req.params.id, { active, inputCostPer1M, outputCostPer1M });
+      const patch: Parameters<typeof store.updateModel>[1] = {};
+      if (active !== undefined) patch.active = active;
+      if (inputCostPer1M !== undefined) patch.inputCostPer1M = inputCostPer1M;
+      if (outputCostPer1M !== undefined) patch.outputCostPer1M = outputCostPer1M;
+      const model = store.updateModel(req.params.id, patch);
       if (!model) {
         res.status(404).json({ error: { message: 'Modelo não encontrado.' } });
         return;
