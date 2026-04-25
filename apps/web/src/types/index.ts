@@ -112,13 +112,15 @@ export interface AnalyticsModelStat {
   totalTokens: number;
   promptTokens: number;
   completionTokens: number;
+  totalCostUsd: number;
 }
 
 export interface AnalyticsUserStat {
   user: string;
   requestCount: number;
   totalTokens: number;
-  models: { model: string; requestCount: number; totalTokens: number }[];
+  totalCostUsd: number;
+  models: { model: string; requestCount: number; totalTokens: number; totalCostUsd: number }[];
 }
 
 export interface AnalyticsData {

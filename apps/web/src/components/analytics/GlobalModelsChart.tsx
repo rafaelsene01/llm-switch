@@ -20,6 +20,12 @@ function fmt(value: number): string {
   return String(value);
 }
 
+function fmtUsd(value: number): string {
+  if (value === 0) return '$0.00';
+  if (value < 0.01) return `$${value.toFixed(4)}`;
+  return `$${value.toFixed(2)}`;
+}
+
 export function GlobalModelsChart({ data }: Props) {
   if (data.length === 0) {
     return (
@@ -36,11 +42,13 @@ export function GlobalModelsChart({ data }: Props) {
 
   const totalTokens = data.reduce((s, d) => s + d.totalTokens, 0);
   const totalRequests = data.reduce((s, d) => s + d.requestCount, 0);
+  const totalCostUsd = data.reduce((s, d) => s + d.totalCostUsd, 0);
 
   const chartData = data.map((d, i) => ({
     model: shortModel(d.model),
     Tokens: d.totalTokens,
     requestCount: d.requestCount,
+    costUsd: d.totalCostUsd,
     color: modelColor(i),
   }));
 
@@ -52,6 +60,7 @@ export function GlobalModelsChart({ data }: Props) {
           <div className="flex gap-4 text-sm text-muted-foreground shrink-0">
             <span>{fmt(totalTokens)} tokens</span>
             <span>{totalRequests.toLocaleString()} requisições</span>
+            <span>{fmtUsd(totalCostUsd)}</span>
           </div>
         </div>
       </CardHeader>
@@ -76,6 +85,7 @@ export function GlobalModelsChart({ data }: Props) {
                     <p className="mb-1.5 font-medium">{label}</p>
                     <p style={{ color: payload[0].fill as string }}>Tokens: {fmt(payload[0].value as number)}</p>
                     <p className="text-muted-foreground">Requisições: {entry?.requestCount.toLocaleString()}</p>
+                    <p className="text-muted-foreground">Custo: {fmtUsd(entry?.costUsd ?? 0)}</p>
                   </div>
                 );
               }}

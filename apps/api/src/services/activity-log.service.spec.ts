@@ -156,4 +156,50 @@ describe('ActivityLogService', () => {
     expect(deleted).toBe(2);
     expect(svc.list(1, 10).total).toBe(0);
   });
+
+  describe('analytics()', () => {
+    it('returns empty arrays when no logs exist', () => {
+      const svc = makeService();
+      const { byModel, byUser } = svc.analytics();
+      expect(byModel).toHaveLength(0);
+      expect(byUser).toHaveLength(0);
+    });
+
+    it('aggregates byModel with totalCostUsd', () => {
+      const svc = makeService();
+      svc.log({ ...baseEntry, providerModel: 'openai:gpt-4o', promptTokens: 10, completionTokens: 5, totalTokens: 15, costUsd: 0.001 });
+      svc.log({ ...baseEntry, requestId: 'req-002', providerModel: 'openai:gpt-4o', promptTokens: 20, completionTokens: 10, totalTokens: 30, costUsd: 0.002 });
+      svc.log({ ...baseEntry, requestId: 'req-003', providerModel: 'anthropic:claude-3', promptTokens: 5, completionTokens: 5, totalTokens: 10, costUsd: 0.0005 });
+
+      const { byModel } = svc.analytics();
+      expect(byModel).toHaveLength(2);
+
+      const gpt = byModel.find((m) => m.model === 'openai:gpt-4o')!;
+      expect(gpt.requestCount).toBe(2);
+      expect(gpt.totalTokens).toBe(45);
+      expect(gpt.totalCostUsd).toBeCloseTo(0.003);
+
+      const claude = byModel.find((m) => m.model === 'anthropic:claude-3')!;
+      expect(claude.requestCount).toBe(1);
+      expect(claude.totalCostUsd).toBeCloseTo(0.0005);
+    });
+
+    it('aggregates byUser with totalCostUsd and nested models', () => {
+      const svc = makeService();
+      svc.log({ ...baseEntry, userName: 'alice', providerModel: 'openai:gpt-4o', totalTokens: 15, costUsd: 0.001 });
+      svc.log({ ...baseEntry, requestId: 'req-002', userName: 'alice', providerModel: 'anthropic:claude-3', totalTokens: 10, costUsd: 0.0005 });
+      svc.log({ ...baseEntry, requestId: 'req-003', userName: 'bob', providerModel: 'openai:gpt-4o', totalTokens: 20, costUsd: 0.002 });
+
+      const { byUser } = svc.analytics();
+      const alice = byUser.find((u) => u.user === 'alice')!;
+      expect(alice.requestCount).toBe(2);
+      expect(alice.totalTokens).toBe(25);
+      expect(alice.totalCostUsd).toBeCloseTo(0.0015);
+      expect(alice.models).toHaveLength(2);
+      expect(alice.models[0].totalCostUsd).toBeGreaterThan(0);
+
+      const bob = byUser.find((u) => u.user === 'bob')!;
+      expect(bob.totalCostUsd).toBeCloseTo(0.002);
+    });
+  });
 });

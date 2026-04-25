@@ -20,6 +20,12 @@ function fmt(value: number): string {
   return String(value);
 }
 
+function fmtUsd(value: number): string {
+  if (value === 0) return '$0.00';
+  if (value < 0.01) return `$${value.toFixed(4)}`;
+  return `$${value.toFixed(2)}`;
+}
+
 export function UserModelChart({ user }: Props) {
   const isSingleModel = user.models.length <= 1;
   const singleModel = user.models[0];
@@ -29,6 +35,7 @@ export function UserModelChart({ user }: Props) {
     model: shortModel(m.model),
     Tokens: m.totalTokens,
     requestCount: m.requestCount,
+    costUsd: m.totalCostUsd,
     color: modelColor(i),
   }));
 
@@ -40,6 +47,7 @@ export function UserModelChart({ user }: Props) {
           <div className="flex gap-3 text-xs text-muted-foreground shrink-0">
             <span>{fmt(user.totalTokens)} tokens</span>
             <span>{user.requestCount} req</span>
+            <span>{fmtUsd(user.totalCostUsd)}</span>
           </div>
         </div>
       </CardHeader>
@@ -50,7 +58,7 @@ export function UserModelChart({ user }: Props) {
               <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Modelo</p>
               <p className="font-mono text-xs truncate">{singleModel?.model ?? '—'}</p>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <div className="rounded-md border bg-muted/30 px-3 py-2 text-center">
                 <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Tokens</p>
                 <p className="text-sm font-semibold" style={{ color: singleColor }}>
@@ -61,6 +69,12 @@ export function UserModelChart({ user }: Props) {
                 <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Requisições</p>
                 <p className="text-sm font-semibold" style={{ color: singleColor }}>
                   {(singleModel?.requestCount ?? 0).toLocaleString()}
+                </p>
+              </div>
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-center">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Custo</p>
+                <p className="text-sm font-semibold" style={{ color: singleColor }}>
+                  {fmtUsd(singleModel?.totalCostUsd ?? 0)}
                 </p>
               </div>
             </div>
@@ -87,6 +101,7 @@ export function UserModelChart({ user }: Props) {
                         <p className="mb-1.5 font-medium">{label}</p>
                         <p style={{ color: payload[0].fill as string }}>Tokens: {fmt(payload[0].value as number)}</p>
                         <p className="text-muted-foreground">Requisições: {entry?.requestCount.toLocaleString()}</p>
+                        <p className="text-muted-foreground">Custo: {fmtUsd(entry?.costUsd ?? 0)}</p>
                       </div>
                     );
                   }}

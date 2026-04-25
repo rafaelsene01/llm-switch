@@ -24,13 +24,15 @@ export interface ModelStat {
   totalTokens: number;
   promptTokens: number;
   completionTokens: number;
+  totalCostUsd: number;
 }
 
 export interface UserStat {
   user: string;
   requestCount: number;
   totalTokens: number;
-  models: { model: string; requestCount: number; totalTokens: number }[];
+  totalCostUsd: number;
+  models: { model: string; requestCount: number; totalTokens: number; totalCostUsd: number }[];
 }
 
 export interface ActivityLogRow {
@@ -302,18 +304,20 @@ export function createActivityLogService(
              COUNT(*)                   AS requestCount,
              SUM(total_tokens)          AS totalTokens,
              SUM(prompt_tokens)         AS promptTokens,
-             SUM(completion_tokens)     AS completionTokens
+             SUM(completion_tokens)     AS completionTokens,
+             SUM(cost_usd)              AS totalCostUsd
       FROM activity_logs
       GROUP BY provider_model
       ORDER BY totalTokens DESC
     `).all() as ModelStat[];
 
-    type UserModelRow = { user: string; model: string; requestCount: number; totalTokens: number };
+    type UserModelRow = { user: string; model: string; requestCount: number; totalTokens: number; totalCostUsd: number };
     const userModelRows = db.prepare(`
       SELECT user_name      AS user,
              provider_model AS model,
              COUNT(*)       AS requestCount,
-             SUM(total_tokens) AS totalTokens
+             SUM(total_tokens) AS totalTokens,
+             SUM(cost_usd)     AS totalCostUsd
       FROM activity_logs
       GROUP BY user_name, provider_model
       ORDER BY user_name, totalTokens DESC
@@ -322,12 +326,13 @@ export function createActivityLogService(
     const userMap = new Map<string, UserStat>();
     for (const row of userModelRows) {
       if (!userMap.has(row.user)) {
-        userMap.set(row.user, { user: row.user, requestCount: 0, totalTokens: 0, models: [] });
+        userMap.set(row.user, { user: row.user, requestCount: 0, totalTokens: 0, totalCostUsd: 0, models: [] });
       }
       const stat = userMap.get(row.user)!;
       stat.requestCount += row.requestCount;
       stat.totalTokens += row.totalTokens;
-      stat.models.push({ model: row.model, requestCount: row.requestCount, totalTokens: row.totalTokens });
+      stat.totalCostUsd += row.totalCostUsd;
+      stat.models.push({ model: row.model, requestCount: row.requestCount, totalTokens: row.totalTokens, totalCostUsd: row.totalCostUsd });
     }
 
     const byUser = [...userMap.values()].sort((a, b) => b.totalTokens - a.totalTokens);

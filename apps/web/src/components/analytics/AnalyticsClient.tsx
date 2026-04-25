@@ -1,6 +1,6 @@
 'use client';
 
-import { Activity, BarChart2, Cpu, Users } from 'lucide-react';
+import { Activity, BarChart2, Cpu, DollarSign, Users } from 'lucide-react';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { GlobalModelsChart } from './GlobalModelsChart';
 import { UserModelChart } from './UserModelChart';
@@ -12,6 +12,12 @@ function fmt(value: number): string {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
   if (value >= 1_000) return `${(value / 1_000).toFixed(1)}k`;
   return String(value);
+}
+
+function fmtUsd(value: number): string {
+  if (value === 0) return '$0.00';
+  if (value < 0.01) return `$${value.toFixed(4)}`;
+  return `$${value.toFixed(2)}`;
 }
 
 function KpiCard({
@@ -57,6 +63,7 @@ export function AnalyticsClient() {
 
   const totalTokens = data?.byModel.reduce((s, m) => s + m.totalTokens, 0) ?? 0;
   const totalRequests = data?.byModel.reduce((s, m) => s + m.requestCount, 0) ?? 0;
+  const totalCostUsd = data?.byModel.reduce((s, m) => s + m.totalCostUsd, 0) ?? 0;
   const activeUsers = data?.byUser.length ?? 0;
   const topModel = data?.byModel[0]?.model
     ? data.byModel[0].model.includes(':')
@@ -73,8 +80,8 @@ export function AnalyticsClient() {
 
       {isLoading ? (
         <div className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {Array.from({ length: 5 }).map((_, i) => (
               <Card key={i} className="shadow-card border-border/50">
                 <CardContent className="flex items-start gap-3 pt-4 pb-4">
                   <Skeleton className="h-9 w-9 rounded-md" />
@@ -99,7 +106,7 @@ export function AnalyticsClient() {
       ) : (
         <div className="space-y-6">
           {/* KPI Row */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <KpiCard
               icon={Activity}
               label="Total de requisições"
@@ -109,6 +116,11 @@ export function AnalyticsClient() {
               icon={BarChart2}
               label="Total de tokens"
               value={fmt(totalTokens)}
+            />
+            <KpiCard
+              icon={DollarSign}
+              label="Custo total"
+              value={fmtUsd(totalCostUsd)}
             />
             <KpiCard
               icon={Users}
