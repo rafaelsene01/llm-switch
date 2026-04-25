@@ -29,7 +29,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { cn } from '@/lib/utils';
+import { cn, formatCost } from '@/lib/utils';
 
 const PAGE_SIZE = 50;
 
@@ -181,8 +181,8 @@ export function ActivityClient() {
                   <TableCell className="text-caption tabular-nums font-mono">
                     {row.blocked || row.cost_usd === 0 || row.input_cost_usd == null || row.output_cost_usd == null ? '—' : (
                       <span className="flex flex-col leading-tight">
-                        <span title="custo de entrada">${row.input_cost_usd.toFixed(4)} ↑</span>
-                        <span className="text-muted-foreground" title="custo de saída">${row.output_cost_usd.toFixed(4)} ↓</span>
+                        <span title="custo de entrada">{formatCost(row.input_cost_usd)} ↑</span>
+                        <span className="text-muted-foreground" title="custo de saída">{formatCost(row.output_cost_usd)} ↓</span>
                       </span>
                     )}
                   </TableCell>

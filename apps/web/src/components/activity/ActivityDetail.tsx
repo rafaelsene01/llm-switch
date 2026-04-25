@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { MessageList, tryParseMessages } from './MessageList';
-import { cn } from '@/lib/utils';
+import { cn, formatCost } from '@/lib/utils';
 
 interface Props {
   detail: ActivityLogDetail;
@@ -140,12 +140,12 @@ export function ActivityDetail({ detail }: Props) {
             </MetaField>
             <MetaField label="Custo entrada (input)">
               <span className="tabular-nums font-medium font-mono">
-                {row.blocked || row.input_cost_usd === 0 ? '—' : `$${row.input_cost_usd.toFixed(6)}`}
+                {row.blocked || row.input_cost_usd === 0 ? '—' : formatCost(row.input_cost_usd)}
               </span>
             </MetaField>
             <MetaField label="Custo saída (output)">
               <span className="tabular-nums font-medium font-mono">
-                {row.blocked || row.output_cost_usd === 0 ? '—' : `$${row.output_cost_usd.toFixed(6)}`}
+                {row.blocked || row.output_cost_usd === 0 ? '—' : formatCost(row.output_cost_usd)}
               </span>
             </MetaField>
             <MetaField label="Data">
