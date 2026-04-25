@@ -57,11 +57,13 @@ function convertTools(openaiTools?: OpenAITool[]) {
   return Object.keys(tools).length > 0 ? tools : undefined;
 }
 
-function computeCostUsd(providerModel: string, promptTokens: number, completionTokens: number): number {
+function computeCosts(providerModel: string, promptTokens: number, completionTokens: number): { inputCostUsd: number; outputCostUsd: number } {
   const model = store.getModels().find((m) => m.value === providerModel);
-  if (!model?.inputCostPer1M && !model?.outputCostPer1M) return 0;
-  return (promptTokens / 1_000_000) * (model.inputCostPer1M ?? 0)
-       + (completionTokens / 1_000_000) * (model.outputCostPer1M ?? 0);
+  if (!model?.inputCostPer1M && !model?.outputCostPer1M) return { inputCostUsd: 0, outputCostUsd: 0 };
+  return {
+    inputCostUsd: (promptTokens / 1_000_000) * (model.inputCostPer1M ?? 0),
+    outputCostUsd: (completionTokens / 1_000_000) * (model.outputCostPer1M ?? 0),
+  };
 }
 
 function convertToolChoice(
@@ -201,6 +203,8 @@ export class ChatService {
           completionTokens: 0,
           totalTokens: 0,
           costUsd: 0,
+          inputCostUsd: 0,
+          outputCostUsd: 0,
         });
         return {
           requestId,
@@ -241,6 +245,8 @@ export class ChatService {
         completionTokens: 0,
         totalTokens: 0,
         costUsd: 0,
+        inputCostUsd: 0,
+        outputCostUsd: 0,
       });
       return {
         requestId,
@@ -283,6 +289,10 @@ export class ChatService {
       durationMs,
     });
 
+    const promptTokens = result.usage?.promptTokens ?? 0;
+    const completionTokens = result.usage?.completionTokens ?? 0;
+    const { inputCostUsd, outputCostUsd } = computeCosts(providerModel, promptTokens, completionTokens);
+
     activityLog.log({
       requestId,
       userName: opts.user?.name ?? clientLabel,
@@ -292,14 +302,12 @@ export class ChatService {
       llmResponse: extractTextFromResult(result.text),
       providerModel,
       blocked: false,
-      promptTokens: result.usage?.promptTokens ?? 0,
-      completionTokens: result.usage?.completionTokens ?? 0,
+      promptTokens,
+      completionTokens,
       totalTokens: result.usage?.totalTokens ?? 0,
-      costUsd: computeCostUsd(
-        providerModel,
-        result.usage?.promptTokens ?? 0,
-        result.usage?.completionTokens ?? 0,
-      ),
+      costUsd: inputCostUsd + outputCostUsd,
+      inputCostUsd,
+      outputCostUsd,
     });
 
     return {

@@ -49,6 +49,8 @@ export function GlobalModelsChart({ data }: Props) {
     Tokens: d.totalTokens,
     requestCount: d.requestCount,
     costUsd: d.totalCostUsd,
+    inputCostUsd: d.inputCostUsd,
+    outputCostUsd: d.outputCostUsd,
     color: modelColor(i),
   }));
 
@@ -85,7 +87,9 @@ export function GlobalModelsChart({ data }: Props) {
                     <p className="mb-1.5 font-medium">{label}</p>
                     <p style={{ color: payload[0].fill as string }}>Tokens: {fmt(payload[0].value as number)}</p>
                     <p className="text-muted-foreground">Requisições: {entry?.requestCount.toLocaleString()}</p>
-                    <p className="text-muted-foreground">Custo: {fmtUsd(entry?.costUsd ?? 0)}</p>
+                    <p className="text-muted-foreground">Custo entrada: {fmtUsd(entry?.inputCostUsd ?? 0)}</p>
+                    <p className="text-muted-foreground">Custo saída: {fmtUsd(entry?.outputCostUsd ?? 0)}</p>
+                    <p className="text-muted-foreground">Custo total: {fmtUsd(entry?.costUsd ?? 0)}</p>
                   </div>
                 );
               }}

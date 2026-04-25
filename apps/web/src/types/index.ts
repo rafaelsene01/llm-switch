@@ -92,6 +92,8 @@ export interface ActivityLogRow {
   completion_tokens: number;
   total_tokens: number;
   cost_usd: number;
+  input_cost_usd: number;
+  output_cost_usd: number;
 }
 
 export interface ActivityLogPage {
@@ -113,6 +115,8 @@ export interface AnalyticsModelStat {
   promptTokens: number;
   completionTokens: number;
   totalCostUsd: number;
+  inputCostUsd: number;
+  outputCostUsd: number;
 }
 
 export interface AnalyticsUserStat {

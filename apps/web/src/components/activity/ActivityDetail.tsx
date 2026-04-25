@@ -123,14 +123,29 @@ export function ActivityDetail({ detail }: Props) {
             <MetaField label="Modelo">
               <code className="text-xs font-mono">{row.provider_model}</code>
             </MetaField>
-            <MetaField label="Tokens">
+            <MetaField label="Tokens enviados (input)">
+              <span className="tabular-nums font-medium">
+                {row.blocked ? '—' : row.prompt_tokens.toLocaleString('pt-BR')}
+              </span>
+            </MetaField>
+            <MetaField label="Tokens recebidos (output)">
+              <span className="tabular-nums font-medium">
+                {row.blocked ? '—' : row.completion_tokens.toLocaleString('pt-BR')}
+              </span>
+            </MetaField>
+            <MetaField label="Total de tokens">
               <span className="tabular-nums font-medium">
                 {row.blocked ? '—' : row.total_tokens.toLocaleString('pt-BR')}
               </span>
             </MetaField>
-            <MetaField label="Custo">
+            <MetaField label="Custo entrada (input)">
               <span className="tabular-nums font-medium font-mono">
-                {row.blocked || row.cost_usd === 0 ? '—' : `$${row.cost_usd.toFixed(6)}`}
+                {row.blocked || row.input_cost_usd === 0 ? '—' : `$${row.input_cost_usd.toFixed(6)}`}
+              </span>
+            </MetaField>
+            <MetaField label="Custo saída (output)">
+              <span className="tabular-nums font-medium font-mono">
+                {row.blocked || row.output_cost_usd === 0 ? '—' : `$${row.output_cost_usd.toFixed(6)}`}
               </span>
             </MetaField>
             <MetaField label="Data">

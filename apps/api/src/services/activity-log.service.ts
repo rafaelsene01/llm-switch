@@ -16,6 +16,8 @@ export interface ActivityLogEntry {
   completionTokens: number;
   totalTokens: number;
   costUsd: number;
+  inputCostUsd: number;
+  outputCostUsd: number;
 }
 
 export interface ModelStat {
@@ -25,6 +27,8 @@ export interface ModelStat {
   promptTokens: number;
   completionTokens: number;
   totalCostUsd: number;
+  inputCostUsd: number;
+  outputCostUsd: number;
 }
 
 export interface UserStat {
@@ -49,6 +53,8 @@ export interface ActivityLogRow {
   completion_tokens: number;
   total_tokens: number;
   cost_usd: number;
+  input_cost_usd: number;
+  output_cost_usd: number;
 }
 
 function initDb(dbPath: string): Database.Database {
@@ -68,7 +74,9 @@ function initDb(dbPath: string): Database.Database {
       prompt_tokens     INTEGER NOT NULL DEFAULT 0,
       completion_tokens INTEGER NOT NULL DEFAULT 0,
       total_tokens      INTEGER NOT NULL DEFAULT 0,
-      cost_usd          REAL    NOT NULL DEFAULT 0
+      cost_usd          REAL    NOT NULL DEFAULT 0,
+      input_cost_usd    REAL    NOT NULL DEFAULT 0,
+      output_cost_usd   REAL    NOT NULL DEFAULT 0
     );
     CREATE INDEX IF NOT EXISTS idx_activity_created_at ON activity_logs(created_at);
   `);
@@ -78,6 +86,8 @@ function initDb(dbPath: string): Database.Database {
     ['completion_tokens', 'INTEGER NOT NULL DEFAULT 0'],
     ['total_tokens', 'INTEGER NOT NULL DEFAULT 0'],
     ['cost_usd', 'REAL NOT NULL DEFAULT 0'],
+    ['input_cost_usd', 'REAL NOT NULL DEFAULT 0'],
+    ['output_cost_usd', 'REAL NOT NULL DEFAULT 0'],
   ]) {
     try {
       db.exec(`ALTER TABLE activity_logs ADD COLUMN ${col} ${type}`);
@@ -108,8 +118,8 @@ function buildMarkdown(entry: ActivityLogEntry, now: string): string {
 **Model**: ${entry.providerModel}
 **Date**: ${now}
 **Status**: ${status}
-**Tokens**: ${entry.promptTokens} prompt / ${entry.completionTokens} completion / ${entry.totalTokens} total
-**Cost**: $${entry.costUsd.toFixed(6)}
+**Tokens**: ${entry.promptTokens} input / ${entry.completionTokens} output / ${entry.totalTokens} total
+**Cost**: input $${entry.inputCostUsd.toFixed(6)} / output $${entry.outputCostUsd.toFixed(6)} / total $${entry.costUsd.toFixed(6)}
 
 ## Original Request
 
@@ -157,8 +167,8 @@ export function createActivityLogService(
       getDb().prepare(
         `INSERT INTO activity_logs
          (request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
-          prompt_tokens, completion_tokens, total_tokens, cost_usd)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          prompt_tokens, completion_tokens, total_tokens, cost_usd, input_cost_usd, output_cost_usd)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         entry.requestId,
         entry.userName,
@@ -171,7 +181,9 @@ export function createActivityLogService(
         entry.promptTokens,
         entry.completionTokens,
         entry.totalTokens,
-        entry.costUsd
+        entry.costUsd,
+        entry.inputCostUsd,
+        entry.outputCostUsd
       );
     } catch (err) {
       logger.error('[activity-log] failed to log entry', { error: (err as Error).message });
@@ -182,7 +194,7 @@ export function createActivityLogService(
     const row = getDb()
       .prepare(
         `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
-                prompt_tokens, completion_tokens, total_tokens, cost_usd
+                prompt_tokens, completion_tokens, total_tokens, cost_usd, input_cost_usd, output_cost_usd
          FROM activity_logs WHERE id = ?`
       )
       .get(id) as ActivityLogRow | undefined;
@@ -202,7 +214,7 @@ export function createActivityLogService(
       const rows = db
         .prepare(
           `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
-                  prompt_tokens, completion_tokens, total_tokens, cost_usd
+                  prompt_tokens, completion_tokens, total_tokens, cost_usd, input_cost_usd, output_cost_usd
            FROM activity_logs
            WHERE user_name LIKE ?
            ORDER BY created_at DESC
@@ -305,7 +317,9 @@ export function createActivityLogService(
              SUM(total_tokens)          AS totalTokens,
              SUM(prompt_tokens)         AS promptTokens,
              SUM(completion_tokens)     AS completionTokens,
-             SUM(cost_usd)              AS totalCostUsd
+             SUM(cost_usd)              AS totalCostUsd,
+             SUM(input_cost_usd)        AS inputCostUsd,
+             SUM(output_cost_usd)       AS outputCostUsd
       FROM activity_logs
       GROUP BY provider_model
       ORDER BY totalTokens DESC

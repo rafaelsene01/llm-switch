@@ -120,8 +120,8 @@ export function ActivityClient() {
               <TableHead className="text-section-title h-10">Token</TableHead>
               <TableHead className="text-section-title h-10 w-[35%]">Mensagem</TableHead>
               <TableHead className="text-section-title h-10">Modelo</TableHead>
-              <TableHead className="text-section-title h-10">Tokens</TableHead>
-              <TableHead className="text-section-title h-10">Custo</TableHead>
+              <TableHead className="text-section-title h-10">Tokens (in/out)</TableHead>
+              <TableHead className="text-section-title h-10">Custo (in/out)</TableHead>
               <TableHead className="text-section-title h-10">Status</TableHead>
               <TableHead className="text-section-title h-10">Data</TableHead>
               <TableHead className="h-10 w-10" />
@@ -171,12 +171,20 @@ export function ActivityClient() {
                     {row.provider_model}
                   </TableCell>
                   <TableCell className="text-caption tabular-nums">
-                    {row.blocked ? '—' : row.total_tokens.toLocaleString('pt-BR')}
+                    {row.blocked ? '—' : (
+                      <span className="flex flex-col leading-tight">
+                        <span title="tokens de entrada">{row.prompt_tokens.toLocaleString('pt-BR')} ↑</span>
+                        <span className="text-muted-foreground" title="tokens de saída">{row.completion_tokens.toLocaleString('pt-BR')} ↓</span>
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="text-caption tabular-nums font-mono">
-                    {row.blocked || row.cost_usd === 0
-                      ? '—'
-                      : `$${row.cost_usd.toFixed(4)}`}
+                    {row.blocked || row.cost_usd === 0 ? '—' : (
+                      <span className="flex flex-col leading-tight">
+                        <span title="custo de entrada">${row.input_cost_usd.toFixed(4)} ↑</span>
+                        <span className="text-muted-foreground" title="custo de saída">${row.output_cost_usd.toFixed(4)} ↓</span>
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell>
                     {row.blocked ? (
