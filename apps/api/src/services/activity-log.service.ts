@@ -233,7 +233,7 @@ export function createActivityLogService(
     const rows = db
       .prepare(
         `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
-                prompt_tokens, completion_tokens, total_tokens, cost_usd
+                prompt_tokens, completion_tokens, total_tokens, cost_usd, input_cost_usd, output_cost_usd
          FROM activity_logs
          ORDER BY created_at DESC
          LIMIT ? OFFSET ?`

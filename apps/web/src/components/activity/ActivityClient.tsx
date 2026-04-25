@@ -179,7 +179,7 @@ export function ActivityClient() {
                     )}
                   </TableCell>
                   <TableCell className="text-caption tabular-nums font-mono">
-                    {row.blocked || row.cost_usd === 0 ? '—' : (
+                    {row.blocked || row.cost_usd === 0 || row.input_cost_usd == null || row.output_cost_usd == null ? '—' : (
                       <span className="flex flex-col leading-tight">
                         <span title="custo de entrada">${row.input_cost_usd.toFixed(4)} ↑</span>
                         <span className="text-muted-foreground" title="custo de saída">${row.output_cost_usd.toFixed(4)} ↓</span>
