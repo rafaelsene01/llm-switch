@@ -7,17 +7,12 @@ import { UserModelChart } from './UserModelChart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { formatCost } from '@/lib/utils';
 
 function fmt(value: number): string {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
   if (value >= 1_000) return `${(value / 1_000).toFixed(1)}k`;
   return String(value);
-}
-
-function fmtUsd(value: number): string {
-  if (value === 0) return '$0.00';
-  if (value < 0.01) return `$${value.toFixed(4)}`;
-  return `$${value.toFixed(2)}`;
 }
 
 function KpiCard({
@@ -120,7 +115,7 @@ export function AnalyticsClient() {
             <KpiCard
               icon={DollarSign}
               label="Custo total"
-              value={fmtUsd(totalCostUsd)}
+              value={formatCost(totalCostUsd)}
             />
             <KpiCard
               icon={Users}

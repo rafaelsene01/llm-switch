@@ -4,6 +4,7 @@ import { BarChart, Bar, Rectangle, XAxis, YAxis, CartesianGrid, Tooltip, Respons
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { AnalyticsUserStat } from '@/types';
 import { modelColor } from './palette';
+import { formatCost } from '@/lib/utils';
 
 interface Props {
   user: AnalyticsUserStat;
@@ -21,9 +22,7 @@ function fmt(value: number): string {
 }
 
 function fmtUsd(value: number): string {
-  if (value === 0) return '$0.00';
-  if (value < 0.01) return `$${value.toFixed(4)}`;
-  return `$${value.toFixed(2)}`;
+  return value === 0 ? '$0' : `$${value}`;
 }
 
 export function UserModelChart({ user }: Props) {
@@ -47,7 +46,7 @@ export function UserModelChart({ user }: Props) {
           <div className="flex gap-3 text-xs text-muted-foreground shrink-0">
             <span>{fmt(user.totalTokens)} tokens</span>
             <span>{user.requestCount} req</span>
-            <span>{fmtUsd(user.totalCostUsd)}</span>
+            <span>{formatCost(user.totalCostUsd)}</span>
           </div>
         </div>
       </CardHeader>
@@ -74,7 +73,7 @@ export function UserModelChart({ user }: Props) {
               <div className="rounded-md border bg-muted/30 px-3 py-2 text-center">
                 <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">Custo</p>
                 <p className="text-sm font-semibold" style={{ color: singleColor }}>
-                  {fmtUsd(singleModel?.totalCostUsd ?? 0)}
+                  {formatCost(singleModel?.totalCostUsd ?? 0)}
                 </p>
               </div>
             </div>
