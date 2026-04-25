@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertCircle } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -51,14 +52,11 @@ export function UserFormFields({
     <>
       <div>
         <Label>Modelo padrão</Label>
-        <Select value={model || NO_MODEL} onValueChange={onModelChange}>
+        <Select value={model || undefined} onValueChange={onModelChange}>
           <SelectTrigger className="mt-1.5">
-            <SelectValue />
+            <SelectValue placeholder="Selecione um modelo" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={NO_MODEL}>
-              <span className="text-muted-foreground">Nenhum (padrão do servidor)</span>
-            </SelectItem>
             {activeModels.map((m) => (
               <SelectItem key={m.id} value={m.value}>
                 {m.label}
@@ -66,6 +64,12 @@ export function UserFormFields({
             ))}
           </SelectContent>
         </Select>
+        {model && !activeModels.some((m) => m.value === model) && (
+          <p className="mt-1.5 flex items-center gap-1 text-xs text-destructive">
+            <AlertCircle className="h-3 w-3" />
+            Modelo <span className="font-mono">{model}</span> não encontrado — selecione outro
+          </p>
+        )}
       </div>
 
       <div>

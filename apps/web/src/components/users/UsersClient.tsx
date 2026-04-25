@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, Users } from 'lucide-react';
+import { AlertCircle, Plus, Users } from 'lucide-react';
 import { useUsers } from '@/hooks/useUsers';
 import { useModels } from '@/hooks/useModels';
 import { apiClient } from '@/lib/api-client';
@@ -24,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { UserActionsMenu } from './UserActionsMenu';
 import { CreateUserDialog } from './CreateUserDialog';
 import { NO_MODEL } from './UserFormFields';
@@ -134,26 +134,33 @@ export function UsersClient() {
                       </code>
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={user.model ?? NO_MODEL}
-                        onValueChange={(v) =>
-                          handleInlineModelChange(user.id, user.allowedModels, v)
-                        }
-                      >
-                        <SelectTrigger className="h-7 w-52 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={NO_MODEL}>
-                            <span className="text-muted-foreground">padrão do servidor</span>
-                          </SelectItem>
-                          {activeModels.map((m) => (
-                            <SelectItem key={m.id} value={m.value}>
-                              {m.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center gap-1.5">
+                        <Select
+                          value={user.model && activeModels.some(m => m.value === user.model) ? user.model : undefined}
+                          onValueChange={(v) =>
+                            handleInlineModelChange(user.id, user.allowedModels, v)
+                          }
+                        >
+                          <SelectTrigger className={`h-7 w-52 text-xs${!user.model || !activeModels.some(m => m.value === user.model) ? ' border-destructive' : ''}`}>
+                            <SelectValue placeholder="Selecione um modelo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {activeModels.map((m) => (
+                              <SelectItem key={m.id} value={m.value}>
+                                {m.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {user.model && !activeModels.some(m => m.value === user.model) && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                            </TooltipTrigger>
+                            <TooltipContent>Modelo &quot;{user.model}&quot; não encontrado</TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Switch
