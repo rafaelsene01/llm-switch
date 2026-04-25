@@ -128,6 +128,11 @@ export function ActivityDetail({ detail }: Props) {
                 {row.blocked ? '—' : row.total_tokens.toLocaleString('pt-BR')}
               </span>
             </MetaField>
+            <MetaField label="Custo">
+              <span className="tabular-nums font-medium font-mono">
+                {row.blocked || row.cost_usd === 0 ? '—' : `$${row.cost_usd.toFixed(6)}`}
+              </span>
+            </MetaField>
             <MetaField label="Data">
               <span>{new Date(row.created_at).toLocaleString('pt-BR')}</span>
             </MetaField>

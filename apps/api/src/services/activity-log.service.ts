@@ -15,6 +15,7 @@ export interface ActivityLogEntry {
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
+  costUsd: number;
 }
 
 export interface ModelStat {
@@ -45,6 +46,7 @@ export interface ActivityLogRow {
   prompt_tokens: number;
   completion_tokens: number;
   total_tokens: number;
+  cost_usd: number;
 }
 
 function initDb(dbPath: string): Database.Database {
@@ -63,14 +65,20 @@ function initDb(dbPath: string): Database.Database {
       created_at      TEXT NOT NULL,
       prompt_tokens     INTEGER NOT NULL DEFAULT 0,
       completion_tokens INTEGER NOT NULL DEFAULT 0,
-      total_tokens      INTEGER NOT NULL DEFAULT 0
+      total_tokens      INTEGER NOT NULL DEFAULT 0,
+      cost_usd          REAL    NOT NULL DEFAULT 0
     );
     CREATE INDEX IF NOT EXISTS idx_activity_created_at ON activity_logs(created_at);
   `);
-  // Migrate existing databases that lack token columns
-  for (const col of ['prompt_tokens', 'completion_tokens', 'total_tokens']) {
+  // Migrate existing databases that lack columns
+  for (const [col, type] of [
+    ['prompt_tokens', 'INTEGER NOT NULL DEFAULT 0'],
+    ['completion_tokens', 'INTEGER NOT NULL DEFAULT 0'],
+    ['total_tokens', 'INTEGER NOT NULL DEFAULT 0'],
+    ['cost_usd', 'REAL NOT NULL DEFAULT 0'],
+  ]) {
     try {
-      db.exec(`ALTER TABLE activity_logs ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`);
+      db.exec(`ALTER TABLE activity_logs ADD COLUMN ${col} ${type}`);
     } catch {
       // Column already exists — safe to ignore
     }
@@ -99,6 +107,7 @@ function buildMarkdown(entry: ActivityLogEntry, now: string): string {
 **Date**: ${now}
 **Status**: ${status}
 **Tokens**: ${entry.promptTokens} prompt / ${entry.completionTokens} completion / ${entry.totalTokens} total
+**Cost**: $${entry.costUsd.toFixed(6)}
 
 ## Original Request
 
@@ -146,8 +155,8 @@ export function createActivityLogService(
       getDb().prepare(
         `INSERT INTO activity_logs
          (request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
-          prompt_tokens, completion_tokens, total_tokens)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          prompt_tokens, completion_tokens, total_tokens, cost_usd)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         entry.requestId,
         entry.userName,
@@ -159,7 +168,8 @@ export function createActivityLogService(
         now,
         entry.promptTokens,
         entry.completionTokens,
-        entry.totalTokens
+        entry.totalTokens,
+        entry.costUsd
       );
     } catch (err) {
       logger.error('[activity-log] failed to log entry', { error: (err as Error).message });
@@ -170,7 +180,7 @@ export function createActivityLogService(
     const row = getDb()
       .prepare(
         `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
-                prompt_tokens, completion_tokens, total_tokens
+                prompt_tokens, completion_tokens, total_tokens, cost_usd
          FROM activity_logs WHERE id = ?`
       )
       .get(id) as ActivityLogRow | undefined;
@@ -190,7 +200,7 @@ export function createActivityLogService(
       const rows = db
         .prepare(
           `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
-                  prompt_tokens, completion_tokens, total_tokens
+                  prompt_tokens, completion_tokens, total_tokens, cost_usd
            FROM activity_logs
            WHERE user_name LIKE ?
            ORDER BY created_at DESC
@@ -209,7 +219,7 @@ export function createActivityLogService(
     const rows = db
       .prepare(
         `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
-                prompt_tokens, completion_tokens, total_tokens
+                prompt_tokens, completion_tokens, total_tokens, cost_usd
          FROM activity_logs
          ORDER BY created_at DESC
          LIMIT ? OFFSET ?`

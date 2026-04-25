@@ -91,6 +91,7 @@ export interface ActivityLogRow {
   prompt_tokens: number;
   completion_tokens: number;
   total_tokens: number;
+  cost_usd: number;
 }
 
 export interface ActivityLogPage {

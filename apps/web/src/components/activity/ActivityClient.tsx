@@ -121,6 +121,7 @@ export function ActivityClient() {
               <TableHead className="text-section-title h-10 w-[35%]">Mensagem</TableHead>
               <TableHead className="text-section-title h-10">Modelo</TableHead>
               <TableHead className="text-section-title h-10">Tokens</TableHead>
+              <TableHead className="text-section-title h-10">Custo</TableHead>
               <TableHead className="text-section-title h-10">Status</TableHead>
               <TableHead className="text-section-title h-10">Data</TableHead>
               <TableHead className="h-10 w-10" />
@@ -130,7 +131,7 @@ export function ActivityClient() {
             {isLoading ? (
               Array.from({ length: 8 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 9 }).map((__, j) => (
+                  {Array.from({ length: 10 }).map((__, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-3.5 w-full" />
                     </TableCell>
@@ -139,7 +140,7 @@ export function ActivityClient() {
               ))
             ) : !data?.rows.length ? (
               <TableRow>
-                <TableCell colSpan={9}>
+                <TableCell colSpan={10}>
                   <div className="flex flex-col items-center justify-center py-16 text-center">
                     <Activity className="mb-3 h-10 w-10 text-muted-foreground/30" />
                     <p className="font-medium text-sm">Nenhuma atividade registrada</p>
@@ -171,6 +172,11 @@ export function ActivityClient() {
                   </TableCell>
                   <TableCell className="text-caption tabular-nums">
                     {row.blocked ? '—' : row.total_tokens.toLocaleString('pt-BR')}
+                  </TableCell>
+                  <TableCell className="text-caption tabular-nums font-mono">
+                    {row.blocked || row.cost_usd === 0
+                      ? '—'
+                      : `$${row.cost_usd.toFixed(4)}`}
                   </TableCell>
                   <TableCell>
                     {row.blocked ? (

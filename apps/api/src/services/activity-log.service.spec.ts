@@ -25,6 +25,7 @@ const baseEntry = {
   promptTokens: 10,
   completionTokens: 5,
   totalTokens: 15,
+  costUsd: 0,
 };
 
 describe('ActivityLogService', () => {

@@ -4,6 +4,7 @@ import { resolveModel } from '../providers';
 import { sanitizer } from './sanitizer.service';
 import { logRequest } from '../utils/logger';
 import { activityLog } from './activity-log.service';
+import { store } from './store.service';
 import type { OpenAIMessage, OpenAITool, BlocklistFinding, SanitizeFinding, SanitizationRoles } from '../types';
 import { DEFAULT_SANITIZATION_ROLES } from '../types';
 
@@ -54,6 +55,13 @@ function convertTools(openaiTools?: OpenAITool[]) {
     }
   }
   return Object.keys(tools).length > 0 ? tools : undefined;
+}
+
+function computeCostUsd(providerModel: string, promptTokens: number, completionTokens: number): number {
+  const model = store.getModels().find((m) => m.value === providerModel);
+  if (!model?.inputCostPer1M && !model?.outputCostPer1M) return 0;
+  return (promptTokens / 1_000_000) * (model.inputCostPer1M ?? 0)
+       + (completionTokens / 1_000_000) * (model.outputCostPer1M ?? 0);
 }
 
 function convertToolChoice(
@@ -192,6 +200,7 @@ export class ChatService {
           promptTokens: 0,
           completionTokens: 0,
           totalTokens: 0,
+          costUsd: 0,
         });
         return {
           requestId,
@@ -231,6 +240,7 @@ export class ChatService {
         promptTokens: 0,
         completionTokens: 0,
         totalTokens: 0,
+        costUsd: 0,
       });
       return {
         requestId,
@@ -285,6 +295,11 @@ export class ChatService {
       promptTokens: result.usage?.promptTokens ?? 0,
       completionTokens: result.usage?.completionTokens ?? 0,
       totalTokens: result.usage?.totalTokens ?? 0,
+      costUsd: computeCostUsd(
+        providerModel,
+        result.usage?.promptTokens ?? 0,
+        result.usage?.completionTokens ?? 0,
+      ),
     });
 
     return {
