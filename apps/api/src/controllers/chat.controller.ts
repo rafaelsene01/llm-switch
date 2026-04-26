@@ -22,7 +22,6 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
 
   // Resolve provider/model
   const providerModel =
-    (req.headers['x-provider'] as string | undefined) ||
     (req.body as { model?: string }).model ||
     req.userModel;
 
@@ -121,13 +120,13 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
   const hasToolCalls = (result.toolCalls?.length ?? 0) > 0;
   const openaiToolCalls: OpenAIToolCall[] | undefined = hasToolCalls
     ? result.toolCalls!.map((tc) => ({
-        id: tc.toolCallId,
-        type: 'function' as const,
-        function: {
-          name: tc.toolName,
-          arguments: JSON.stringify(tc.args),
-        },
-      }))
+      id: tc.toolCallId,
+      type: 'function' as const,
+      function: {
+        name: tc.toolName,
+        arguments: JSON.stringify(tc.args),
+      },
+    }))
     : undefined;
 
   const finishReason =

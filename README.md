@@ -69,14 +69,7 @@ const response = await client.chat.completions.create({
 
 ### Escolhendo o provider
 
-Via header (recomendado):
-```
-X-Provider: anthropic:claude-3-5-sonnet-20241022
-X-Provider: google:gemini-2.0-flash
-X-Provider: ollama:llama3.2
-```
-
-Ou via `model` no body:
+Via `model` no body:
 ```json
 { "model": "anthropic:claude-3-5-haiku-20241022" }
 ```

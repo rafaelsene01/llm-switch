@@ -44,7 +44,7 @@ Client → POST /v1/chat/completions
   → chat controller   (sanitize → resolve provider → call AI SDK → log → respond)
 ```
 
-Provider selection priority: `X-Provider` header → `body.model` → `req.userModel` → `DEFAULT_PROVIDER` env → `"openai:gpt-4o-mini"`. Provider format is always `"provider:model"` (e.g., `"anthropic:claude-3-5-sonnet-20241022"`).
+Provider selection priority: `body.model` → `req.userModel` → `DEFAULT_PROVIDER` env → `"openai:gpt-4o-mini"`. Provider format is always `"provider:model"` (e.g., `"anthropic:claude-3-5-sonnet-20241022"`).
 
 ### Key Modules (apps/api)
 
