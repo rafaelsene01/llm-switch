@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { randomBytes } from 'crypto';
 import { readFileSync, existsSync } from 'fs';
+import path from 'path';
 import type { Request, Response } from 'express';
 import { store } from '../services/store.service';
 import { env } from '../config/env';
@@ -503,6 +504,48 @@ export function createAdminRouter(): Router {
       const ok = activityLog.deleteById(id);
       if (!ok) { res.status(404).json({ error: 'Not found' }); return; }
       res.json({ success: true });
+    })
+  );
+
+  // Audit log (logs/audit.log)
+  router.get(
+    '/audit-log',
+    wrap(async (req, res) => {
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(200, Math.max(1, parseInt(req.query.limit as string) || 50));
+      const clientFilter = (req.query.client as string | undefined) || undefined;
+      const levelFilter = (req.query.level as string | undefined) || undefined;
+
+      const logPath = path.resolve('logs/audit.log');
+      if (!existsSync(logPath)) {
+        res.json({ entries: [], total: 0, page, limit });
+        return;
+      }
+
+      const raw = readFileSync(logPath, 'utf8');
+      const lines = raw.split('\n').filter(Boolean);
+
+      const entries: Record<string, unknown>[] = [];
+      for (const line of lines) {
+        try {
+          const obj = JSON.parse(line) as Record<string, unknown>;
+          if (!obj.requestId) continue; // só entradas de request
+          if (clientFilter && obj.client !== clientFilter) continue;
+          if (levelFilter && obj.level !== levelFilter) continue;
+          entries.push(obj);
+        } catch {
+          // linha inválida — ignorar
+        }
+      }
+
+      // mais recente primeiro
+      entries.reverse();
+
+      const total = entries.length;
+      const start = (page - 1) * limit;
+      const paged = entries.slice(start, start + limit);
+
+      res.json({ entries: paged, total, page, limit });
     })
   );
 

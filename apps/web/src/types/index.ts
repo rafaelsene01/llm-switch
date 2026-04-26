@@ -131,3 +131,25 @@ export interface AnalyticsData {
   byModel: AnalyticsModelStat[];
   byUser: AnalyticsUserStat[];
 }
+
+export interface AuditLogEntry {
+  requestId: string;
+  client: string;
+  provider: string;
+  messagesCount: number;
+  sensitiveDataRemoved: boolean;
+  responseTokens?: number;
+  durationMs: number;
+  level: 'info' | 'warn' | 'error';
+  message: 'request_ok' | 'request_sanitized' | 'request_blocked' | 'request_failed';
+  timestamp: string;
+  sanitizationReport?: { messageIndex: number; role: string; findings: { count: number; label: string }[] }[];
+  error?: string;
+}
+
+export interface AuditLogPage {
+  entries: AuditLogEntry[];
+  total: number;
+  page: number;
+  limit: number;
+}
