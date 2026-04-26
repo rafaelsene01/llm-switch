@@ -48,6 +48,9 @@
       "esbuild",
       "nx",
       "sharp"
-    ]
+    ],
+    "overrides": {
+      "next": "15.2.4"
+    }
   }
 }
