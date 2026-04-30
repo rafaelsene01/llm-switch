@@ -144,7 +144,11 @@ function createStore(dataFile?: string) {
   // ── Models ─────────────────────────────────────────────────────────────────
 
   function getModels(): GatewayModel[] {
-    return load().models;
+    const data = load();
+    const configuredIds = new Set(
+      data.providers.filter((p) => p.configured).map((p) => p.id)
+    );
+    return data.models.filter((m) => configuredIds.has(m.value.split(':')[0]));
   }
 
   function addModel(model: Pick<GatewayModel, 'value' | 'label'>): GatewayModel {

@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { chatService } from '../services/chat.service';
 import { env } from '../config/env';
+import logger from '../utils/logger';
 import type { OpenAIMessage, OpenAITool, OpenAIToolCall } from '../types';
 
 export async function chatCompletions(req: Request, res: Response): Promise<void> {
@@ -75,9 +76,11 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
       maxTokens: max_tokens,
     });
   } catch (err) {
+    const message = (err as Error).message;
+    logger.error('provider_error', { provider: providerModel, client: req.clientLabel, error: message });
     res.status(502).json({
       error: {
-        message: `Erro ao chamar o provider "${providerModel}": ${(err as Error).message}`,
+        message: `Erro ao chamar o provider "${providerModel}": ${message}`,
         type: 'provider_error',
       },
     });
