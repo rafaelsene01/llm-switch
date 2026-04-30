@@ -33,12 +33,12 @@ import { cn, formatCost } from '@/lib/utils';
 
 const PAGE_SIZE = 50;
 
-function StatusDot({ blocked }: { blocked: boolean }) {
+function StatusDot({ blocked, error }: { blocked: boolean; error: boolean }) {
   return (
     <span
       className={cn(
         'inline-flex h-2 w-2 rounded-full shrink-0',
-        blocked ? 'bg-destructive' : 'bg-emerald-500'
+        blocked ? 'bg-destructive' : error ? 'bg-orange-500' : 'bg-emerald-500'
       )}
     />
   );
@@ -156,7 +156,7 @@ export function ActivityClient() {
                   onClick={() => router.push(`/activity/${row.id}`)}
                 >
                   <TableCell className="pr-0">
-                    <StatusDot blocked={row.blocked} />
+                    <StatusDot blocked={row.blocked} error={Boolean(row.error_message)} />
                   </TableCell>
                   <TableCell className="font-medium">{row.user_name}</TableCell>
                   <TableCell>
@@ -189,6 +189,8 @@ export function ActivityClient() {
                   <TableCell>
                     {row.blocked ? (
                       <Badge variant="destructive" className="text-xs px-1.5 py-0">bloqueado</Badge>
+                    ) : row.error_message ? (
+                      <Badge variant="outline" className="border-orange-500/40 bg-orange-500/10 text-orange-600 dark:text-orange-400 text-xs px-1.5 py-0">erro</Badge>
                     ) : (
                       <Badge variant="default" className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 text-xs px-1.5 py-0">ok</Badge>
                     )}

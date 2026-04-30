@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
-import { ArrowLeft, AlertTriangle, ChevronDown, Shield } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, ChevronDown, Shield, AlertCircle } from 'lucide-react';
 import type { ActivityLogDetail } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -101,6 +101,11 @@ export function ActivityDetail({ detail }: Props) {
               <Shield className="h-3 w-3" />
               Bloqueado
             </Badge>
+          ) : row.error_message ? (
+            <Badge variant="outline" className="border-orange-500/40 bg-orange-500/10 text-orange-600 dark:text-orange-400 gap-1.5">
+              <AlertCircle className="h-3 w-3" />
+              Erro de Provider
+            </Badge>
           ) : (
             <Badge variant="default" className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -155,12 +160,25 @@ export function ActivityDetail({ detail }: Props) {
         </CardContent>
       </Card>
 
+      {/* Provider error banner */}
+      {row.error_message && (
+        <div className="flex items-start gap-2 rounded-lg border border-orange-300 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800 p-4 text-sm text-orange-800 dark:text-orange-300">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold mb-0.5">Erro de provider</p>
+            <p className="font-mono text-xs break-all">{row.error_message}</p>
+          </div>
+        </div>
+      )}
+
       {/* Log sections */}
       {!markdown ? (
+        !row.error_message && (
         <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-300">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           Arquivo de log não encontrado no servidor.
         </div>
+        )
       ) : (
         <div className="space-y-3">
           {sections.map((section) => {

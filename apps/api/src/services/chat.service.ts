@@ -265,15 +265,49 @@ export class ChatService {
     const sdkToolChoice = convertToolChoice(toolChoice);
     const coreMessages = convertMessagesToCore(sanitizedMessages as OpenAIMessage[]);
 
-    const result = await generateText({
-      model,
-      messages: coreMessages,
-      system: sanitizedSystem,
-      temperature,
-      maxTokens,
-      ...(sdkTools ? { tools: sdkTools } : {}),
-      ...(sdkToolChoice ? { toolChoice: sdkToolChoice } : {}),
-    });
+    let result;
+    try {
+      result = await generateText({
+        model,
+        messages: coreMessages,
+        system: sanitizedSystem,
+        temperature,
+        maxTokens,
+        ...(sdkTools ? { tools: sdkTools } : {}),
+        ...(sdkToolChoice ? { toolChoice: sdkToolChoice } : {}),
+      });
+    } catch (err) {
+      const durationMs = Date.now() - startTime;
+      const errorMessage = (err as Error).message;
+      logRequest({
+        requestId,
+        clientLabel,
+        providerModel,
+        originalMessages: messages,
+        sanitizedMessages,
+        sanitizationReport: report.flatMap((r) => r.findings),
+        durationMs,
+        error: err as Error,
+      });
+      activityLog.log({
+        requestId,
+        userName: opts.user?.name ?? clientLabel,
+        tokenPreview,
+        originalMessages: messages as Array<{ role: string; content: unknown }>,
+        sanitizedMessages: filterSanitizedForLog(sanitizedMessages as Array<{ role: string; content: unknown }>),
+        llmResponse: null,
+        providerModel,
+        blocked: false,
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+        costUsd: 0,
+        inputCostUsd: 0,
+        outputCostUsd: 0,
+        errorMessage,
+      });
+      throw err;
+    }
 
     const durationMs = Date.now() - startTime;
     const flatReport = report.flatMap((r) => r.findings);

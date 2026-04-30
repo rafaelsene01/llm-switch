@@ -155,10 +155,10 @@ export const apiClient = {
   },
 
   auditLog: {
-    list: (page = 1, limit = 50, client?: string, level?: string) => {
+    list: (page = 1, limit = 50, client?: string, status?: string) => {
       const qs = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (client) qs.set('client', client);
-      if (level) qs.set('level', level);
+      if (status) qs.set('status', status);
       return apiFetch<AuditLogPage>(`/admin/audit-log?${qs.toString()}`);
     },
   },

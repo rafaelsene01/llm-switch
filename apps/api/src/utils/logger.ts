@@ -24,10 +24,6 @@ const logger = createLogger({
       filename: path.resolve('logs/audit.log'),
       level: 'info',
     }),
-    new transports.File({
-      filename: path.resolve('logs/errors.log'),
-      level: 'error',
-    }),
   ],
 });
 

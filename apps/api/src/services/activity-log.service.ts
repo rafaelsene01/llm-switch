@@ -18,6 +18,7 @@ export interface ActivityLogEntry {
   costUsd: number;
   inputCostUsd: number;
   outputCostUsd: number;
+  errorMessage?: string;
 }
 
 export interface ModelStat {
@@ -55,6 +56,7 @@ export interface ActivityLogRow {
   cost_usd: number;
   input_cost_usd: number;
   output_cost_usd: number;
+  error_message: string | null;
 }
 
 function initDb(dbPath: string): Database.Database {
@@ -76,7 +78,8 @@ function initDb(dbPath: string): Database.Database {
       total_tokens      INTEGER NOT NULL DEFAULT 0,
       cost_usd          REAL    NOT NULL DEFAULT 0,
       input_cost_usd    REAL    NOT NULL DEFAULT 0,
-      output_cost_usd   REAL    NOT NULL DEFAULT 0
+      output_cost_usd   REAL    NOT NULL DEFAULT 0,
+      error_message     TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_activity_created_at ON activity_logs(created_at);
   `);
@@ -88,6 +91,7 @@ function initDb(dbPath: string): Database.Database {
     ['cost_usd', 'REAL NOT NULL DEFAULT 0'],
     ['input_cost_usd', 'REAL NOT NULL DEFAULT 0'],
     ['output_cost_usd', 'REAL NOT NULL DEFAULT 0'],
+    ['error_message', 'TEXT'],
   ]) {
     try {
       db.exec(`ALTER TABLE activity_logs ADD COLUMN ${col} ${type}`);
@@ -167,8 +171,8 @@ export function createActivityLogService(
       getDb().prepare(
         `INSERT INTO activity_logs
          (request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
-          prompt_tokens, completion_tokens, total_tokens, cost_usd, input_cost_usd, output_cost_usd)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          prompt_tokens, completion_tokens, total_tokens, cost_usd, input_cost_usd, output_cost_usd, error_message)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         entry.requestId,
         entry.userName,
@@ -183,7 +187,8 @@ export function createActivityLogService(
         entry.totalTokens,
         entry.costUsd,
         entry.inputCostUsd,
-        entry.outputCostUsd
+        entry.outputCostUsd,
+        entry.errorMessage ?? null
       );
     } catch (err) {
       logger.error('[activity-log] failed to log entry', { error: (err as Error).message });
@@ -194,7 +199,7 @@ export function createActivityLogService(
     const row = getDb()
       .prepare(
         `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
-                prompt_tokens, completion_tokens, total_tokens, cost_usd, input_cost_usd, output_cost_usd
+                prompt_tokens, completion_tokens, total_tokens, cost_usd, input_cost_usd, output_cost_usd, error_message
          FROM activity_logs WHERE id = ?`
       )
       .get(id) as ActivityLogRow | undefined;
@@ -214,7 +219,7 @@ export function createActivityLogService(
       const rows = db
         .prepare(
           `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
-                  prompt_tokens, completion_tokens, total_tokens, cost_usd, input_cost_usd, output_cost_usd
+                  prompt_tokens, completion_tokens, total_tokens, cost_usd, input_cost_usd, output_cost_usd, error_message
            FROM activity_logs
            WHERE user_name LIKE ?
            ORDER BY created_at DESC
@@ -233,7 +238,7 @@ export function createActivityLogService(
     const rows = db
       .prepare(
         `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
-                prompt_tokens, completion_tokens, total_tokens, cost_usd, input_cost_usd, output_cost_usd
+                prompt_tokens, completion_tokens, total_tokens, cost_usd, input_cost_usd, output_cost_usd, error_message
          FROM activity_logs
          ORDER BY created_at DESC
          LIMIT ? OFFSET ?`

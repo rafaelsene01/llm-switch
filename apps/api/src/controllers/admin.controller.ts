@@ -514,7 +514,11 @@ export function createAdminRouter(): Router {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(200, Math.max(1, parseInt(req.query.limit as string) || 50));
       const clientFilter = (req.query.client as string | undefined) || undefined;
-      const levelFilter = (req.query.level as string | undefined) || undefined;
+      const statusFilter = (req.query.status as string | undefined) || undefined;
+
+      const OK_MESSAGES = new Set(['request_ok', 'request_sanitized']);
+      const WARN_MESSAGES = new Set(['request_blocked']);
+      const ERROR_MESSAGES = new Set(['request_failed']);
 
       const logPath = path.resolve('logs/audit.log');
       if (!existsSync(logPath)) {
@@ -529,9 +533,14 @@ export function createAdminRouter(): Router {
       for (const line of lines) {
         try {
           const obj = JSON.parse(line) as Record<string, unknown>;
-          if (!obj.requestId) continue; // só entradas de request
+          if (!obj.requestId) continue;
           if (clientFilter && obj.client !== clientFilter) continue;
-          if (levelFilter && obj.level !== levelFilter) continue;
+          if (statusFilter) {
+            const msg = obj.message as string;
+            if (statusFilter === 'ok' && !OK_MESSAGES.has(msg)) continue;
+            if (statusFilter === 'warn' && !WARN_MESSAGES.has(msg)) continue;
+            if (statusFilter === 'error' && !ERROR_MESSAGES.has(msg)) continue;
+          }
           entries.push(obj);
         } catch {
           // linha inválida — ignorar

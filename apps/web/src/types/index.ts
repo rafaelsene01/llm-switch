@@ -94,6 +94,7 @@ export interface ActivityLogRow {
   cost_usd: number;
   input_cost_usd: number;
   output_cost_usd: number;
+  error_message: string | null;
 }
 
 export interface ActivityLogPage {

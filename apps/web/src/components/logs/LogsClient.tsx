@@ -12,11 +12,11 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import type { AuditLogEntry } from '@/types';
 
-const STATUS_BADGE: Record<AuditLogEntry['message'], { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  request_ok: { label: 'OK', variant: 'default' },
-  request_sanitized: { label: 'Sanitizado', variant: 'secondary' },
-  request_blocked: { label: 'Bloqueado', variant: 'destructive' },
-  request_failed: { label: 'Erro', variant: 'destructive' },
+const STATUS_BADGE: Record<AuditLogEntry['message'], { label: string; className: string }> = {
+  request_ok:        { label: 'OK',    className: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30' },
+  request_sanitized: { label: 'OK',    className: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30' },
+  request_blocked:   { label: 'Aviso', className: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30' },
+  request_failed:    { label: 'Erro',  className: 'border-orange-500/40 bg-orange-500/10 text-orange-600 dark:text-orange-400' },
 };
 
 function formatDuration(ms: number): string {
@@ -34,9 +34,9 @@ export function LogsClient() {
   const [page, setPage] = useState(1);
   const [clientInput, setClientInput] = useState('');
   const [clientFilter, setClientFilter] = useState<string | undefined>(undefined);
-  const [levelFilter, setLevelFilter] = useState<string | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
 
-  const { data, isLoading, error, mutate } = useAuditLog(page, LIMIT, clientFilter, levelFilter);
+  const { data, isLoading, error, mutate } = useAuditLog(page, LIMIT, clientFilter, statusFilter);
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / LIMIT)) : 1;
 
@@ -45,15 +45,15 @@ export function LogsClient() {
     setClientFilter(clientInput.trim() || undefined);
   }
 
-  function handleLevelChange(value: string) {
+  function handleStatusChange(value: string) {
     setPage(1);
-    setLevelFilter(value === 'all' ? undefined : value);
+    setStatusFilter(value === 'all' ? undefined : value);
   }
 
   function clearFilters() {
     setClientInput('');
     setClientFilter(undefined);
-    setLevelFilter(undefined);
+    setStatusFilter(undefined);
     setPage(1);
   }
 
@@ -90,19 +90,19 @@ export function LogsClient() {
             </Button>
           </div>
 
-          <Select value={levelFilter ?? 'all'} onValueChange={handleLevelChange}>
+          <Select value={statusFilter ?? 'all'} onValueChange={handleStatusChange}>
             <SelectTrigger className="h-8 w-36 text-sm">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="info">OK</SelectItem>
+              <SelectItem value="ok">OK</SelectItem>
               <SelectItem value="warn">Aviso</SelectItem>
               <SelectItem value="error">Erro</SelectItem>
             </SelectContent>
           </Select>
 
-          {(clientFilter || levelFilter) && (
+          {(clientFilter || statusFilter) && (
             <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-sm">
               Limpar filtros
             </Button>
@@ -140,7 +140,7 @@ export function LogsClient() {
               </TableHeader>
               <TableBody>
                 {data?.entries.map((entry) => {
-                  const badge = STATUS_BADGE[entry.message] ?? { label: entry.message, variant: 'outline' as const };
+                  const badge = STATUS_BADGE[entry.message] ?? { label: entry.message, className: '' };
                   return (
                     <TableRow key={entry.requestId}>
                       <TableCell className="font-mono text-xs text-muted-foreground">
@@ -149,10 +149,7 @@ export function LogsClient() {
                       <TableCell className="font-medium">{entry.client}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{entry.provider}</TableCell>
                       <TableCell>
-                        <Badge variant={badge.variant}>{badge.label}</Badge>
-                        {entry.sensitiveDataRemoved && (
-                          <Badge variant="outline" className="ml-1 text-xs">PII</Badge>
-                        )}
+                        <Badge variant="outline" className={`text-xs px-1.5 py-0 ${badge.className}`}>{badge.label}</Badge>
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
                         {entry.responseTokens ?? '—'}
