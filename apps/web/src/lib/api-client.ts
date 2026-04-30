@@ -2,7 +2,6 @@ import type {
   ActivityLogDetail,
   ActivityLogPage,
   AnalyticsData,
-  AuditLogPage,
   BlocklistEntry,
   GatewayModel,
   GatewayProvider,
@@ -152,15 +151,6 @@ export const apiClient = {
       apiFetch<{ success: boolean }>(`/admin/activity/${id}`, { method: 'DELETE' }),
     removeAll: () =>
       apiFetch<{ deleted: number }>('/admin/activity', { method: 'DELETE' }),
-  },
-
-  auditLog: {
-    list: (page = 1, limit = 50, client?: string, status?: string) => {
-      const qs = new URLSearchParams({ page: String(page), limit: String(limit) });
-      if (client) qs.set('client', client);
-      if (status) qs.set('status', status);
-      return apiFetch<AuditLogPage>(`/admin/audit-log?${qs.toString()}`);
-    },
   },
 
   analytics: {
