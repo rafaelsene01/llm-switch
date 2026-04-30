@@ -1,6 +1,7 @@
 node_modules
 .env
 logs
+!apps/web/src/app/logs/
 .specs
 temp
 .nx
