@@ -9,12 +9,13 @@ export function listModels(req: Request, res: Response): void {
   const models =
     allowedModels.length > 0 ? allModels.filter((m) => allowedModels.includes(m.value)) : allModels;
 
+  const created = Math.floor(Date.now() / 1000);
   res.json({
     object: 'list',
     data: models.map((m) => ({
       id: m.value,
       object: 'model',
-      created: 0,
+      created,
       owned_by: m.value.split(':')[0] ?? 'unknown',
     })),
   });
