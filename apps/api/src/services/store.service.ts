@@ -3,32 +3,15 @@ import path from 'path';
 import { DEFAULT_MODELS } from '../data/defaults/models';
 import type {
   GatewayModel,
-  GatewayProvider,
   GatewayUser,
   UserPublic,
 } from '../types';
 import type { ProviderModelInfo } from './providers.service';
-
-const DEFAULT_PROVIDERS: GatewayProvider[] = [
-  { id: 'openai',     name: 'OpenAI',      type: 'cloud', configured: false, enabled: false },
-  { id: 'anthropic',  name: 'Anthropic',   type: 'cloud', configured: false, enabled: false },
-  { id: 'google',     name: 'Google',      type: 'cloud', configured: false, enabled: false },
-  { id: 'mistral',    name: 'Mistral',     type: 'cloud', configured: false, enabled: false },
-  { id: 'openrouter', name: 'OpenRouter',  type: 'cloud', configured: false, enabled: false },
-  { id: 'ollama',     name: 'Ollama',      type: 'local', url: 'http://localhost:11434', configured: false, enabled: false },
-  { id: 'lmstudio',   name: 'LM Studio',   type: 'local', url: 'http://localhost:1234',  configured: false, enabled: false },
-];
+import { providersDb } from './providers-db.service';
 
 interface StoreData {
   models: GatewayModel[];
   users: GatewayUser[];
-  providers: GatewayProvider[];
-}
-
-interface ProviderExportEntry {
-  id: string;
-  key?: string;
-  url?: string;
 }
 
 interface ExportPayload {
@@ -38,7 +21,6 @@ interface ExportPayload {
   _exported_at: string;
   models?: GatewayModel[];
   users?: GatewayUser[];
-  providers?: ProviderExportEntry[];
 }
 
 interface ImportReport {
@@ -51,24 +33,18 @@ function createStore(dataFile?: string) {
 
   function load(): StoreData {
     if (!existsSync(resolvedFile)) {
-      const fresh: StoreData = {
-        models: DEFAULT_MODELS,
-        users: [],
-        providers: structuredClone(DEFAULT_PROVIDERS),
-      };
+      const fresh: StoreData = { models: DEFAULT_MODELS, users: [] };
       mkdirSync(path.dirname(resolvedFile), { recursive: true });
       writeFileSync(resolvedFile, JSON.stringify(fresh, null, 2));
       return structuredClone(fresh);
     }
     try {
-      const data = JSON.parse(readFileSync(resolvedFile, 'utf8')) as StoreData;
-      if (!data.providers) {
-        data.providers = structuredClone(DEFAULT_PROVIDERS);
-        save(data);
-      }
+      const raw = JSON.parse(readFileSync(resolvedFile, 'utf8')) as StoreData & { providers?: unknown };
+      // Strip providers from JSON if still present (migrated to SQLite)
+      const data: StoreData = { models: raw.models ?? DEFAULT_MODELS, users: raw.users ?? [] };
       return data;
     } catch {
-      return { models: DEFAULT_MODELS, users: [], providers: structuredClone(DEFAULT_PROVIDERS) };
+      return { models: DEFAULT_MODELS, users: [] };
     }
   }
 
@@ -82,7 +58,7 @@ function createStore(dataFile?: string) {
   function getModels(): GatewayModel[] {
     const data = load();
     const configuredIds = new Set(
-      data.providers.filter((p) => p.configured).map((p) => p.id)
+      providersDb.list().filter((p) => p.configured).map((p) => p.id)
     );
     return data.models.filter((m) => configuredIds.has(m.value.split(':')[0]));
   }
@@ -171,6 +147,17 @@ function createStore(dataFile?: string) {
     return true;
   }
 
+  // Remove all models belonging to a provider instance
+  function deleteProviderModels(providerId: string): number {
+    const data = load();
+    const prefix = `${providerId}:`;
+    const before = data.models.length;
+    data.models = data.models.filter((m) => !m.value.startsWith(prefix));
+    const removed = before - data.models.length;
+    if (removed > 0) save(data);
+    return removed;
+  }
+
   // ── Users ──────────────────────────────────────────────────────────────────
 
   function getUsers(): UserPublic[] {
@@ -225,100 +212,34 @@ function createStore(dataFile?: string) {
     return true;
   }
 
-  // ── Providers ──────────────────────────────────────────────────────────────
-
-  function getProviders(): GatewayProvider[] {
-    return load().providers.map((p) => ({
-      ...p,
-      enabled: p.enabled !== undefined ? p.enabled : p.configured,
-    }));
-  }
-
-  function updateProvider(id: string, patch: Partial<Pick<GatewayProvider, 'key' | 'url' | 'enabled'>>): GatewayProvider | null {
-    const data = load();
-    const idx = data.providers.findIndex((p) => p.id === id);
-    if (idx === -1) return null;
-    const current = data.providers[idx];
-    const updated = { ...current, ...patch };
-    const wasConfigured = current.configured;
-    updated.configured = updated.type === 'cloud'
-      ? Boolean(updated.key)
-      : Boolean(updated.url);
-
-    const explicitEnabled = 'enabled' in patch ? patch.enabled : undefined;
-    if (explicitEnabled !== undefined) {
-      updated.enabled = explicitEnabled && updated.configured;
-    } else if (!wasConfigured && updated.configured) {
-      updated.enabled = true;
-    } else {
-      updated.enabled = current.enabled !== undefined ? current.enabled : current.configured;
-    }
-
-    data.providers[idx] = updated;
-    save(data);
-    return updated;
-  }
-
-  function clearProviderKey(id: string): boolean {
-    const data = load();
-    const idx = data.providers.findIndex((p) => p.id === id);
-    if (idx === -1) return false;
-    const { key: _key, ...rest } = data.providers[idx];
-    data.providers[idx] = {
-      ...rest,
-      url: data.providers[idx].type === 'local'
-        ? DEFAULT_PROVIDERS.find((p) => p.id === id)?.url
-        : undefined,
-      configured: false,
-      enabled: false,
-    };
-    save(data);
-    return true;
-  }
-
   // ── Export / Import ────────────────────────────────────────────────────────
 
-  function exportAll(): ExportPayload {
+  function exportAll(): ExportPayload & { providers: { id: string; providerType: string; key?: string; url?: string }[] } {
     const data = load();
     return {
       _gateway_export: true,
       _module: 'all',
-      _version: '1.0',
+      _version: '2.0',
       _exported_at: new Date().toISOString(),
       models: data.models,
       users: data.users,
-      providers: data.providers.map((p) => ({ id: p.id, key: p.key, url: p.url })),
+      providers: providersDb.list().map((p) => ({ id: p.id, providerType: p.providerType, key: p.key, url: p.url })),
     };
   }
 
-  function importAll(payload: ExportPayload, mode: 'merge' | 'replace' = 'merge'): ImportReport {
+  function importAll(payload: ExportPayload & { providers?: unknown[] }, mode: 'merge' | 'replace' = 'merge'): ImportReport {
     if (!payload?._gateway_export) {
       throw new Error('Arquivo inválido: não é uma exportação do LLM Switch.');
     }
-    const report = _importModules(payload, ['models', 'users'], mode);
-    if (payload.providers) {
-      const provReport = _importProviders(payload.providers);
-      report.added['providers'] = provReport.added;
-      report.skipped['providers'] = provReport.skipped;
-    }
-    return report;
+    return _importModules(payload, ['models', 'users'], mode);
   }
 
-  function exportModule(module: 'models' | 'users' | 'providers'): ExportPayload {
+  function exportModule(module: 'models' | 'users'): ExportPayload {
     const data = load();
-    if (module === 'providers') {
-      return {
-        _gateway_export: true,
-        _module: 'providers',
-        _version: '1.0',
-        _exported_at: new Date().toISOString(),
-        providers: data.providers.map((p) => ({ id: p.id, key: p.key, url: p.url })),
-      };
-    }
     return {
       _gateway_export: true,
       _module: module,
-      _version: '1.0',
+      _version: '2.0',
       _exported_at: new Date().toISOString(),
       [module]: data[module],
     };
@@ -326,7 +247,7 @@ function createStore(dataFile?: string) {
 
   function importModule(
     payload: ExportPayload,
-    module: 'models' | 'users' | 'providers',
+    module: 'models' | 'users',
     mode: 'merge' | 'replace' = 'merge'
   ): ImportReport {
     if (!payload?._gateway_export) {
@@ -335,31 +256,7 @@ function createStore(dataFile?: string) {
     if (!payload[module]) {
       throw new Error(`Arquivo não contém dados do módulo "${module}".`);
     }
-    if (module === 'providers') {
-      const provReport = _importProviders(payload.providers ?? []);
-      return { added: { providers: provReport.added }, skipped: { providers: provReport.skipped } };
-    }
     return _importModules(payload, [module], mode);
-  }
-
-  function _importProviders(entries: ProviderExportEntry[]): { added: number; skipped: number } {
-    const data = load();
-    let updated = 0;
-    let skipped = 0;
-    for (const entry of entries) {
-      const idx = data.providers.findIndex((p) => p.id === entry.id);
-      if (idx === -1) { skipped++; continue; }
-      const p = data.providers[idx];
-      const patch: Partial<GatewayProvider> = {};
-      if (entry.url !== undefined) patch.url = entry.url;
-      if (entry.key && entry.key !== '***') patch.key = entry.key;
-      data.providers[idx] = { ...p, ...patch };
-      data.providers[idx].configured =
-        p.type === 'cloud' ? Boolean(data.providers[idx].key) : Boolean(data.providers[idx].url);
-      updated++;
-    }
-    save(data);
-    return { added: updated, skipped };
   }
 
   function _importModules(
@@ -418,14 +315,12 @@ function createStore(dataFile?: string) {
     syncModels,
     pruneUnconfiguredModels,
     deleteModel,
+    deleteProviderModels,
     getUsers,
     getUserByKey,
     addUser,
     updateUser,
     deleteUser,
-    getProviders,
-    updateProvider,
-    clearProviderKey,
     exportAll,
     importAll,
     exportModule,

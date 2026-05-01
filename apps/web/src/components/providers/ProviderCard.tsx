@@ -9,20 +9,12 @@ import type { GatewayProvider } from '@/types';
 import { cn } from '@/lib/utils';
 
 const PROVIDER_ICONS: Record<string, string> = {
-  openai: 'OAI',
-  anthropic: 'ANT',
-  google: 'GGL',
-  mistral: 'MST',
   openrouter: 'OR',
   ollama: 'OLL',
   lmstudio: 'LMS',
 };
 
 const PROVIDER_COLORS: Record<string, string> = {
-  openai: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
-  anthropic: 'bg-orange-500/15 text-orange-600 dark:text-orange-400',
-  google: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
-  mistral: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
   openrouter: 'bg-rose-500/15 text-rose-600 dark:text-rose-400',
   ollama: 'bg-slate-500/15 text-slate-600 dark:text-slate-400',
   lmstudio: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400',
@@ -32,12 +24,20 @@ interface ProviderCardProps {
   provider: GatewayProvider;
   onConfigure: () => void;
   onToggleEnabled: (enabled: boolean) => void;
+  onDelete: () => void;
 }
 
-export function ProviderCard({ provider, onConfigure, onToggleEnabled }: ProviderCardProps) {
-  const icon = PROVIDER_ICONS[provider.id] ?? provider.id.slice(0, 3).toUpperCase();
-  const iconColor = PROVIDER_COLORS[provider.id] ?? 'bg-muted text-muted-foreground';
+export function ProviderCard({ provider, onConfigure, onToggleEnabled, onDelete }: ProviderCardProps) {
+  const pType = provider.providerType;
+  const icon = PROVIDER_ICONS[pType] ?? pType.slice(0, 3).toUpperCase();
+  const iconColor = PROVIDER_COLORS[pType] ?? 'bg-muted text-muted-foreground';
   const isEnabled = provider.enabled !== false;
+
+  function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!confirm(`Remover "${provider.name}"? Os modelos associados também serão removidos.`)) return;
+    onDelete();
+  }
 
   return (
     <Card className={cn(
@@ -88,14 +88,24 @@ export function ProviderCard({ provider, onConfigure, onToggleEnabled }: Provide
             </p>
           </>
         )}
-        <Button
-          size="sm"
-          variant={provider.configured ? 'outline' : 'default'}
-          onClick={onConfigure}
-          className="w-full"
-        >
-          {provider.configured ? 'Editar configuração' : 'Configurar'}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant={provider.configured ? 'outline' : 'default'}
+            onClick={onConfigure}
+            className="flex-1"
+          >
+            {provider.configured ? 'Editar' : 'Configurar'}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleDelete}
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive px-2"
+          >
+            Remover
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

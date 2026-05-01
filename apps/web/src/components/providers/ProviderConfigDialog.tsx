@@ -20,8 +20,8 @@ import { CloudProviderForm } from './CloudProviderForm';
 import { LocalProviderForm } from './LocalProviderForm';
 import { ProviderTestPanel } from './ProviderTestPanel';
 
-// Providers whose model list is static (no API call) — listModels alone can't validate the key
-const STATIC_PROVIDERS = new Set(['anthropic', 'google']);
+// Providers that support dynamic model listing — key validated via listModels API call
+const DYNAMIC_PROVIDERS = new Set(['openrouter', 'ollama', 'lmstudio']);
 
 interface ProviderConfigDialogProps {
   provider: GatewayProvider;
@@ -68,17 +68,8 @@ export function ProviderConfigDialog({ provider, open, onClose, onSaved }: Provi
       : undefined;
 
     try {
-      // List models first — for dynamic providers this validates the key via real API call
-      const models = await apiClient.providers.listModels(provider.id, { key: candidateKey, url: candidateUrl });
-
-      if (STATIC_PROVIDERS.has(provider.id) && models.length > 0) {
-        // Static providers return a pre-defined list — need a real completion to validate the key
-        const model = models[models.length - 1].id; // use last (typically smallest/cheapest)
-        const result = await apiClient.providers.test(provider.id, { model, key: candidateKey, url: candidateUrl });
-        if (!result.success) {
-          setKeyError(result.error ?? 'Chave inválida ou sem permissão.');
-          return false;
-        }
+      if (DYNAMIC_PROVIDERS.has(provider.providerType)) {
+        await apiClient.providers.listModels(provider.id, { key: candidateKey, url: candidateUrl });
       }
       return true;
     } catch (err) {

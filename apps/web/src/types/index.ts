@@ -21,6 +21,7 @@ export type ProviderType = 'cloud' | 'local';
 
 export interface GatewayProvider {
   id: string;
+  providerType: string;
   name: string;
   type: ProviderType;
   key?: string;

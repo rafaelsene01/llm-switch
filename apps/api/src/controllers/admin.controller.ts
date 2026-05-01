@@ -4,13 +4,15 @@ import { readFileSync, existsSync } from 'fs';
 import path from 'path';
 import type { Request, Response } from 'express';
 import { store } from '../services/store.service';
+import { providersDb, ALLOWED_PROVIDER_TYPES } from '../services/providers-db.service';
+import type { AllowedProviderType } from '../services/providers-db.service';
 import { env } from '../config/env';
 import { listProviderModels, testProviderConnection } from '../services/providers.service';
 import { getPricingForModel, buildPricingMap } from '../services/pricing.service';
 
 import { activityLog } from '../services/activity-log.service';
 
-const MODULES = ['models', 'users', 'providers'] as const;
+const MODULES = ['models', 'users'] as const;
 type Module = (typeof MODULES)[number];
 
 function wrap(fn: (req: Request, res: Response) => Promise<void>) {
@@ -76,11 +78,11 @@ export function createAdminRouter(): Router {
   router.post(
     '/models/sync',
     wrap(async (_req, res) => {
-      const configured = store.getProviders().filter((p) => p.configured);
+      const configured = providersDb.list().filter((p) => p.configured);
       const configuredIds = configured.map((p) => p.id);
       const results = await Promise.allSettled(
         configured.map((p) =>
-          listProviderModels(p.id, p.key, p.url).then((models) =>
+          listProviderModels(p.providerType, p.key, p.url).then((models) =>
             store.syncModels(p.id, models)
           )
         )
@@ -105,7 +107,7 @@ export function createAdminRouter(): Router {
       const { value, label } = req.body as { value?: string; label?: string };
       if (!value) {
         res.status(400).json({
-          error: { message: "Campo 'value' obrigatório (ex: openai:gpt-4o)." },
+          error: { message: "Campo 'value' obrigatório (ex: openrouter:anthropic/claude-3.5-sonnet)." },
         });
         return;
       }
@@ -227,11 +229,30 @@ export function createAdminRouter(): Router {
   router.get(
     '/providers',
     wrap(async (_req, res) => {
-      const providers = store.getProviders().map((p) => ({
+      const providers = providersDb.list().map((p) => ({
         ...p,
         key: p.key ? '***' : undefined,
       }));
       res.json({ providers });
+    })
+  );
+
+  router.post(
+    '/providers',
+    wrap(async (req, res) => {
+      const { providerType } = req.body as { providerType?: string };
+      if (!providerType) {
+        res.status(400).json({ error: { message: "Campo 'providerType' obrigatório." } });
+        return;
+      }
+      if (!(ALLOWED_PROVIDER_TYPES as readonly string[]).includes(providerType)) {
+        res.status(400).json({
+          error: { message: `Tipo inválido. Use: ${ALLOWED_PROVIDER_TYPES.join(', ')}` },
+        });
+        return;
+      }
+      const provider = providersDb.add(providerType as AllowedProviderType);
+      res.status(201).json({ provider: { ...provider, key: undefined } });
     })
   );
 
@@ -241,14 +262,14 @@ export function createAdminRouter(): Router {
       const { key, url, enabled } = req.body as { key?: string; url?: string; enabled?: boolean };
       const patch: { key?: string; url?: string; enabled?: boolean } = { key, url };
       if (enabled !== undefined) patch.enabled = enabled;
-      const provider = store.updateProvider(req.params.id, patch);
+      const provider = providersDb.update(req.params.id, patch);
       if (!provider) {
         res.status(404).json({ error: { message: 'Provider não encontrado.' } });
         return;
       }
       res.json({ provider: { ...provider, key: provider.key ? '***' : undefined } });
       if (provider.configured) {
-        listProviderModels(provider.id, provider.key, provider.url)
+        listProviderModels(provider.providerType, provider.key, provider.url)
           .then((models) => store.syncModels(provider.id, models))
           .catch(() => {});
       }
@@ -256,9 +277,23 @@ export function createAdminRouter(): Router {
   );
 
   router.delete(
+    '/providers/:id',
+    wrap(async (req, res) => {
+      const provider = providersDb.getById(req.params.id);
+      if (!provider) {
+        res.status(404).json({ error: { message: 'Provider não encontrado.' } });
+        return;
+      }
+      store.deleteProviderModels(req.params.id);
+      providersDb.remove(req.params.id);
+      res.status(204).send();
+    })
+  );
+
+  router.delete(
     '/providers/:id/key',
     wrap(async (req, res) => {
-      if (!store.clearProviderKey(req.params.id)) {
+      if (!providersDb.clearKey(req.params.id)) {
         res.status(404).json({ error: { message: 'Provider não encontrado.' } });
         return;
       }
@@ -271,11 +306,15 @@ export function createAdminRouter(): Router {
     wrap(async (req, res) => {
       const { id } = req.params;
       const { key, url } = req.query as { key?: string; url?: string };
-      const storedProvider = store.getProviders().find((p) => p.id === id);
-      const resolvedKey = key ?? storedProvider?.key;
-      const resolvedUrl = url ?? storedProvider?.url;
+      const storedProvider = providersDb.getById(id);
+      if (!storedProvider) {
+        res.status(404).json({ error: { message: 'Provider não encontrado.' } });
+        return;
+      }
+      const resolvedKey = key ?? storedProvider.key;
+      const resolvedUrl = url ?? storedProvider.url;
       try {
-        const models = await listProviderModels(id, resolvedKey, resolvedUrl);
+        const models = await listProviderModels(storedProvider.providerType, resolvedKey, resolvedUrl);
         res.json({ models });
       } catch (err) {
         res.status(422).json({
@@ -297,7 +336,12 @@ export function createAdminRouter(): Router {
         res.status(400).json({ error: { message: "Campo 'model' obrigatório." } });
         return;
       }
-      const result = await testProviderConnection(id, model, key, url);
+      const storedProvider = providersDb.getById(id);
+      if (!storedProvider) {
+        res.status(404).json({ error: { message: 'Provider não encontrado.' } });
+        return;
+      }
+      const result = await testProviderConnection(storedProvider.providerType, model, key, url);
       res.json(result);
     })
   );

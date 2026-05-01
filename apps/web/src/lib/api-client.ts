@@ -98,11 +98,21 @@ export const apiClient = {
 
   providers: {
     list: () => apiFetch<{ providers: GatewayProvider[] }>('/admin/providers').then((r) => r.providers),
+    create: (providerType: string) =>
+      apiFetch<{ provider: GatewayProvider }>('/admin/providers', {
+        method: 'POST',
+        body: JSON.stringify({ providerType }),
+      }).then((r) => r.provider),
     update: (id: string, body: { key?: string; url?: string; enabled?: boolean }) =>
       apiFetch<{ provider: GatewayProvider }>(`/admin/providers/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(body),
       }).then((r) => r.provider),
+    remove: (id: string) =>
+      fetch(`/admin/providers/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${ADMIN_KEY}` },
+      }).then((r) => { if (!r.ok && r.status !== 204) throw new Error(`HTTP ${r.status}`); }),
     removeKey: (id: string) =>
       fetch(`/admin/providers/${id}/key`, {
         method: 'DELETE',

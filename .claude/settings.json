@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(git remote *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(node node_modules/typescript/bin/tsc --project apps/api/tsconfig.app.json --noEmit)"
     ]
   }
 }
