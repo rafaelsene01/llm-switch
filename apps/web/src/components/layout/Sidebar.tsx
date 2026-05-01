@@ -31,9 +31,9 @@ export function Sidebar() {
       <div className="px-4 py-5">
         <div className="flex items-center gap-2.5 px-1">
           <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary">
-            <span className="text-xs font-bold text-primary-foreground">LG</span>
+            <span className="text-xs font-bold text-primary-foreground">LS</span>
           </div>
-          <span className="font-bold text-sm tracking-tight">LLM Gateway</span>
+          <span className="font-bold text-sm tracking-tight">LLM Switch</span>
         </div>
       </div>
 

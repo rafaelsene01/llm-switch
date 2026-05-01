@@ -83,7 +83,7 @@ export default function HomePage() {
   return (
     <div>
       <PageHeader
-        title="LLM Gateway"
+        title="LLM Switch"
         description="Proxy OpenAI-compatível com sanitização de PII, multi-provider e autenticação por cliente."
         actions={<HomeConfigActions />}
       />

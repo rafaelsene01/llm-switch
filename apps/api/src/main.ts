@@ -10,5 +10,5 @@ mkdirSync('logs', { recursive: true });
 const app = createApp();
 
 app.listen(env.PORT, () => {
-  logger.info(`LLM Gateway running on port ${env.PORT}`);
+  logger.info(`LLM Switch running on port ${env.PORT}`);
 });

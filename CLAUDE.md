@@ -31,7 +31,7 @@ This is an **Nx monorepo** with an OpenAI-compatible LLM proxy gateway (`apps/ap
 ```
 apps/api/    — Express + TypeScript backend (port 3000)
 apps/web/    — Next.js 14 App Router admin UI (port 3001)
-libs/shared/ — Shared TypeScript types (@llm-gateway/shared)
+libs/shared/ — Shared TypeScript types (@llm-switch/shared)
 docker/      — Dockerfile (multi-stage) + nginx.conf
 ```
 

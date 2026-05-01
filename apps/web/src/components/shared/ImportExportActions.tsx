@@ -92,7 +92,7 @@ export function ImportExportActions({ module, onImportSuccess, className }: Impo
       parsed === null ||
       !(parsed as Record<string, unknown>)['_gateway_export']
     ) {
-      toast.error('Arquivo inválido: não é uma exportação do LLM Gateway.');
+      toast.error('Arquivo inválido: não é uma exportação do LLM Switch.');
       return;
     }
 

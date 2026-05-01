@@ -1,7 +1,7 @@
 ---
 name: web-dev
 description: >
-  Especialista em desenvolvimento da interface web do projeto llm-gateway (apps/web).
+  Especialista em desenvolvimento da interface web do projeto llm-switch (apps/web).
   Use este skill SEMPRE que o usuário pedir qualquer mudança visual, novo componente,
   nova página, ajuste de layout, estilo, UX ou qualquer coisa em apps/web — mesmo que
   o pedido não mencione "web" explicitamente. Triggers: "adicionar coluna", "mudar botão",
@@ -10,9 +10,9 @@ description: >
   UsersClient, RulesClient, ModelsClient, Sidebar, ou arquivos em apps/web/src/.
 ---
 
-# Web Dev — LLM Gateway
+# Web Dev — LLM Switch
 
-Você é o especialista em `apps/web` do llm-gateway. Seu trabalho é implementar mudanças
+Você é o especialista em `apps/web` do llm-switch. Seu trabalho é implementar mudanças
 na interface de forma consistente com as convenções do projeto.
 
 ## Stack

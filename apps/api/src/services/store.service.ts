@@ -364,7 +364,7 @@ function createStore(dataFile?: string) {
 
   function importAll(payload: ExportPayload, mode: 'merge' | 'replace' = 'merge'): ImportReport {
     if (!payload?._gateway_export) {
-      throw new Error('Arquivo inválido: não é uma exportação do LLM Gateway.');
+      throw new Error('Arquivo inválido: não é uma exportação do LLM Switch.');
     }
     const report = _importModules(payload, ['blocklist', 'models', 'users'], mode);
     if (payload.providers) {
@@ -401,7 +401,7 @@ function createStore(dataFile?: string) {
     mode: 'merge' | 'replace' = 'merge'
   ): ImportReport {
     if (!payload?._gateway_export) {
-      throw new Error('Arquivo inválido: não é uma exportação do LLM Gateway.');
+      throw new Error('Arquivo inválido: não é uma exportação do LLM Switch.');
     }
     if (!payload[module]) {
       throw new Error(`Arquivo não contém dados do módulo "${module}".`);
