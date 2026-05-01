@@ -12,9 +12,10 @@ const endpoints = [
   {
     method: 'POST',
     path: '/v1/chat/completions',
-    desc: 'Chat com qualquer provider (OpenAI-compat)',
+    desc: 'Chat com qualquer provider — suporta stream: true (SSE)',
   },
   { method: 'GET', path: '/v1/models', desc: 'Lista modelos disponíveis para o token' },
+  { method: 'GET', path: '/v1/models/:model_id', desc: 'Retorna metadados de um modelo específico' },
 ];
 
 const chatCurlExample = (url: string) => `curl ${url}/v1/chat/completions \\
@@ -53,6 +54,48 @@ const response = await client.chat.completions.create({
 
 console.log(response.choices[0].message.content);`;
 
+const streamCurlExample = (url: string) => `curl -N ${url}/v1/chat/completions \\
+  -H "Authorization: Bearer SEU_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "openai:gpt-4o-mini",
+    "stream": true,
+    "messages": [{"role": "user", "content": "Olá!"}]
+  }'`;
+
+const streamPythonExample = (url: string) => `from openai import OpenAI
+
+client = OpenAI(
+    api_key="SEU_TOKEN",
+    base_url="${url}/v1",
+)
+
+stream = client.chat.completions.create(
+    model="openai:gpt-4o-mini",
+    messages=[{"role": "user", "content": "Olá!"}],
+    stream=True,
+)
+
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="", flush=True)`;
+
+const streamNodeExample = (url: string) => `import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: "SEU_TOKEN",
+  baseURL: "${url}/v1",
+});
+
+const stream = await client.chat.completions.create({
+  model: "openai:gpt-4o-mini",
+  messages: [{ role: "user", content: "Olá!" }],
+  stream: true,
+});
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content ?? "");
+}`;
+
 const modelsCurlExample = (url: string) => `curl ${url}/v1/models \\
   -H "Authorization: Bearer SEU_TOKEN"`;
 
@@ -78,6 +121,29 @@ const models = await client.models.list();
 for (const model of models.data) {
   console.log(model.id);
 }`;
+
+const retrieveModelCurlExample = (url: string) => `curl ${url}/v1/models/openai:gpt-4o-mini \\
+  -H "Authorization: Bearer SEU_TOKEN"`;
+
+const retrieveModelPythonExample = (url: string) => `from openai import OpenAI
+
+client = OpenAI(
+    api_key="SEU_TOKEN",
+    base_url="${url}/v1",
+)
+
+model = client.models.retrieve("openai:gpt-4o-mini")
+print(model.id)`;
+
+const retrieveModelNodeExample = (url: string) => `import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: "SEU_TOKEN",
+  baseURL: "${url}/v1",
+});
+
+const model = await client.models.retrieve("openai:gpt-4o-mini");
+console.log(model.id);`;
 
 export default function HomePage() {
   return (
@@ -127,7 +193,9 @@ export default function HomePage() {
           <Tabs defaultValue="chat">
             <TabsList className="mb-3">
               <TabsTrigger value="chat">POST /v1/chat/completions</TabsTrigger>
+              <TabsTrigger value="stream">POST /v1/chat/completions (stream)</TabsTrigger>
               <TabsTrigger value="models">GET /v1/models</TabsTrigger>
+              <TabsTrigger value="model-retrieve">GET /v1/models/:id</TabsTrigger>
             </TabsList>
 
             <TabsContent value="chat">
@@ -167,6 +235,43 @@ export default function HomePage() {
               </Tabs>
             </TabsContent>
 
+            <TabsContent value="stream">
+              <Tabs defaultValue="curl">
+                <TabsList className="mb-3">
+                  <TabsTrigger value="curl">cURL</TabsTrigger>
+                  <TabsTrigger value="python">Python SDK</TabsTrigger>
+                  <TabsTrigger value="node">Node.js SDK</TabsTrigger>
+                </TabsList>
+                <TabsContent value="curl">
+                  <Card className="shadow-card border-border/50">
+                    <CardContent className="pt-4 pb-4">
+                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
+                        <code>{streamCurlExample(GATEWAY_URL)}</code>
+                      </pre>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                <TabsContent value="python">
+                  <Card className="shadow-card border-border/50">
+                    <CardContent className="pt-4 pb-4">
+                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
+                        <code>{streamPythonExample(GATEWAY_URL)}</code>
+                      </pre>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                <TabsContent value="node">
+                  <Card className="shadow-card border-border/50">
+                    <CardContent className="pt-4 pb-4">
+                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
+                        <code>{streamNodeExample(GATEWAY_URL)}</code>
+                      </pre>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
+
             <TabsContent value="models">
               <Tabs defaultValue="curl">
                 <TabsList className="mb-3">
@@ -197,6 +302,43 @@ export default function HomePage() {
                     <CardContent className="pt-4 pb-4">
                       <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
                         <code>{modelsNodeExample(GATEWAY_URL)}</code>
+                      </pre>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
+
+            <TabsContent value="model-retrieve">
+              <Tabs defaultValue="curl">
+                <TabsList className="mb-3">
+                  <TabsTrigger value="curl">cURL</TabsTrigger>
+                  <TabsTrigger value="python">Python SDK</TabsTrigger>
+                  <TabsTrigger value="node">Node.js SDK</TabsTrigger>
+                </TabsList>
+                <TabsContent value="curl">
+                  <Card className="shadow-card border-border/50">
+                    <CardContent className="pt-4 pb-4">
+                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
+                        <code>{retrieveModelCurlExample(GATEWAY_URL)}</code>
+                      </pre>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                <TabsContent value="python">
+                  <Card className="shadow-card border-border/50">
+                    <CardContent className="pt-4 pb-4">
+                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
+                        <code>{retrieveModelPythonExample(GATEWAY_URL)}</code>
+                      </pre>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                <TabsContent value="node">
+                  <Card className="shadow-card border-border/50">
+                    <CardContent className="pt-4 pb-4">
+                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
+                        <code>{retrieveModelNodeExample(GATEWAY_URL)}</code>
                       </pre>
                     </CardContent>
                   </Card>
