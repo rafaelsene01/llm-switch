@@ -1,4 +1,4 @@
-import { generateText, jsonSchema } from 'ai';
+import { generateText, streamText, jsonSchema } from 'ai';
 import { v4 as uuidv4 } from 'uuid';
 import { resolveModel } from '../providers';
 import { logRequest } from '../utils/logger';
@@ -132,7 +132,61 @@ function extractTextFromResult(text: string | null | undefined): string | null {
   return text;
 }
 
+export interface ChatStreamHandle {
+  requestId: string;
+  textStream: AsyncIterable<string>;
+  finishStream: Promise<void>;
+}
+
 export class ChatService {
+  async streamComplete(opts: ChatServiceOptions): Promise<ChatStreamHandle> {
+    const requestId = uuidv4();
+    const startTime = Date.now();
+
+    const { messages, providerModel, clientLabel, tokenPreview, system, tools: rawTools, toolChoice, temperature, maxTokens } = opts;
+
+    const model = resolveModel(providerModel);
+    const sdkTools = convertTools(rawTools);
+    const sdkToolChoice = convertToolChoice(toolChoice);
+    const coreMessages = convertMessagesToCore(messages);
+
+    const result = streamText({
+      model,
+      messages: coreMessages,
+      system,
+      temperature,
+      maxTokens,
+      ...(sdkTools ? { tools: sdkTools } : {}),
+      ...(sdkToolChoice ? { toolChoice: sdkToolChoice } : {}),
+      onFinish: async ({ usage, text }) => {
+        const durationMs = Date.now() - startTime;
+        const promptTokens = usage?.promptTokens ?? 0;
+        const completionTokens = usage?.completionTokens ?? 0;
+        const { inputCostUsd, outputCostUsd } = computeCosts(providerModel, promptTokens, completionTokens);
+        logRequest({ requestId, clientLabel, providerModel, originalMessages: messages, responseTokens: usage?.totalTokens, durationMs });
+        activityLog.log({
+          requestId,
+          userName: opts.user?.name ?? clientLabel,
+          tokenPreview,
+          originalMessages: messages as Array<{ role: string; content: unknown }>,
+          llmResponse: extractTextFromResult(text),
+          providerModel,
+          blocked: false,
+          promptTokens,
+          completionTokens,
+          totalTokens: usage?.totalTokens ?? 0,
+          costUsd: inputCostUsd + outputCostUsd,
+          inputCostUsd,
+          outputCostUsd,
+        });
+      },
+    });
+
+    const finishStream = result.consumeStream().catch(() => {});
+
+    return { requestId, textStream: result.textStream, finishStream };
+  }
+
   async complete(opts: ChatServiceOptions): Promise<ChatServiceResult> {
     const requestId = uuidv4();
     const startTime = Date.now();

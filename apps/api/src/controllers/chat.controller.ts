@@ -10,6 +10,7 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
     system,
     tools: rawTools,
     tool_choice,
+    stream = false,
   } = req.body as {
     messages?: OpenAIMessage[];
     temperature?: number;
@@ -17,6 +18,7 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
     system?: string;
     tools?: OpenAITool[];
     tool_choice?: string | { type: 'function'; function: { name: string } };
+    stream?: boolean;
   };
 
   const providerModel =
@@ -57,28 +59,54 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
     return;
   }
 
+  const serviceOpts = {
+    messages,
+    providerModel,
+    clientLabel: req.clientLabel,
+    tokenPreview: req.tokenPreview,
+    user: req.user,
+    system,
+    tools: rawTools,
+    toolChoice: tool_choice,
+    temperature,
+    maxTokens: max_tokens,
+  };
+
+  if (stream) {
+    let handle;
+    try {
+      handle = await chatService.streamComplete(serviceOpts);
+    } catch (err) {
+      res.status(502).json({ error: { message: `Erro ao chamar o provider "${providerModel}": ${(err as Error).message}`, type: 'provider_error' } });
+      return;
+    }
+
+    const created = Math.floor(Date.now() / 1000);
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Request-Id', handle.requestId);
+
+    const firstChunk = { id: handle.requestId, object: 'chat.completion.chunk', created, model: providerModel, choices: [{ index: 0, delta: { role: 'assistant', content: '' }, finish_reason: null }] };
+    res.write(`data: ${JSON.stringify(firstChunk)}\n\n`);
+
+    for await (const text of handle.textStream) {
+      const chunk = { id: handle.requestId, object: 'chat.completion.chunk', created, model: providerModel, choices: [{ index: 0, delta: { content: text }, finish_reason: null }] };
+      res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+    }
+
+    const doneChunk = { id: handle.requestId, object: 'chat.completion.chunk', created, model: providerModel, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] };
+    res.write(`data: ${JSON.stringify(doneChunk)}\n\n`);
+    res.write('data: [DONE]\n\n');
+    res.end();
+    return;
+  }
+
   let result;
   try {
-    result = await chatService.complete({
-      messages,
-      providerModel,
-      clientLabel: req.clientLabel,
-      tokenPreview: req.tokenPreview,
-      user: req.user,
-      system,
-      tools: rawTools,
-      toolChoice: tool_choice,
-      temperature,
-      maxTokens: max_tokens,
-    });
+    result = await chatService.complete(serviceOpts);
   } catch (err) {
-    const message = (err as Error).message;
-    res.status(502).json({
-      error: {
-        message: `Erro ao chamar o provider "${providerModel}": ${message}`,
-        type: 'provider_error',
-      },
-    });
+    res.status(502).json({ error: { message: `Erro ao chamar o provider "${providerModel}": ${(err as Error).message}`, type: 'provider_error' } });
     return;
   }
 
