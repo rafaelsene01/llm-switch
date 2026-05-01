@@ -16,6 +16,7 @@ const endpoints = [
   },
   { method: 'GET', path: '/v1/models', desc: 'Lista modelos disponíveis para o token' },
   { method: 'GET', path: '/v1/models/:model_id', desc: 'Retorna metadados de um modelo específico' },
+  { method: 'POST', path: '/v1/embeddings', desc: 'Gera embeddings vetoriais (OpenAI, Google, Mistral, Ollama, LM Studio)' },
 ];
 
 const chatCurlExample = (url: string) => `curl ${url}/v1/chat/completions \\
@@ -145,6 +146,42 @@ const client = new OpenAI({
 const model = await client.models.retrieve("openai:gpt-4o-mini");
 console.log(model.id);`;
 
+const embeddingsCurlExample = (url: string) => `curl ${url}/v1/embeddings \\
+  -H "Authorization: Bearer SEU_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "openai:text-embedding-3-small",
+    "input": "O céu é azul."
+  }'`;
+
+const embeddingsPythonExample = (url: string) => `from openai import OpenAI
+
+client = OpenAI(
+    api_key="SEU_TOKEN",
+    base_url="${url}/v1",
+)
+
+response = client.embeddings.create(
+    model="openai:text-embedding-3-small",
+    input="O céu é azul.",
+)
+
+print(response.data[0].embedding)`;
+
+const embeddingsNodeExample = (url: string) => `import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: "SEU_TOKEN",
+  baseURL: "${url}/v1",
+});
+
+const response = await client.embeddings.create({
+  model: "openai:text-embedding-3-small",
+  input: "O céu é azul.",
+});
+
+console.log(response.data[0].embedding);`;
+
 export default function HomePage() {
   return (
     <div>
@@ -196,6 +233,7 @@ export default function HomePage() {
               <TabsTrigger value="stream">POST /v1/chat/completions (stream)</TabsTrigger>
               <TabsTrigger value="models">GET /v1/models</TabsTrigger>
               <TabsTrigger value="model-retrieve">GET /v1/models/:id</TabsTrigger>
+              <TabsTrigger value="embeddings">POST /v1/embeddings</TabsTrigger>
             </TabsList>
 
             <TabsContent value="chat">
@@ -339,6 +377,43 @@ export default function HomePage() {
                     <CardContent className="pt-4 pb-4">
                       <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
                         <code>{retrieveModelNodeExample(GATEWAY_URL)}</code>
+                      </pre>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
+
+            <TabsContent value="embeddings">
+              <Tabs defaultValue="curl">
+                <TabsList className="mb-3">
+                  <TabsTrigger value="curl">cURL</TabsTrigger>
+                  <TabsTrigger value="python">Python SDK</TabsTrigger>
+                  <TabsTrigger value="node">Node.js SDK</TabsTrigger>
+                </TabsList>
+                <TabsContent value="curl">
+                  <Card className="shadow-card border-border/50">
+                    <CardContent className="pt-4 pb-4">
+                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
+                        <code>{embeddingsCurlExample(GATEWAY_URL)}</code>
+                      </pre>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                <TabsContent value="python">
+                  <Card className="shadow-card border-border/50">
+                    <CardContent className="pt-4 pb-4">
+                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
+                        <code>{embeddingsPythonExample(GATEWAY_URL)}</code>
+                      </pre>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                <TabsContent value="node">
+                  <Card className="shadow-card border-border/50">
+                    <CardContent className="pt-4 pb-4">
+                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
+                        <code>{embeddingsNodeExample(GATEWAY_URL)}</code>
                       </pre>
                     </CardContent>
                   </Card>

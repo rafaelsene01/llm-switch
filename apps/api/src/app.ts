@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import { createAdminRoute } from './routes/admin.router';
 import { createChatRouter } from './routes/chat.router';
 import { createModelsRouter } from './routes/models.router';
+import { createEmbeddingsRouter } from './routes/embeddings.router';
 import { errorHandler } from './middleware/errorHandler.middleware';
 
 export function createApp() {
@@ -20,6 +21,7 @@ export function createApp() {
   app.use('/admin', createAdminRoute());
   app.use('/v1', createChatRouter());
   app.use('/v1', createModelsRouter());
+  app.use('/v1', createEmbeddingsRouter());
 
   app.use(errorHandler);
 
