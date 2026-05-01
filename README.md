@@ -1,6 +1,12 @@
-# LLM Gateway Corporativo
+# LLM Switch
 
-Proxy inteligente que senta entre seus sistemas internos e qualquer LLM externo (OpenAI, Anthropic, Google, etc.), **sanitizando automaticamente dados sensíveis** antes de cada requisição.
+Um gateway de uso pessoal para cadastrar e alternar entre múltiplos providers de LLM — OpenAI, Anthropic, Google, Mistral e outros — aproveitando ao máximo os limites gratuitos de cada um sem precisar trocar de API key ou mudar código.
+
+---
+
+## O problema que resolve
+
+Cada provider oferece um nível gratuito com limites de tokens/requisições. Sem um switch, você precisa ficar trocando de chave manualmente ou fica preso em um único provider. O LLM Switch centraliza tudo: você configura suas chaves uma vez e usa normalmente, enquanto o switch roteia para o provider que você quiser.
 
 ---
 
@@ -8,13 +14,12 @@ Proxy inteligente que senta entre seus sistemas internos e qualquer LLM externo 
 
 | Feature | Detalhe |
 |---|---|
-| **Sanitização automática** | CPF, CNPJ, e-mail, telefone, cartão, API keys, senhas, JWT, CEP, IP interno, CID, CRM e mais |
 | **Multi-provider** | OpenAI, Anthropic, Google Gemini, Mistral, OpenRouter, Ollama, LM Studio |
-| **Compatível com OpenAI** | Seus sistemas apontam para o gateway sem mudar código |
-| **Autenticação interna** | Suas próprias API keys, isoladas das chaves reais dos providers |
-| **Rate limiting** | Por departamento/cliente, configurável |
-| **Auditoria completa** | Todos os requests logados com: quem pediu, o que foi sanitizado, qual provider, tokens usados |
-| **Blocklist customizável** | Adicione termos proprietários via `.env` |
+| **Compatível com OpenAI** | Aponte qualquer client OpenAI para o LLM Switch sem mudar código |
+| **Dashboard admin** | Interface web para gerenciar providers, usuários, modelos e regras |
+| **Sanitização de PII** | Remove CPF, CNPJ, e-mail, API keys, senhas e mais antes de enviar ao provider |
+| **Autenticação própria** | Suas chaves internas, isoladas das chaves reais dos providers |
+| **Rate limiting** | Por usuário/cliente, configurável |
 | **Streaming** | Suporte a `stream: true` (SSE) |
 | **Docker** | Sobe com um comando |
 
@@ -28,50 +33,49 @@ npm install
 
 # 2. Configurar
 cp .env.example .env
-# Edite .env com suas chaves
+# Edite .env com suas chaves de cada provider
 
 # 3. Rodar
-npm start
-# ou em dev com auto-reload:
 npm run dev
 ```
 
 ### Com Docker
 
 ```bash
-cp .env.example .env   # configure o .env
+cp .env.example .env
 docker compose up -d
 ```
+
+Acesse o dashboard em `http://localhost:3001` para configurar providers e criar usuários.
 
 ---
 
 ## Uso
 
-O gateway expõe a mesma API da OpenAI. Seus sistemas só precisam mudar a `baseURL`:
+O LLM Switch expõe a mesma API da OpenAI. Qualquer client só precisa mudar a `baseURL`:
 
 ```javascript
-// Antes (direto na OpenAI)
-const client = new OpenAI({ apiKey: "sk-..." });
-
-// Depois (via gateway)
 const client = new OpenAI({
   baseURL: "http://localhost:3000/v1",
-  apiKey: "key_dev_abc123",   // sua key interna, não a da OpenAI
+  apiKey: "sua_key_interna",  // criada no dashboard, não a chave real do provider
 });
 
-// Funciona igual — o gateway cuida do resto
+// Escolha o provider no campo model
 const response = await client.chat.completions.create({
-  model: "gpt-4o",
-  messages: [{ role: "user", content: "Meu CPF é 123.456.789-00, me ajude com..." }]
-  // → o CPF será removido antes de chegar na OpenAI
+  model: "anthropic:claude-3-5-haiku-20241022",  // ou "openai:gpt-4o-mini", "google:gemini-2.0-flash" etc.
+  messages: [{ role: "user", content: "Olá!" }]
 });
 ```
 
-### Escolhendo o provider
+### Formato do model
 
-Via `model` no body:
-```json
-{ "model": "anthropic:claude-3-5-haiku-20241022" }
+Sempre `provider:modelo`:
+
+```
+openai:gpt-4o-mini
+anthropic:claude-3-5-haiku-20241022
+google:gemini-2.0-flash
+mistral:mistral-small-latest
 ```
 
 ---
@@ -82,73 +86,20 @@ Via `model` no body:
 |---|---|---|
 | `GET` | `/health` | Health check (sem auth) |
 | `POST` | `/v1/chat/completions` | Completions (compatível OpenAI) |
-| `GET` | `/v1/models` | Lista providers disponíveis |
-| `GET` | `/v1/models/rules` | Lista regras de sanitização |
-
----
-
-## Dados sanitizados
-
-| Tipo | Exemplo → Resultado |
-|---|---|
-| CPF | `123.456.789-00` → `[CPF_REMOVIDO]` |
-| CNPJ | `12.345.678/0001-90` → `[CNPJ_REMOVIDO]` |
-| E-mail | `joao@empresa.com` → `[EMAIL_REMOVIDO]` |
-| Telefone | `(11) 91234-5678` → `[TELEFONE_REMOVIDO]` |
-| Cartão | `4111 1111 1111 1111` → `[CARTAO_REMOVIDO]` |
-| API Key | `sk-abc123...` → `[API_KEY_REMOVIDA]` |
-| JWT | `eyJ...` → `[JWT_REMOVIDO]` |
-| Senha inline | `senha: minhasenha` → `[SENHA_REMOVIDA]` |
-| CEP | `01310-100` → `[CEP_REMOVIDO]` |
-| IP interno | `192.168.1.10` → `[IP_INTERNO_REMOVIDO]` |
-
----
-
-## Logs de auditoria
-
-Cada requisição gera um log em `logs/audit.log`:
-
-```json
-{
-  "timestamp": "2025-01-15 14:32:10",
-  "level": "warn",
-  "message": "request_sanitized",
-  "requestId": "uuid-...",
-  "client": "time-dev",
-  "provider": "openai:gpt-4o",
-  "sensitiveDataRemoved": true,
-  "sanitizationReport": [
-    { "messageIndex": 0, "role": "user", "findings": [
-      { "label": "CPF", "count": 1 },
-      { "label": "EMAIL", "count": 2 }
-    ]}
-  ],
-  "responseTokens": 312,
-  "durationMs": 1840
-}
-```
+| `GET` | `/v1/models` | Lista modelos disponíveis |
 
 ---
 
 ## Estrutura do projeto
 
 ```
-llm-gateway/
-├── src/
-│   ├── index.js              # Entry point / servidor Express
-│   ├── providers.js          # Gerenciamento de providers (AI SDK)
-│   ├── middleware/
-│   │   ├── auth.js           # Autenticação por API key interna
-│   │   └── rateLimit.js      # Rate limiting por cliente
-│   ├── routes/
-│   │   ├── chat.js           # POST /v1/chat/completions
-│   │   └── models.js         # GET /v1/models
-│   ├── sanitizer/
-│   │   └── index.js          # Motor de detecção e remoção de PII
-│   └── utils/
-│       └── logger.js         # Winston logger estruturado
-├── logs/                     # Gerado automaticamente
+llm-switch/
+├── apps/
+│   ├── api/    — Express + TypeScript (porta 3000)
+│   └── web/    — Next.js 14 admin dashboard (porta 3001)
+├── libs/
+│   └── shared/ — Tipos TypeScript compartilhados
+├── docker/
 ├── .env.example
-├── Dockerfile
 └── docker-compose.yml
 ```
