@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Plus, RefreshCw, Cpu, TrendingDown, Pencil, Check, X, Search, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { RefreshCw, Cpu, TrendingDown, Pencil, Check, X, Search, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { useModels } from '@/hooks/useModels';
 import { useProviders } from '@/hooks/useProviders';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -19,13 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { cn } from '@/lib/utils';
@@ -87,14 +79,11 @@ interface PriceEditState {
 export function ModelsClient() {
   const { data: models, isLoading, mutate } = useModels();
   const { data: providers } = useProviders();
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState('');
-  const [label, setLabel] = useState('');
-  const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncingPrices, setSyncingPrices] = useState(false);
   const [priceEdit, setPriceEdit] = useState<PriceEditState | null>(null);
   const [savingPrice, setSavingPrice] = useState(false);
+  const [togglingAll, setTogglingAll] = useState(false);
   const [filter, setFilter] = useState('');
   const [selectedProviders, setSelectedProviders] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>('label');
@@ -172,26 +161,6 @@ export function ModelsClient() {
     });
   })();
 
-  async function handleAdd() {
-    if (!value.trim()) {
-      toast.error("Campo 'provider:model' obrigatório");
-      return;
-    }
-    setSaving(true);
-    try {
-      await apiClient.models.add({ value: value.trim(), label: label.trim() || value.trim() });
-      await mutate();
-      toast.success('Modelo adicionado');
-      setOpen(false);
-      setValue('');
-      setLabel('');
-    } catch (err) {
-      toast.error((err as Error).message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function handleSync() {
     setSyncing(true);
     try {
@@ -233,6 +202,20 @@ export function ModelsClient() {
       toast.success(active ? 'Modelo ativado' : 'Modelo desativado');
     } catch (err) {
       toast.error((err as Error).message);
+    }
+  }
+
+  async function handleToggleAll(active: boolean) {
+    if (!sortedModels?.length) return;
+    setTogglingAll(true);
+    try {
+      await Promise.all(sortedModels.map((m) => apiClient.models.update(m.id, { active })));
+      await mutate();
+      toast.success(active ? 'Todos os modelos ativados' : 'Todos os modelos desativados');
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setTogglingAll(false);
     }
   }
 
@@ -288,10 +271,6 @@ export function ModelsClient() {
               <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
                 <RefreshCw className={`mr-1.5 h-4 w-4${syncing ? ' animate-spin' : ''}`} />
                 {syncing ? 'Sincronizando...' : 'Sincronizar'}
-              </Button>
-              <Button onClick={() => setOpen(true)} size="sm">
-                <Plus className="mr-1.5 h-4 w-4" />
-                Adicionar
               </Button>
             </>
           }
@@ -367,15 +346,6 @@ export function ModelsClient() {
                 ? 'Nenhum modelo corresponde ao filtro'
                 : 'Nenhum modelo cadastrado'}
             </p>
-            {!filter.trim() && selectedProviders.size === 0 && (
-              <>
-                <p className="mt-1 text-caption">Adicione um modelo para começar a rotear requisições</p>
-                <Button onClick={() => setOpen(true)} size="sm" className="mt-4">
-                  <Plus className="mr-1.5 h-4 w-4" />
-                  Adicionar modelo
-                </Button>
-              </>
-            )}
           </div>
         ) : (
           <div className="rounded-lg border overflow-hidden">
@@ -406,15 +376,24 @@ export function ModelsClient() {
                     );
                   })}
                   <TableHead className="text-section-title h-10 w-8" />
-                  <TableHead
-                    className="text-section-title h-10 cursor-pointer select-none"
-                    onClick={() => toggleSort('active')}
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      Ativo
-                      {sortKey === 'active'
-                        ? (sortDir === 'asc' ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />)
-                        : <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />}
+                  <TableHead className="text-section-title h-10">
+                    <span className="inline-flex items-center gap-2">
+                      <span
+                        className="inline-flex items-center gap-1 cursor-pointer select-none"
+                        onClick={() => toggleSort('active')}
+                      >
+                        Ativo
+                        {sortKey === 'active'
+                          ? (sortDir === 'asc' ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />)
+                          : <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />}
+                      </span>
+                      <Switch
+                        checked={!!sortedModels?.length && sortedModels.every((m) => m.active)}
+                        onCheckedChange={handleToggleAll}
+                        disabled={togglingAll || !sortedModels?.length}
+                        className="scale-75 origin-left"
+                        title={sortedModels?.every((m) => m.active) ? 'Desativar todos' : 'Ativar todos'}
+                      />
                     </span>
                   </TableHead>
                 </TableRow>
@@ -509,42 +488,6 @@ export function ModelsClient() {
           </div>
         )}
 
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent>
-            <DialogHeader className="border-b border-border pb-4 mb-2">
-              <DialogTitle className="text-base font-semibold">Adicionar Modelo</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label className="text-field-label">Provider:Model *</Label>
-                <Input
-                  placeholder="openai:gpt-4o"
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                  className="mt-1.5 font-mono"
-                />
-              </div>
-              <div>
-                <Label className="text-field-label">Label (opcional)</Label>
-                <Input
-                  placeholder="GPT-4o"
-                  value={label}
-                  onChange={(e) => setLabel(e.target.value)}
-                  className="mt-1.5"
-                />
-              </div>
-
-            </div>
-            <DialogFooter className="border-t border-border pt-4 mt-2">
-              <Button variant="outline" onClick={() => setOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleAdd} disabled={saving}>
-                {saving ? 'Salvando...' : 'Adicionar'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </TooltipProvider>
   );
