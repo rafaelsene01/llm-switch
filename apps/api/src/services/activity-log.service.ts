@@ -8,7 +8,6 @@ export interface ActivityLogEntry {
   userName: string;
   tokenPreview: string;
   originalMessages: Array<{ role: string; content: unknown }>;
-  sanitizedMessages: Array<{ role: string; content: unknown }>;
   llmResponse: string | null;
   providerModel: string;
   blocked: boolean;
@@ -129,12 +128,6 @@ function buildMarkdown(entry: ActivityLogEntry, now: string): string {
 
 \`\`\`json
 ${JSON.stringify(entry.originalMessages, null, 2)}
-\`\`\`
-
-## Sanitized Request
-
-\`\`\`json
-${JSON.stringify(entry.sanitizedMessages, null, 2)}
 \`\`\`
 
 ## LLM Response

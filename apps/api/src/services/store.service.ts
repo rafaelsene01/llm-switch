@@ -1,19 +1,13 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import path from 'path';
-import { DEFAULT_BLOCKLIST } from '../data/defaults/blocklist';
 import { DEFAULT_MODELS } from '../data/defaults/models';
 import type {
-  BlocklistEntry,
-  BlocklistMode,
   GatewayModel,
   GatewayProvider,
   GatewayUser,
   UserPublic,
 } from '../types';
-import { DEFAULT_SANITIZATION_ROLES } from '../types';
 import type { ProviderModelInfo } from './providers.service';
-
-const VALID_MODES: BlocklistMode[] = ['disabled', 'redact', 'block'];
 
 const DEFAULT_PROVIDERS: GatewayProvider[] = [
   { id: 'openai',     name: 'OpenAI',      type: 'cloud', configured: false, enabled: false },
@@ -26,7 +20,6 @@ const DEFAULT_PROVIDERS: GatewayProvider[] = [
 ];
 
 interface StoreData {
-  blocklist: BlocklistEntry[];
   models: GatewayModel[];
   users: GatewayUser[];
   providers: GatewayProvider[];
@@ -43,7 +36,6 @@ interface ExportPayload {
   _module: string;
   _version: string;
   _exported_at: string;
-  blocklist?: BlocklistEntry[];
   models?: GatewayModel[];
   users?: GatewayUser[];
   providers?: ProviderExportEntry[];
@@ -60,7 +52,6 @@ function createStore(dataFile?: string) {
   function load(): StoreData {
     if (!existsSync(resolvedFile)) {
       const fresh: StoreData = {
-        blocklist: DEFAULT_BLOCKLIST,
         models: DEFAULT_MODELS,
         users: [],
         providers: structuredClone(DEFAULT_PROVIDERS),
@@ -77,68 +68,13 @@ function createStore(dataFile?: string) {
       }
       return data;
     } catch {
-      return { blocklist: DEFAULT_BLOCKLIST, models: DEFAULT_MODELS, users: [], providers: structuredClone(DEFAULT_PROVIDERS) };
+      return { models: DEFAULT_MODELS, users: [], providers: structuredClone(DEFAULT_PROVIDERS) };
     }
   }
 
   function save(data: StoreData): void {
     mkdirSync(path.dirname(resolvedFile), { recursive: true });
     writeFileSync(resolvedFile, JSON.stringify(data, null, 2));
-  }
-
-  function normalizeMode(entry: BlocklistEntry): BlocklistMode {
-    if (VALID_MODES.includes(entry.mode)) return entry.mode;
-    return 'redact';
-  }
-
-  // ── Blocklist ──────────────────────────────────────────────────────────────
-
-  function getBlocklist(): BlocklistEntry[] {
-    return load().blocklist.map((e) => ({ ...e, mode: normalizeMode(e) }));
-  }
-
-  function addBlocklistEntry(entry: Partial<BlocklistEntry>): BlocklistEntry {
-    const data = load();
-    const newEntry: BlocklistEntry = {
-      id: `bl_${Date.now()}`,
-      label: entry.label ?? (entry.value ?? '').slice(0, 40),
-      value: entry.value ?? '',
-      type: entry.type ?? 'word',
-      replacement: entry.replacement ?? '[REMOVIDO]',
-      mode: VALID_MODES.includes(entry.mode as BlocklistMode)
-        ? (entry.mode as BlocklistMode)
-        : 'redact',
-      builtin: false,
-      category: entry.category ?? 'custom',
-    };
-    data.blocklist.push(newEntry);
-    save(data);
-    return { ...newEntry, mode: normalizeMode(newEntry) };
-  }
-
-  function updateBlocklistEntry(
-    id: string,
-    patch: Partial<BlocklistEntry>
-  ): BlocklistEntry | null {
-    const data = load();
-    const idx = data.blocklist.findIndex((e) => e.id === id);
-    if (idx === -1) return null;
-    const safePatch = { ...patch };
-    if (safePatch.mode !== undefined && !VALID_MODES.includes(safePatch.mode)) {
-      delete safePatch.mode;
-    }
-    data.blocklist[idx] = { ...data.blocklist[idx], ...safePatch };
-    save(data);
-    return { ...data.blocklist[idx], mode: normalizeMode(data.blocklist[idx]) };
-  }
-
-  function deleteBlocklistEntry(id: string): boolean {
-    const data = load();
-    const entry = data.blocklist.find((e) => e.id === id);
-    if (!entry) return false;
-    data.blocklist = data.blocklist.filter((e) => e.id !== id);
-    save(data);
-    return true;
   }
 
   // ── Models ─────────────────────────────────────────────────────────────────
@@ -241,7 +177,6 @@ function createStore(dataFile?: string) {
     return load().users.map(({ key, ...rest }) => ({
       ...rest,
       keyPreview: key ? key.slice(0, 8) + '...' : '???',
-      sanitizationRoles: rest.sanitizationRoles ?? DEFAULT_SANITIZATION_ROLES,
     }));
   }
 
@@ -265,7 +200,6 @@ function createStore(dataFile?: string) {
       allowedModels: Array.isArray(user.allowedModels) ? user.allowedModels : [],
       createdAt: new Date().toISOString(),
       active: true,
-      sanitizationRoles: user.sanitizationRoles ?? DEFAULT_SANITIZATION_ROLES,
     };
     data.users.push(newUser);
     save(data);
@@ -296,7 +230,6 @@ function createStore(dataFile?: string) {
   function getProviders(): GatewayProvider[] {
     return load().providers.map((p) => ({
       ...p,
-      // backward compat: old entries without enabled field default to configured state
       enabled: p.enabled !== undefined ? p.enabled : p.configured,
     }));
   }
@@ -314,13 +247,10 @@ function createStore(dataFile?: string) {
 
     const explicitEnabled = 'enabled' in patch ? patch.enabled : undefined;
     if (explicitEnabled !== undefined) {
-      // Respect explicit toggle, but can only be enabled if configured
       updated.enabled = explicitEnabled && updated.configured;
     } else if (!wasConfigured && updated.configured) {
-      // Just became configured → auto-enable
       updated.enabled = true;
     } else {
-      // Preserve current enabled, defaulting to configured state for old entries
       updated.enabled = current.enabled !== undefined ? current.enabled : current.configured;
     }
 
@@ -355,7 +285,6 @@ function createStore(dataFile?: string) {
       _module: 'all',
       _version: '1.0',
       _exported_at: new Date().toISOString(),
-      blocklist: data.blocklist,
       models: data.models,
       users: data.users,
       providers: data.providers.map((p) => ({ id: p.id, key: p.key, url: p.url })),
@@ -366,7 +295,7 @@ function createStore(dataFile?: string) {
     if (!payload?._gateway_export) {
       throw new Error('Arquivo inválido: não é uma exportação do LLM Switch.');
     }
-    const report = _importModules(payload, ['blocklist', 'models', 'users'], mode);
+    const report = _importModules(payload, ['models', 'users'], mode);
     if (payload.providers) {
       const provReport = _importProviders(payload.providers);
       report.added['providers'] = provReport.added;
@@ -375,7 +304,7 @@ function createStore(dataFile?: string) {
     return report;
   }
 
-  function exportModule(module: 'blocklist' | 'models' | 'users' | 'providers'): ExportPayload {
+  function exportModule(module: 'models' | 'users' | 'providers'): ExportPayload {
     const data = load();
     if (module === 'providers') {
       return {
@@ -397,7 +326,7 @@ function createStore(dataFile?: string) {
 
   function importModule(
     payload: ExportPayload,
-    module: 'blocklist' | 'models' | 'users' | 'providers',
+    module: 'models' | 'users' | 'providers',
     mode: 'merge' | 'replace' = 'merge'
   ): ImportReport {
     if (!payload?._gateway_export) {
@@ -435,7 +364,7 @@ function createStore(dataFile?: string) {
 
   function _importModules(
     payload: ExportPayload,
-    modules: ('blocklist' | 'models' | 'users')[],
+    modules: ('models' | 'users')[],
     mode: 'merge' | 'replace'
   ): ImportReport {
     const current = load();
@@ -457,16 +386,16 @@ function createStore(dataFile?: string) {
         const keyFn =
           mod === 'users'
             ? (x: GatewayUser) => x.name + '|' + x.key
-            : (x: GatewayModel | BlocklistEntry) => x.value;
+            : (x: GatewayModel) => x.value;
 
-        for (const item of items as (GatewayUser | GatewayModel | BlocklistEntry)[]) {
-          const exists = (current[mod] as (GatewayUser | GatewayModel | BlocklistEntry)[]).find(
-            (e) => keyFn(e as GatewayUser & GatewayModel & BlocklistEntry) === keyFn(item as GatewayUser & GatewayModel & BlocklistEntry)
+        for (const item of items as (GatewayUser | GatewayModel)[]) {
+          const exists = (current[mod] as (GatewayUser | GatewayModel)[]).find(
+            (e) => keyFn(e as GatewayUser & GatewayModel) === keyFn(item as GatewayUser & GatewayModel)
           );
           if (exists) {
             report.skipped[mod]++;
           } else {
-            (current[mod] as (GatewayUser | GatewayModel | BlocklistEntry)[]).push({
+            (current[mod] as (GatewayUser | GatewayModel)[]).push({
               ...item,
               id:
                 (item as { id?: string }).id ||
@@ -483,10 +412,6 @@ function createStore(dataFile?: string) {
   }
 
   return {
-    getBlocklist,
-    addBlocklistEntry,
-    updateBlocklistEntry,
-    deleteBlocklistEntry,
     getModels,
     addModel,
     updateModel,

@@ -22,37 +22,6 @@ describe('StoreService', () => {
     }
   });
 
-  it('addBlocklistEntry returns entry with generated id', () => {
-    const entry = store.addBlocklistEntry({
-      value: 'test-word',
-      type: 'word',
-      label: 'Test',
-      replacement: '[TEST]',
-      mode: 'redact',
-      category: 'custom',
-    });
-
-    expect(entry.id).toMatch(/^bl_/);
-    expect(entry.value).toBe('test-word');
-    expect(entry.mode).toBe('redact');
-  });
-
-  it('updateBlocklistEntry updates field without affecting others', () => {
-    const added = store.addBlocklistEntry({
-      value: 'original',
-      type: 'word',
-      label: 'Original Label',
-      mode: 'redact',
-    });
-
-    const updated = store.updateBlocklistEntry(added.id, { mode: 'block' });
-
-    expect(updated).not.toBeNull();
-    expect(updated!.mode).toBe('block');
-    expect(updated!.label).toBe('Original Label');
-    expect(updated!.value).toBe('original');
-  });
-
   it('deleteModel throws if user is still using it', () => {
     const model = store.addModel({ value: 'openai:gpt-test', label: 'Test Model' });
     store.addUser({ name: 'testuser', key: 'gw_test123', model: 'openai:gpt-test', allowedModels: [] });
@@ -71,8 +40,7 @@ describe('StoreService', () => {
     expect(notFound).toBeNull();
   });
 
-  it('exportAll / importAll round-trip preserves data', () => {
-    store.addBlocklistEntry({ value: 'export-test', type: 'word', label: 'Export Test' });
+  it('exportAll / importAll round-trip preserves models', () => {
     store.addModel({ value: 'test:model', label: 'Test Model' });
 
     const exported = store.exportAll();
@@ -80,10 +48,15 @@ describe('StoreService', () => {
     const store2 = createStore(makeTempFile());
     store2.importAll(exported, 'replace');
 
-    const blocklist = store2.getBlocklist();
-    expect(blocklist.some((e) => e.value === 'export-test')).toBe(true);
-
     const models = store2.getModels();
     expect(models.some((m) => m.value === 'test:model')).toBe(true);
+  });
+
+  it('addUser and getUsers returns user without key', () => {
+    store.addUser({ name: 'bob', key: 'gw_bob456', model: null, allowedModels: [] });
+    const users = store.getUsers();
+    expect(users).toHaveLength(1);
+    expect(users[0].name).toBe('bob');
+    expect(users[0].keyPreview).toContain('gw_bob4');
   });
 });

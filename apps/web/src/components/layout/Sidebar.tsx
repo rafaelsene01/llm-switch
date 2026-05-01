@@ -1,25 +1,22 @@
 'use client';
 
-import { Home, Shield, Cpu, Users, Plug, Activity, BarChart2 } from 'lucide-react';
+import { Home, Cpu, Users, Plug, Activity, BarChart2 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { NavItem } from './NavItem';
 import { Separator } from '@/components/ui/separator';
 import { useUsers } from '@/hooks/useUsers';
 import { useModels } from '@/hooks/useModels';
-import { useRules } from '@/hooks/useRules';
 import { useProviders } from '@/hooks/useProviders';
 import { useActivity } from '@/hooks/useActivity';
 
 export function Sidebar() {
   const { data: users } = useUsers();
   const { data: models } = useModels();
-  const { data: rules } = useRules();
   const { data: providers } = useProviders();
   const { data: activityPage } = useActivity(1, 1);
 
   const activeUsers = users?.filter((u) => u.active).length;
   const activeModels = models?.filter((m) => m.active).length;
-  const activeRules = rules?.filter((r) => r.mode !== 'disabled').length;
   const configuredProviders = providers?.filter((p) => p.configured).length;
 
   return (
@@ -42,7 +39,6 @@ export function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 space-y-0.5 px-2 py-3">
         <NavItem href="/" label="Home" icon={Home} />
-        <NavItem href="/rules" label="Regras" icon={Shield} badge={activeRules} />
         <NavItem href="/models" label="Modelos" icon={Cpu} badge={activeModels} />
         <NavItem href="/users" label="Usuários" icon={Users} badge={activeUsers} />
         <NavItem href="/providers" label="Providers" icon={Plug} badge={configuredProviders} />
@@ -51,8 +47,8 @@ export function Sidebar() {
       </nav>
 
       <Separator className="opacity-50" />
-      <div className="flex items-center justify-between px-5 py-3">
-        <span className="text-caption opacity-40">v2.0</span>
+
+      <div className="px-4 py-3">
         <ThemeToggle />
       </div>
     </aside>

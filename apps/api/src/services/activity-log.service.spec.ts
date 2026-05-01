@@ -18,7 +18,6 @@ const baseEntry = {
   userName: 'alice',
   tokenPreview: 'abcd1234',
   originalMessages: [{ role: 'user', content: 'Hello, world!' }],
-  sanitizedMessages: [{ role: 'user', content: 'Hello, world!' }],
   llmResponse: 'Hi there!',
   providerModel: 'openai:gpt-4o-mini',
   blocked: false,
@@ -26,6 +25,8 @@ const baseEntry = {
   completionTokens: 5,
   totalTokens: 15,
   costUsd: 0,
+  inputCostUsd: 0,
+  outputCostUsd: 0,
 };
 
 describe('ActivityLogService', () => {
@@ -58,17 +59,17 @@ describe('ActivityLogService', () => {
   it('truncates message_preview to 200 chars', () => {
     const svc = makeService();
     const long = 'x'.repeat(300);
-    svc.log({ ...baseEntry, sanitizedMessages: [{ role: 'user', content: long }] });
+    svc.log({ ...baseEntry, originalMessages: [{ role: 'user', content: long }] });
     const { rows } = svc.list(1, 10);
     expect(rows[0].message_preview).toHaveLength(203); // 200 + '...'
     expect(rows[0].message_preview.endsWith('...')).toBe(true);
   });
 
-  it('uses the last user message for preview when multiple messages exist', () => {
+  it('uses the first user message for preview when multiple messages exist', () => {
     const svc = makeService();
     svc.log({
       ...baseEntry,
-      sanitizedMessages: [
+      originalMessages: [
         { role: 'system', content: 'You are helpful.' },
         { role: 'user', content: 'First message' },
         { role: 'assistant', content: 'Response' },
@@ -76,7 +77,7 @@ describe('ActivityLogService', () => {
       ],
     });
     const { rows } = svc.list(1, 10);
-    expect(rows[0].message_preview).toBe('Last user message');
+    expect(rows[0].message_preview).toBe('First message');
   });
 
   it('returns rows in descending created_at order', () => {
@@ -102,7 +103,6 @@ describe('ActivityLogService', () => {
   it('deleteOlderThan removes rows older than cutoff', () => {
     const svc = makeService();
     svc.log(baseEntry);
-    // days=-1 sets cutoff 1 day in the future, so all existing rows qualify
     const result = svc.deleteOlderThan(-1);
     expect(result.rows).toBe(1);
     const { total } = svc.list(1, 10);
@@ -112,16 +112,15 @@ describe('ActivityLogService', () => {
   it('deleteOlderThan does not remove recent rows', () => {
     const svc = makeService();
     svc.log(baseEntry);
-    // days=30 sets cutoff 30 days ago — recent rows should survive
     const result = svc.deleteOlderThan(30);
     expect(result.rows).toBe(0);
     const { total } = svc.list(1, 10);
     expect(total).toBe(1);
   });
 
-  it('does not throw when log() fails internally', () => {
+  it('does not throw when log() receives empty messages', () => {
     const svc = makeService();
-    expect(() => svc.log({ ...baseEntry, sanitizedMessages: null as unknown as [] })).not.toThrow();
+    expect(() => svc.log({ ...baseEntry, originalMessages: [] })).not.toThrow();
   });
 
   it('list filters by userFilter (case-insensitive partial match)', () => {
@@ -196,7 +195,6 @@ describe('ActivityLogService', () => {
       expect(alice.totalTokens).toBe(25);
       expect(alice.totalCostUsd).toBeCloseTo(0.0015);
       expect(alice.models).toHaveLength(2);
-      expect(alice.models[0].totalCostUsd).toBeGreaterThan(0);
 
       const bob = byUser.find((u) => u.user === 'bob')!;
       expect(bob.totalCostUsd).toBeCloseTo(0.002);

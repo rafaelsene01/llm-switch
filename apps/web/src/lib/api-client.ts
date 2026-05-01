@@ -2,7 +2,6 @@ import type {
   ActivityLogDetail,
   ActivityLogPage,
   AnalyticsData,
-  BlocklistEntry,
   GatewayModel,
   GatewayProvider,
   ProviderModelInfo,
@@ -55,7 +54,7 @@ async function downloadExport(apiPath: string, filename: string): Promise<void> 
   URL.revokeObjectURL(url);
 }
 
-export type ImportModule = 'blocklist' | 'users' | 'providers';
+export type ImportModule = 'users' | 'providers';
 
 export interface ImportReport {
   added: Record<string, number>;
@@ -69,22 +68,6 @@ export interface ImportResult {
 }
 
 export const apiClient = {
-  blocklist: {
-    list: () => apiFetch<BlocklistEntry[]>('/admin/blocklist'),
-    add: (body: Partial<BlocklistEntry>) =>
-      apiFetch<BlocklistEntry>('/admin/blocklist', {
-        method: 'POST',
-        body: JSON.stringify(body),
-      }),
-    update: (id: string, patch: Partial<BlocklistEntry>) =>
-      apiFetch<BlocklistEntry>(`/admin/blocklist/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(patch),
-      }),
-    remove: (id: string) =>
-      apiFetch<{ success: boolean }>(`/admin/blocklist/${id}`, { method: 'DELETE' }),
-  },
-
   models: {
     list: () => apiFetch<GatewayModel[]>('/admin/models'),
     add: (body: { value: string; label?: string }) =>
@@ -162,9 +145,9 @@ export const apiClient = {
   },
 
   export: {
-    all: () => downloadExport('/admin/export', `gateway-config-${today()}.json`),
+    all: () => downloadExport('/admin/export', `llm-switch-config-${today()}.json`),
     module: (mod: ImportModule) =>
-      downloadExport(`/admin/export/${mod}`, `gateway-${mod}-${today()}.json`),
+      downloadExport(`/admin/export/${mod}`, `llm-switch-${mod}-${today()}.json`),
   },
 
   import: {

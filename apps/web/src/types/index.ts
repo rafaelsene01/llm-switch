@@ -1,25 +1,3 @@
-export type BlocklistMode = 'disabled' | 'redact' | 'block';
-
-export type BlocklistCategory =
-  | 'documento'
-  | 'contato'
-  | 'financeiro'
-  | 'credencial'
-  | 'saude'
-  | 'rede'
-  | 'custom';
-
-export interface BlocklistEntry {
-  id: string;
-  label: string;
-  value: string;
-  type: 'regex' | 'word';
-  replacement: string;
-  mode: BlocklistMode;
-  builtin: boolean;
-  category: BlocklistCategory;
-}
-
 export interface GatewayModel {
   id: string;
   value: string;
@@ -27,12 +5,6 @@ export interface GatewayModel {
   active: boolean;
   inputCostPer1M?: number;
   outputCostPer1M?: number;
-}
-
-export interface SanitizationRoles {
-  system: boolean;
-  user: boolean;
-  tool: boolean;
 }
 
 export interface GatewayUser {
@@ -43,7 +15,6 @@ export interface GatewayUser {
   allowedModels: string[];
   createdAt: string;
   active: boolean;
-  sanitizationRoles?: SanitizationRoles;
 }
 
 export type ProviderType = 'cloud' | 'local';
@@ -75,7 +46,6 @@ export interface UserPublic {
   allowedModels: string[];
   createdAt: string;
   active: boolean;
-  sanitizationRoles: SanitizationRoles;
 }
 
 export interface ActivityLogRow {
@@ -132,4 +102,3 @@ export interface AnalyticsData {
   byModel: AnalyticsModelStat[];
   byUser: AnalyticsUserStat[];
 }
-

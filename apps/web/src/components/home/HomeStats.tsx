@@ -1,11 +1,10 @@
 'use client';
 
-import { Shield, Cpu, Users, Plug } from 'lucide-react';
+import { Cpu, Users, Plug } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUsers } from '@/hooks/useUsers';
 import { useModels } from '@/hooks/useModels';
-import { useRules } from '@/hooks/useRules';
 import { useProviders } from '@/hooks/useProviders';
 
 interface StatCardProps {
@@ -49,15 +48,14 @@ function StatCardSkeleton() {
 export function HomeStats() {
   const { data: users, isLoading: loadingUsers } = useUsers();
   const { data: models, isLoading: loadingModels } = useModels();
-  const { data: rules, isLoading: loadingRules } = useRules();
   const { data: providers, isLoading: loadingProviders } = useProviders();
 
-  const isLoading = loadingUsers || loadingModels || loadingRules || loadingProviders;
+  const isLoading = loadingUsers || loadingModels || loadingProviders;
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)}
+      <div className="grid gap-4 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => <StatCardSkeleton key={i} />)}
       </div>
     );
   }
@@ -66,24 +64,16 @@ export function HomeStats() {
   const totalUsers = users?.length ?? 0;
   const activeModels = models?.filter((m) => m.active).length ?? 0;
   const totalModels = models?.length ?? 0;
-  const activeRules = rules?.filter((r) => r.mode !== 'disabled').length ?? 0;
-  const totalRules = rules?.length ?? 0;
   const configuredProviders = providers?.filter((p) => p.configured).length ?? 0;
   const totalProviders = providers?.length ?? 0;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-3">
       <StatCard
         icon={Users}
         label="Usuários"
         value={activeUsers}
         sub={`${totalUsers} total`}
-      />
-      <StatCard
-        icon={Shield}
-        label="Regras ativas"
-        value={activeRules}
-        sub={`${totalRules} total`}
       />
       <StatCard
         icon={Cpu}

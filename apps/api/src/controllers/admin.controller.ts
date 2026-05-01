@@ -5,15 +5,12 @@ import path from 'path';
 import type { Request, Response } from 'express';
 import { store } from '../services/store.service';
 import { env } from '../config/env';
-import type { BlocklistCategory, BlocklistMode, SanitizationRoles } from '../types';
-import { DEFAULT_SANITIZATION_ROLES } from '../types';
 import { listProviderModels, testProviderConnection } from '../services/providers.service';
 import { getPricingForModel, buildPricingMap } from '../services/pricing.service';
 
 import { activityLog } from '../services/activity-log.service';
 
-const VALID_MODES = ['disabled', 'redact', 'block'];
-const MODULES = ['blocklist', 'models', 'users', 'providers'] as const;
+const MODULES = ['models', 'users', 'providers'] as const;
 type Module = (typeof MODULES)[number];
 
 function wrap(fn: (req: Request, res: Response) => Promise<void>) {
@@ -65,72 +62,6 @@ export function createAdminRouter(): Router {
     '/analytics',
     wrap(async (_req, res) => {
       res.json(activityLog.analytics());
-    })
-  );
-
-  // Blocklist
-  router.get(
-    '/blocklist',
-    wrap(async (_req, res) => {
-      res.json(store.getBlocklist());
-    })
-  );
-
-  router.post(
-    '/blocklist',
-    wrap(async (req, res) => {
-      const { value, type, label, replacement, category, mode } = req.body as Record<
-        string,
-        string
-      >;
-      if (!value) {
-        res.status(400).json({ error: { message: "Campo 'value' obrigatório." } });
-        return;
-      }
-      if (type === 'regex') {
-        try {
-          new RegExp(value);
-        } catch {
-          res.status(400).json({ error: { message: 'Regex inválida.' } });
-          return;
-        }
-      }
-      if (mode !== undefined && !VALID_MODES.includes(mode)) {
-        res.status(400).json({
-          error: { message: `mode inválido. Valores aceitos: ${VALID_MODES.join(', ')}` },
-        });
-        return;
-      }
-      res.status(201).json(store.addBlocklistEntry({ value, type: type as 'regex' | 'word', label, replacement, category: category as BlocklistCategory, mode: mode as BlocklistMode }));
-    })
-  );
-
-  router.patch(
-    '/blocklist/:id',
-    wrap(async (req, res) => {
-      if (req.body.mode !== undefined && !VALID_MODES.includes(req.body.mode)) {
-        res.status(400).json({
-          error: { message: `mode inválido. Valores aceitos: ${VALID_MODES.join(', ')}` },
-        });
-        return;
-      }
-      const entry = store.updateBlocklistEntry(req.params.id, req.body);
-      if (!entry) {
-        res.status(404).json({ error: { message: 'Entrada não encontrada.' } });
-        return;
-      }
-      res.json(entry);
-    })
-  );
-
-  router.delete(
-    '/blocklist/:id',
-    wrap(async (req, res) => {
-      if (!store.deleteBlocklistEntry(req.params.id)) {
-        res.status(404).json({ error: { message: 'Entrada não encontrada.' } });
-        return;
-      }
-      res.json({ success: true });
     })
   );
 
@@ -249,12 +180,11 @@ export function createAdminRouter(): Router {
   router.post(
     '/users',
     wrap(async (req, res) => {
-      const { name, key, model, allowedModels, sanitizationRoles } = req.body as {
+      const { name, key, model, allowedModels } = req.body as {
         name?: string;
         key?: string;
         model?: string;
         allowedModels?: string[];
-        sanitizationRoles?: SanitizationRoles;
       };
       if (!name) {
         res.status(400).json({ error: { message: "Campo 'name' obrigatório." } });
@@ -265,7 +195,7 @@ export function createAdminRouter(): Router {
         return;
       }
       res.status(201).json(
-        store.addUser({ name, key, model: model ?? null, allowedModels: allowedModels ?? [], sanitizationRoles: sanitizationRoles ?? DEFAULT_SANITIZATION_ROLES })
+        store.addUser({ name, key, model: model ?? null, allowedModels: allowedModels ?? [] })
       );
     })
   );
@@ -341,7 +271,6 @@ export function createAdminRouter(): Router {
     wrap(async (req, res) => {
       const { id } = req.params;
       const { key, url } = req.query as { key?: string; url?: string };
-      // Fall back to stored config if no query params provided
       const storedProvider = store.getProviders().find((p) => p.id === id);
       const resolvedKey = key ?? storedProvider?.key;
       const resolvedUrl = url ?? storedProvider?.url;
@@ -378,7 +307,7 @@ export function createAdminRouter(): Router {
     '/export',
     wrap(async (_req, res) => {
       const date = new Date().toISOString().slice(0, 10);
-      downloadJson(res, store.exportAll(), `gateway-config-${date}.json`);
+      downloadJson(res, store.exportAll(), `llm-switch-config-${date}.json`);
     })
   );
 
@@ -422,7 +351,7 @@ export function createAdminRouter(): Router {
       downloadJson(
         res,
         store.exportModule(module as Module),
-        `gateway-${module}-${date}.json`
+        `llm-switch-${module}-${date}.json`
       );
     })
   );
@@ -547,7 +476,6 @@ export function createAdminRouter(): Router {
         }
       }
 
-      // mais recente primeiro
       entries.reverse();
 
       const total = entries.length;

@@ -19,7 +19,6 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
     tool_choice?: string | { type: 'function'; function: { name: string } };
   };
 
-  // Resolve provider/model
   const providerModel =
     (req.body as { model?: string }).model ||
     req.userModel;
@@ -35,7 +34,6 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
     return;
   }
 
-  // Check allowed models
   const allowedModels = req.user?.allowedModels ?? [];
   const userDefaultModel = req.userModel;
 
@@ -85,37 +83,6 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
   }
 
   res.setHeader('X-Request-Id', result.requestId);
-  if (result.sanitizationReport.length > 0) {
-    res.setHeader('X-Sanitization-Applied', 'true');
-  }
-
-  if (result.blocked) {
-    const detectedList = result.blockFindings
-      .map((f) => `${f.label} (${f.count} ocorrência${f.count > 1 ? 's' : ''})`)
-      .join(', ');
-    const content = `Requisição bloqueada por política de segurança. Dados sensíveis detectados: ${detectedList}.`;
-
-    res.json({
-      id: result.requestId,
-      object: 'chat.completion',
-      model: providerModel,
-      choices: [
-        {
-          index: 0,
-          message: { role: 'assistant', content },
-          finish_reason: 'content_filter',
-        },
-      ],
-      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-      gateway: {
-        request_id: result.requestId,
-        provider: providerModel,
-        blocked: true,
-        block_findings: result.blockFindings,
-      },
-    });
-    return;
-  }
 
   const hasToolCalls = (result.toolCalls?.length ?? 0) > 0;
   const openaiToolCalls: OpenAIToolCall[] | undefined = hasToolCalls
@@ -155,7 +122,6 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
     gateway: {
       request_id: result.requestId,
       provider: providerModel,
-      sanitization_applied: result.sanitizationReport.length > 0,
     },
   });
 }

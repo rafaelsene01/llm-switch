@@ -1,6 +1,5 @@
 import type { Request, Response } from 'express';
 import { store } from '../services/store.service';
-import { sanitizer } from '../services/sanitizer.service';
 
 export function listModels(req: Request, res: Response): void {
   const allModels = store.getModels().filter((m) => m.active);
@@ -19,8 +18,4 @@ export function listModels(req: Request, res: Response): void {
       owned_by: m.value.split(':')[0] ?? 'unknown',
     })),
   });
-}
-
-export function listRules(_req: Request, res: Response): void {
-  res.json(sanitizer.listRules());
 }

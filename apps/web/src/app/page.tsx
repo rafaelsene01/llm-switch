@@ -84,7 +84,7 @@ export default function HomePage() {
     <div>
       <PageHeader
         title="LLM Switch"
-        description="Proxy OpenAI-compatível com sanitização de PII, multi-provider e autenticação por cliente."
+        description="Switch de providers OpenAI-compatível: gerencie múltiplas LLMs e aproveite os limites gratuitos de cada uma."
         actions={<HomeConfigActions />}
       />
 

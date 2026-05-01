@@ -1,37 +1,3 @@
-// Blocklist
-export type BlocklistMode = 'disabled' | 'redact' | 'block';
-
-export type BlocklistCategory =
-  | 'documento'
-  | 'contato'
-  | 'financeiro'
-  | 'credencial'
-  | 'saude'
-  | 'rede'
-  | 'custom';
-
-export interface BlocklistEntry {
-  id: string;
-  label: string;
-  value: string;
-  type: 'regex' | 'word';
-  replacement: string;
-  mode: BlocklistMode;
-  builtin: boolean;
-  category: BlocklistCategory;
-}
-
-export interface BlocklistFinding {
-  ruleId: string;
-  label: string;
-  count: number;
-}
-
-export interface SanitizeFinding {
-  label: string;
-  count: number;
-}
-
 // Models
 export interface GatewayModel {
   id: string;
@@ -43,18 +9,6 @@ export interface GatewayModel {
 }
 
 // Users
-export interface SanitizationRoles {
-  system: boolean;
-  user: boolean;
-  tool: boolean;
-}
-
-export const DEFAULT_SANITIZATION_ROLES: SanitizationRoles = {
-  system: true,
-  user: true,
-  tool: true,
-};
-
 export interface GatewayUser {
   id: string;
   name: string;
@@ -63,7 +17,6 @@ export interface GatewayUser {
   allowedModels: string[];
   createdAt: string;
   active: boolean;
-  sanitizationRoles?: SanitizationRoles;
 }
 
 export interface UserPublic {
@@ -74,7 +27,6 @@ export interface UserPublic {
   allowedModels: string[];
   createdAt: string;
   active: boolean;
-  sanitizationRoles: SanitizationRoles;
 }
 
 // Providers
@@ -152,9 +104,6 @@ export interface ChatResponse {
   gateway: {
     request_id: string;
     provider: string;
-    sanitization_applied?: boolean;
-    blocked?: boolean;
-    block_findings?: Array<{ ruleId: string; label: string; count: number }>;
   };
 }
 

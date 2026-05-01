@@ -1,12 +1,10 @@
 import { generateText, jsonSchema } from 'ai';
 import { v4 as uuidv4 } from 'uuid';
 import { resolveModel } from '../providers';
-import { sanitizer } from './sanitizer.service';
 import { logRequest } from '../utils/logger';
 import { activityLog } from './activity-log.service';
 import { store } from './store.service';
-import type { OpenAIMessage, OpenAITool, BlocklistFinding, SanitizeFinding, SanitizationRoles } from '../types';
-import { DEFAULT_SANITIZATION_ROLES } from '../types';
+import type { OpenAIMessage, OpenAITool } from '../types';
 
 export interface ChatServiceOptions {
   messages: OpenAIMessage[];
@@ -18,7 +16,6 @@ export interface ChatServiceOptions {
     name: string;
     model: string | null;
     allowedModels: string[];
-    sanitizationRoles: SanitizationRoles;
   } | null;
   system?: string;
   tools?: OpenAITool[];
@@ -33,9 +30,6 @@ export interface ChatServiceResult {
   toolCalls?: Array<{ toolCallId: string; toolName: string; args: unknown }>;
   finishReason: string;
   usage: { promptTokens: number; completionTokens: number; totalTokens: number };
-  sanitizationReport: SanitizeFinding[];
-  blocked: boolean;
-  blockFindings: BlocklistFinding[];
   providerModel: string;
   durationMs: number;
 }
@@ -155,122 +149,17 @@ export class ChatService {
       maxTokens,
     } = opts;
 
-    const roles: SanitizationRoles = opts.user?.sanitizationRoles ?? DEFAULT_SANITIZATION_ROLES;
     const model = resolveModel(providerModel);
-
-    // Sanitize messages (only for enabled roles)
-    const { messages: sanitizedMessages, report, blocked, blockFindings } =
-      sanitizer.sanitizeMessages(messages as Array<{ role: string; content: unknown }>, roles);
-
-    // For sanitized log: only include messages whose role had sanitization enabled
-    function filterSanitizedForLog(
-      msgs: Array<{ role: string; content: unknown }>
-    ): Array<{ role: string; content: unknown }> {
-      return msgs.filter((m) => {
-        if (m.role === 'system') return roles.system;
-        if (m.role === 'user')   return roles.user;
-        if (m.role === 'tool')   return roles.tool;
-        return false;
-      });
-    }
-
-    let sanitizedSystem = system;
-    if (system && roles.system) {
-      const result = sanitizer.sanitizeText(system);
-      sanitizedSystem = result.sanitized;
-      if (result.blocked) {
-        const durationMs = Date.now() - startTime;
-        logRequest({
-          requestId,
-          clientLabel,
-          providerModel,
-          originalMessages: messages,
-          sanitizedMessages,
-          sanitizationReport: report.flatMap((r) => r.findings),
-          durationMs,
-          blocked: true,
-        });
-        activityLog.log({
-          requestId,
-          userName: opts.user?.name ?? clientLabel,
-          tokenPreview,
-          originalMessages: messages as Array<{ role: string; content: unknown }>,
-          sanitizedMessages: filterSanitizedForLog(sanitizedMessages as Array<{ role: string; content: unknown }>),
-          llmResponse: null,
-          providerModel,
-          blocked: true,
-          promptTokens: 0,
-          completionTokens: 0,
-          totalTokens: 0,
-          costUsd: 0,
-          inputCostUsd: 0,
-          outputCostUsd: 0,
-        });
-        return {
-          requestId,
-          text: null,
-          finishReason: 'content_filter',
-          usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
-          sanitizationReport: report.flatMap((r) => r.findings),
-          blocked: true,
-          blockFindings: result.blockFindings,
-          providerModel,
-          durationMs,
-        };
-      }
-    }
-
-    if (blocked) {
-      const durationMs = Date.now() - startTime;
-      logRequest({
-        requestId,
-        clientLabel,
-        providerModel,
-        originalMessages: messages,
-        sanitizedMessages,
-        sanitizationReport: report.flatMap((r) => r.findings),
-        durationMs,
-        blocked: true,
-      });
-      activityLog.log({
-        requestId,
-        userName: opts.user?.name ?? clientLabel,
-        tokenPreview,
-        originalMessages: messages as Array<{ role: string; content: unknown }>,
-        sanitizedMessages: filterSanitizedForLog(sanitizedMessages as Array<{ role: string; content: unknown }>),
-        llmResponse: null,
-        providerModel,
-        blocked: true,
-        promptTokens: 0,
-        completionTokens: 0,
-        totalTokens: 0,
-        costUsd: 0,
-        inputCostUsd: 0,
-        outputCostUsd: 0,
-      });
-      return {
-        requestId,
-        text: null,
-        finishReason: 'content_filter',
-        usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
-        sanitizationReport: report.flatMap((r) => r.findings),
-        blocked: true,
-        blockFindings,
-        providerModel,
-        durationMs,
-      };
-    }
-
     const sdkTools = convertTools(rawTools);
     const sdkToolChoice = convertToolChoice(toolChoice);
-    const coreMessages = convertMessagesToCore(sanitizedMessages as OpenAIMessage[]);
+    const coreMessages = convertMessagesToCore(messages);
 
     let result;
     try {
       result = await generateText({
         model,
         messages: coreMessages,
-        system: sanitizedSystem,
+        system,
         temperature,
         maxTokens,
         ...(sdkTools ? { tools: sdkTools } : {}),
@@ -284,8 +173,6 @@ export class ChatService {
         clientLabel,
         providerModel,
         originalMessages: messages,
-        sanitizedMessages,
-        sanitizationReport: report.flatMap((r) => r.findings),
         durationMs,
         error: err as Error,
       });
@@ -294,7 +181,7 @@ export class ChatService {
         userName: opts.user?.name ?? clientLabel,
         tokenPreview,
         originalMessages: messages as Array<{ role: string; content: unknown }>,
-        sanitizedMessages: filterSanitizedForLog(sanitizedMessages as Array<{ role: string; content: unknown }>),
+
         llmResponse: null,
         providerModel,
         blocked: false,
@@ -310,15 +197,12 @@ export class ChatService {
     }
 
     const durationMs = Date.now() - startTime;
-    const flatReport = report.flatMap((r) => r.findings);
 
     logRequest({
       requestId,
       clientLabel,
       providerModel,
       originalMessages: messages,
-      sanitizedMessages,
-      sanitizationReport: flatReport,
       responseTokens: result.usage?.totalTokens,
       durationMs,
     });
@@ -332,7 +216,6 @@ export class ChatService {
       userName: opts.user?.name ?? clientLabel,
       tokenPreview,
       originalMessages: messages as Array<{ role: string; content: unknown }>,
-      sanitizedMessages: filterSanitizedForLog(sanitizedMessages as Array<{ role: string; content: unknown }>),
       llmResponse: extractTextFromResult(result.text),
       providerModel,
       blocked: false,
@@ -354,9 +237,6 @@ export class ChatService {
         completionTokens: result.usage?.completionTokens ?? 0,
         totalTokens: result.usage?.totalTokens ?? 0,
       },
-      sanitizationReport: flatReport,
-      blocked: false,
-      blockFindings: [],
       providerModel,
       durationMs,
     };

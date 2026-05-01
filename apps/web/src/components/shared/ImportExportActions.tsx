@@ -26,7 +26,6 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 const MODULE_LABELS: Record<'all' | ImportModule, string> = {
   all: 'config global',
-  blocklist: 'regras',
   users: 'usuários',
   providers: 'providers',
 };

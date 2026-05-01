@@ -27,14 +27,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { UserFormFields, NO_MODEL, DEFAULT_SANITIZATION_ROLES } from './UserFormFields';
-import type { UserPublic, SanitizationRoles } from '@/types';
+import { UserFormFields, NO_MODEL } from './UserFormFields';
+import type { UserPublic } from '@/types';
 
 interface FormState {
   name: string;
   model: string;
   allowedModels: string[];
-  sanitizationRoles: SanitizationRoles;
 }
 
 interface Props {
@@ -47,7 +46,7 @@ export function UserActionsMenu({ user, onUpdated, onDeleted }: Props) {
   const { data: models } = useModels();
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<FormState>({ name: '', model: '', allowedModels: [], sanitizationRoles: DEFAULT_SANITIZATION_ROLES });
+  const [form, setForm] = useState<FormState>({ name: '', model: '', allowedModels: [] });
 
   const activeModels = models?.filter((m) => m.active) ?? [];
 
@@ -56,7 +55,6 @@ export function UserActionsMenu({ user, onUpdated, onDeleted }: Props) {
       name: user.name,
       model: user.model ?? '',
       allowedModels: [...user.allowedModels],
-      sanitizationRoles: user.sanitizationRoles ?? DEFAULT_SANITIZATION_ROLES,
     });
     setEditOpen(true);
   }
@@ -91,7 +89,6 @@ export function UserActionsMenu({ user, onUpdated, onDeleted }: Props) {
         model: form.model || null,
         allowedModels: form.allowedModels,
         active: user.active,
-        sanitizationRoles: form.sanitizationRoles,
       });
       toast.success('Usuário atualizado');
       setEditOpen(false);
@@ -115,7 +112,6 @@ export function UserActionsMenu({ user, onUpdated, onDeleted }: Props) {
 
   return (
     <>
-      {/* Tooltip > TooltipTrigger > DropdownMenuTrigger > Button — ordem correta para Radix */}
       <Tooltip>
         <DropdownMenu>
           <TooltipTrigger asChild>
@@ -163,10 +159,8 @@ export function UserActionsMenu({ user, onUpdated, onDeleted }: Props) {
               allowedModels={form.allowedModels}
               activeModels={activeModels}
               idPrefix={`edit-${user.id}`}
-              sanitizationRoles={form.sanitizationRoles}
               onModelChange={handleModelChange}
               onAllowedModelsChange={handleAllowedModelsChange}
-              onSanitizationRolesChange={(roles) => setForm((f) => ({ ...f, sanitizationRoles: roles }))}
             />
           </div>
           <DialogFooter>
