@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Label } from '@/components/ui/label';
 import {
   Table,
   TableBody,
@@ -18,10 +19,24 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { cn } from '@/lib/utils';
-import type { GatewayModel } from '@/types';
+import type { GatewayModel, ModelRateLimit } from '@/types';
 
 
 interface ProviderColors {
@@ -76,6 +91,28 @@ interface PriceEditState {
   output: string;
 }
 
+interface LimitEditState {
+  modelId: string;
+  amount: string;
+  unit: ModelRateLimit['unit'];
+  interval: ModelRateLimit['interval'];
+  intervalHours: string;
+}
+
+function formatRateLimit(rl: ModelRateLimit): string {
+  const amt = rl.amount >= 1_000_000
+    ? `${(rl.amount / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}M`
+    : rl.amount >= 1_000
+    ? `${(rl.amount / 1_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}k`
+    : String(rl.amount);
+  const unit = rl.unit === 'tokens' ? 'tokens' : 'req';
+  const interval =
+    rl.interval === 'weekly' ? 'sem' :
+    rl.interval === 'daily' ? 'dia' :
+    `${rl.intervalHours ?? 1}h`;
+  return `${amt} ${unit}/${interval}`;
+}
+
 export function ModelsClient() {
   const { data: models, isLoading, mutate } = useModels();
   const { data: providers } = useProviders();
@@ -83,6 +120,8 @@ export function ModelsClient() {
   const [syncingPrices, setSyncingPrices] = useState(false);
   const [priceEdit, setPriceEdit] = useState<PriceEditState | null>(null);
   const [savingPrice, setSavingPrice] = useState(false);
+  const [limitEdit, setLimitEdit] = useState<LimitEditState | null>(null);
+  const [savingLimit, setSavingLimit] = useState(false);
   const [togglingAll, setTogglingAll] = useState(false);
   const [filter, setFilter] = useState('');
   const [selectedProviders, setSelectedProviders] = useState<Set<string>>(new Set());
@@ -179,21 +218,14 @@ export function ModelsClient() {
     try {
       const result = await apiClient.models.syncPrices();
       await mutate();
-      if (result.notFound.length > 0) {
-        toast.success(`${result.updated} de ${result.total} modelos atualizados`);
-        toast.warning(
-          `Sem preço para: ${result.notFound.join(', ')}`,
-          { duration: 8000 }
-        );
-      } else {
-        toast.success(`Todos os ${result.updated} modelos atualizados`);
-      }
+      toast.success(`${result.updated} de ${result.total} modelos atualizados`);
     } catch (err) {
       toast.error(`Não foi possível buscar preços: ${(err as Error).message}`);
     } finally {
       setSyncingPrices(false);
     }
   }
+
 
   async function handleToggleActive(id: string, active: boolean) {
     try {
@@ -248,6 +280,57 @@ export function ModelsClient() {
       toast.error((err as Error).message);
     } finally {
       setSavingPrice(false);
+    }
+  }
+
+  function startLimitEdit(model: GatewayModel) {
+    setLimitEdit({
+      modelId: model.id,
+      amount: model.rateLimit ? String(model.rateLimit.amount) : '',
+      unit: model.rateLimit?.unit ?? 'tokens',
+      interval: model.rateLimit?.interval ?? 'weekly',
+      intervalHours: model.rateLimit?.intervalHours ? String(model.rateLimit.intervalHours) : '1',
+    });
+  }
+
+  async function saveLimitEdit() {
+    if (!limitEdit) return;
+    const amount = parseInt(limitEdit.amount, 10);
+    if (!limitEdit.amount || isNaN(amount) || amount <= 0) {
+      toast.error('Quantidade inválida');
+      return;
+    }
+    const intervalHours = limitEdit.interval === 'hourly' ? parseInt(limitEdit.intervalHours, 10) : undefined;
+    if (limitEdit.interval === 'hourly' && (!intervalHours || isNaN(intervalHours) || intervalHours <= 0)) {
+      toast.error('Intervalo de horas inválido');
+      return;
+    }
+    const rateLimit: ModelRateLimit = {
+      amount,
+      unit: limitEdit.unit,
+      interval: limitEdit.interval,
+      ...(intervalHours ? { intervalHours } : {}),
+    };
+    setSavingLimit(true);
+    try {
+      await apiClient.models.update(limitEdit.modelId, { rateLimit });
+      await mutate();
+      toast.success('Limite salvo');
+      setLimitEdit(null);
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSavingLimit(false);
+    }
+  }
+
+  async function clearLimit(id: string) {
+    try {
+      await apiClient.models.update(id, { rateLimit: null });
+      await mutate();
+      toast.success('Limite removido');
+    } catch (err) {
+      toast.error((err as Error).message);
     }
   }
 
@@ -376,6 +459,8 @@ export function ModelsClient() {
                     );
                   })}
                   <TableHead className="text-section-title h-10 w-8" />
+                  <TableHead className="text-section-title h-10">Limite</TableHead>
+                  <TableHead className="text-section-title h-10 w-8" />
                   <TableHead className="text-section-title h-10">
                     <span className="inline-flex items-center gap-2">
                       <span
@@ -475,6 +560,39 @@ export function ModelsClient() {
                         </>
                       )}
                       <TableCell>
+                        {model.rateLimit ? (
+                          <span className="font-mono text-xs tabular-nums">
+                            {formatRateLimit(model.rateLimit)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground/50 italic">não definido</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="w-8">
+                        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            onClick={() => startLimitEdit(model)}
+                            title="Editar limite"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          {model.rateLimit && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              onClick={() => clearLimit(model.id)}
+                              title="Remover limite"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
                         <Switch
                           checked={model.active}
                           onCheckedChange={(checked) => handleToggleActive(model.id, checked)}
@@ -487,6 +605,76 @@ export function ModelsClient() {
             </Table>
           </div>
         )}
+
+        <Dialog open={!!limitEdit} onOpenChange={(o) => !o && setLimitEdit(null)}>
+          <DialogContent>
+            <DialogHeader className="border-b border-border pb-4 mb-2">
+              <DialogTitle className="text-base font-semibold">Editar Limite de Uso</DialogTitle>
+            </DialogHeader>
+            {limitEdit && (
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-field-label">Quantidade</Label>
+                  <Input
+                    className="mt-1.5 font-mono"
+                    placeholder="ex: 1000000"
+                    value={limitEdit.amount}
+                    onChange={(e) => setLimitEdit({ ...limitEdit, amount: e.target.value })}
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <Label className="text-field-label">Unidade</Label>
+                  <Select
+                    value={limitEdit.unit}
+                    onValueChange={(v) => setLimitEdit({ ...limitEdit, unit: v as ModelRateLimit['unit'] })}
+                  >
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tokens">Tokens</SelectItem>
+                      <SelectItem value="requests">Requisições</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-field-label">Intervalo</Label>
+                  <Select
+                    value={limitEdit.interval}
+                    onValueChange={(v) => setLimitEdit({ ...limitEdit, interval: v as ModelRateLimit['interval'] })}
+                  >
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hourly">Por hora</SelectItem>
+                      <SelectItem value="daily">Por dia</SelectItem>
+                      <SelectItem value="weekly">Por semana</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {limitEdit.interval === 'hourly' && (
+                  <div>
+                    <Label className="text-field-label">A cada quantas horas</Label>
+                    <Input
+                      className="mt-1.5 font-mono"
+                      placeholder="ex: 1"
+                      value={limitEdit.intervalHours}
+                      onChange={(e) => setLimitEdit({ ...limitEdit, intervalHours: e.target.value })}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+            <DialogFooter className="border-t border-border pt-4 mt-2">
+              <Button variant="outline" onClick={() => setLimitEdit(null)}>Cancelar</Button>
+              <Button onClick={saveLimitEdit} disabled={savingLimit}>
+                {savingLimit ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
       </div>
     </TooltipProvider>

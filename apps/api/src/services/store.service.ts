@@ -1,17 +1,29 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import Database from 'better-sqlite3';
+import { existsSync, readFileSync, renameSync, mkdirSync } from 'fs';
 import path from 'path';
-import { DEFAULT_MODELS } from '../data/defaults/models';
-import type {
-  GatewayModel,
-  GatewayUser,
-  UserPublic,
-} from '../types';
+import type { GatewayModel, GatewayUser, UserPublic } from '../types';
 import type { ProviderModelInfo } from './providers.service';
-import { providersDb } from './providers-db.service';
+import { providersDb, type ProvidersDb } from './providers-db.service';
 
-interface StoreData {
-  models: GatewayModel[];
-  users: GatewayUser[];
+interface ModelRow {
+  id: string;
+  value: string;
+  label: string;
+  active: number;
+  input_cost_per1m: number | null;
+  output_cost_per1m: number | null;
+  rate_limit_json: string | null;
+  created_at: string;
+}
+
+interface UserRow {
+  id: string;
+  name: string;
+  api_key: string;
+  model: string | null;
+  allowed_models: string;
+  created_at: string;
+  active: number;
 }
 
 interface ExportPayload {
@@ -28,54 +40,144 @@ interface ImportReport {
   skipped: Record<string, number>;
 }
 
-function createStore(dataFile?: string) {
-  const resolvedFile = dataFile ?? path.resolve('data/config.json');
+function rowToModel(row: ModelRow): GatewayModel {
+  return {
+    id: row.id,
+    value: row.value,
+    label: row.label,
+    active: Boolean(row.active),
+    ...(row.input_cost_per1m !== null && { inputCostPer1M: row.input_cost_per1m }),
+    ...(row.output_cost_per1m !== null && { outputCostPer1M: row.output_cost_per1m }),
+    ...(row.rate_limit_json ? { rateLimit: JSON.parse(row.rate_limit_json) } : {}),
+  };
+}
 
-  function load(): StoreData {
-    if (!existsSync(resolvedFile)) {
-      const fresh: StoreData = { models: DEFAULT_MODELS, users: [] };
-      mkdirSync(path.dirname(resolvedFile), { recursive: true });
-      writeFileSync(resolvedFile, JSON.stringify(fresh, null, 2));
-      return structuredClone(fresh);
-    }
-    try {
-      const raw = JSON.parse(readFileSync(resolvedFile, 'utf8')) as StoreData & { providers?: unknown };
-      // Strip providers from JSON if still present (migrated to SQLite)
-      const data: StoreData = { models: raw.models ?? DEFAULT_MODELS, users: raw.users ?? [] };
-      return data;
-    } catch {
-      return { models: DEFAULT_MODELS, users: [] };
-    }
+function rowToUser(row: UserRow): GatewayUser {
+  return {
+    id: row.id,
+    name: row.name,
+    key: row.api_key,
+    model: row.model,
+    allowedModels: JSON.parse(row.allowed_models),
+    createdAt: row.created_at,
+    active: Boolean(row.active),
+  };
+}
+
+function migrateFromJson(db: Database.Database): void {
+  const configFile = path.resolve('data/config.json');
+  if (!existsSync(configFile)) return;
+
+  try {
+    const raw = JSON.parse(readFileSync(configFile, 'utf8')) as {
+      models?: GatewayModel[];
+      users?: GatewayUser[];
+    };
+    const models: GatewayModel[] = raw.models ?? [];
+    const users: GatewayUser[] = raw.users ?? [];
+
+    const insertModel = db.prepare(
+      'INSERT OR IGNORE INTO models (id, value, label, active, input_cost_per1m, output_cost_per1m, rate_limit_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+    const insertUser = db.prepare(
+      'INSERT OR IGNORE INTO users (id, name, api_key, model, allowed_models, created_at, active) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    );
+
+    db.transaction(() => {
+      for (const m of models) {
+        insertModel.run(
+          m.id,
+          m.value,
+          m.label,
+          m.active ? 1 : 0,
+          m.inputCostPer1M ?? null,
+          m.outputCostPer1M ?? null,
+          m.rateLimit ? JSON.stringify(m.rateLimit) : null,
+          new Date().toISOString()
+        );
+      }
+      for (const u of users) {
+        insertUser.run(
+          u.id,
+          u.name,
+          u.key,
+          u.model ?? null,
+          JSON.stringify(u.allowedModels ?? []),
+          u.createdAt,
+          u.active ? 1 : 0
+        );
+      }
+    })();
+
+    renameSync(configFile, configFile + '.migrated');
+    console.log(`[store] Migrated ${models.length} models and ${users.length} users from config.json to SQLite.`);
+  } catch (err) {
+    console.error('[store] Migration from config.json failed:', err);
+  }
+}
+
+function createStore(dbFile?: string, _providers?: Pick<ProvidersDb, 'list'>) {
+  const resolvedFile = dbFile ?? path.resolve('data/gateway.db');
+  mkdirSync(path.dirname(resolvedFile), { recursive: true });
+
+  const db = new Database(resolvedFile);
+  db.pragma('journal_mode = WAL');
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS models (
+      id                TEXT PRIMARY KEY,
+      value             TEXT NOT NULL UNIQUE,
+      label             TEXT NOT NULL,
+      active            INTEGER NOT NULL DEFAULT 1,
+      input_cost_per1m  REAL,
+      output_cost_per1m REAL,
+      rate_limit_json   TEXT,
+      created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS users (
+      id             TEXT PRIMARY KEY,
+      name           TEXT NOT NULL UNIQUE,
+      api_key        TEXT NOT NULL UNIQUE,
+      model          TEXT,
+      allowed_models TEXT NOT NULL DEFAULT '[]',
+      created_at     TEXT NOT NULL,
+      active         INTEGER NOT NULL DEFAULT 1
+    );
+  `);
+
+  // Only migrate on the default (production) db, not in test mode
+  if (!dbFile) {
+    migrateFromJson(db);
   }
 
-  function save(data: StoreData): void {
-    mkdirSync(path.dirname(resolvedFile), { recursive: true });
-    writeFileSync(resolvedFile, JSON.stringify(data, null, 2));
-  }
+  const resolvedProviders = _providers ?? providersDb;
 
   // ── Models ─────────────────────────────────────────────────────────────────
 
   function getModels(): GatewayModel[] {
-    const data = load();
     const configuredIds = new Set(
-      providersDb.list().filter((p) => p.configured).map((p) => p.id)
+      resolvedProviders.list().filter((p) => p.configured).map((p) => p.id)
     );
-    return data.models.filter((m) => configuredIds.has(m.value.split(':')[0]));
+    const rows = db.prepare('SELECT * FROM models ORDER BY created_at ASC').all() as ModelRow[];
+    return rows.map(rowToModel).filter((m) => configuredIds.has(m.value.split(':')[0]));
   }
 
   function addModel(model: Pick<GatewayModel, 'value' | 'label'>): GatewayModel {
-    const data = load();
-    if (data.models.find((m) => m.value === model.value)) {
+    if (db.prepare('SELECT id FROM models WHERE value = ?').get(model.value)) {
       throw new Error(`Modelo "${model.value}" já existe.`);
     }
     const newModel: GatewayModel = {
-      id: `m_${Date.now()}`,
+      id: `m_${Date.now()}_${Math.random().toString(36).slice(2)}`,
       value: model.value,
       label: model.label || model.value,
       active: true,
     };
-    data.models.push(newModel);
-    save(data);
+    db.prepare('INSERT INTO models (id, value, label, active) VALUES (?, ?, ?, ?)').run(
+      newModel.id,
+      newModel.value,
+      newModel.label,
+      1
+    );
     return newModel;
   }
 
@@ -83,100 +185,116 @@ function createStore(dataFile?: string) {
     providerId: string,
     newModels: ProviderModelInfo[]
   ): { added: number; removed: number; models: GatewayModel[] } {
-    const data = load();
     const prefix = `${providerId}:`;
-    const currentForProvider = data.models.filter((m) => m.value.startsWith(prefix));
-    const currentOther = data.models.filter((m) => !m.value.startsWith(prefix));
-
     const newValueSet = new Set(newModels.map((m) => `${prefix}${m.id}`));
+    const currentForProvider = (
+      db.prepare('SELECT * FROM models WHERE value LIKE ?').all(`${prefix}%`) as ModelRow[]
+    ).map(rowToModel);
     const currentValueMap = new Map(currentForProvider.map((m) => [m.value, m]));
 
-    const kept: GatewayModel[] = [];
     let added = 0;
 
-    for (const m of newModels) {
-      const value = `${prefix}${m.id}`;
-      const existing = currentValueMap.get(value);
-      if (existing) {
-        kept.push(existing);
-      } else {
-        kept.push({ id: `m_${Date.now()}_${Math.random().toString(36).slice(2)}`, value, label: m.name, active: true });
-        added++;
+    db.transaction(() => {
+      for (const m of currentForProvider) {
+        if (!newValueSet.has(m.value)) {
+          db.prepare('DELETE FROM models WHERE id = ?').run(m.id);
+        }
       }
-    }
+      for (const m of newModels) {
+        const value = `${prefix}${m.id}`;
+        if (!currentValueMap.has(value)) {
+          db.prepare('INSERT OR IGNORE INTO models (id, value, label, active) VALUES (?, ?, ?, ?)').run(
+            `m_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+            value,
+            m.name,
+            1
+          );
+          added++;
+        }
+      }
+    })();
 
     const removed = currentForProvider.filter((m) => !newValueSet.has(m.value)).length;
-    data.models = [...currentOther, ...kept];
-    save(data);
-    return { added, removed, models: data.models };
+    const allModels = (
+      db.prepare('SELECT * FROM models ORDER BY created_at ASC').all() as ModelRow[]
+    ).map(rowToModel);
+    return { added, removed, models: allModels };
   }
 
-  function updateModel(id: string, patch: Partial<Pick<GatewayModel, 'active' | 'label' | 'inputCostPer1M' | 'outputCostPer1M'>>): GatewayModel | null {
-    const data = load();
-    const idx = data.models.findIndex((m) => m.id === id);
-    if (idx === -1) return null;
-    data.models[idx] = { ...data.models[idx], ...patch };
-    save(data);
-    return data.models[idx];
+  function updateModel(
+    id: string,
+    patch: Partial<Pick<GatewayModel, 'active' | 'label' | 'inputCostPer1M' | 'outputCostPer1M' | 'rateLimit'>>
+  ): GatewayModel | null {
+    const row = db.prepare('SELECT * FROM models WHERE id = ?').get(id) as ModelRow | undefined;
+    if (!row) return null;
+    const updated = { ...rowToModel(row), ...patch };
+    db.prepare(
+      'UPDATE models SET label=?, active=?, input_cost_per1m=?, output_cost_per1m=?, rate_limit_json=? WHERE id=?'
+    ).run(
+      updated.label,
+      updated.active ? 1 : 0,
+      updated.inputCostPer1M ?? null,
+      updated.outputCostPer1M ?? null,
+      updated.rateLimit ? JSON.stringify(updated.rateLimit) : null,
+      id
+    );
+    return updated;
   }
 
   function pruneUnconfiguredModels(configuredProviderIds: string[]): { removed: number } {
-    const data = load();
-    const before = data.models.length;
-    data.models = data.models.filter((m) => {
-      const prefix = m.value.split(':')[0];
-      return configuredProviderIds.includes(prefix);
-    });
-    const removed = before - data.models.length;
-    if (removed > 0) save(data);
+    const rows = db.prepare('SELECT id, value FROM models').all() as Pick<ModelRow, 'id' | 'value'>[];
+    let removed = 0;
+    db.transaction(() => {
+      for (const row of rows) {
+        if (!configuredProviderIds.includes(row.value.split(':')[0])) {
+          db.prepare('DELETE FROM models WHERE id = ?').run(row.id);
+          removed++;
+        }
+      }
+    })();
     return { removed };
   }
 
   function deleteModel(id: string): boolean {
-    const data = load();
-    const modelEntry = data.models.find((m) => m.id === id);
-    if (!modelEntry) return false;
-    const usersWithModel = data.users.filter((u) => u.model === modelEntry.value);
+    const row = db.prepare('SELECT * FROM models WHERE id = ?').get(id) as ModelRow | undefined;
+    if (!row) return false;
+    const usersWithModel = db
+      .prepare('SELECT name FROM users WHERE model = ?')
+      .all(row.value) as { name: string }[];
     if (usersWithModel.length > 0) {
       throw new Error(
         `Modelo em uso pelos usuários: ${usersWithModel.map((u) => u.name).join(', ')}`
       );
     }
-    data.models = data.models.filter((m) => m.id !== id);
-    save(data);
+    db.prepare('DELETE FROM models WHERE id = ?').run(id);
     return true;
   }
 
-  // Remove all models belonging to a provider instance
   function deleteProviderModels(providerId: string): number {
-    const data = load();
-    const prefix = `${providerId}:`;
-    const before = data.models.length;
-    data.models = data.models.filter((m) => !m.value.startsWith(prefix));
-    const removed = before - data.models.length;
-    if (removed > 0) save(data);
-    return removed;
+    const result = db.prepare('DELETE FROM models WHERE value LIKE ?').run(`${providerId}:%`);
+    return result.changes;
   }
 
   // ── Users ──────────────────────────────────────────────────────────────────
 
   function getUsers(): UserPublic[] {
-    return load().users.map(({ key, ...rest }) => ({
-      ...rest,
-      keyPreview: key ? key.slice(0, 8) + '...' : '???',
-    }));
+    const rows = db.prepare('SELECT * FROM users ORDER BY created_at ASC').all() as UserRow[];
+    return rows.map((row) => {
+      const { key, ...rest } = rowToUser(row);
+      return { ...rest, keyPreview: key ? key.slice(0, 8) + '...' : '???' };
+    });
   }
 
   function getUserByKey(key: string): GatewayUser | null {
-    return load().users.find((u) => u.key === key) ?? null;
+    const row = db.prepare('SELECT * FROM users WHERE api_key = ?').get(key) as UserRow | undefined;
+    return row ? rowToUser(row) : null;
   }
 
   function addUser(user: Omit<GatewayUser, 'id' | 'createdAt' | 'active'>): GatewayUser {
-    const data = load();
-    if (data.users.find((u) => u.name === user.name)) {
+    if (db.prepare('SELECT id FROM users WHERE name = ?').get(user.name)) {
       throw new Error(`Usuário "${user.name}" já existe.`);
     }
-    if (data.users.find((u) => u.key === user.key)) {
+    if (db.prepare('SELECT id FROM users WHERE api_key = ?').get(user.key)) {
       throw new Error('Essa API key já está em uso.');
     }
     const newUser: GatewayUser = {
@@ -188,46 +306,69 @@ function createStore(dataFile?: string) {
       createdAt: new Date().toISOString(),
       active: true,
     };
-    data.users.push(newUser);
-    save(data);
+    db.prepare(
+      'INSERT INTO users (id, name, api_key, model, allowed_models, created_at, active) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(
+      newUser.id,
+      newUser.name,
+      newUser.key,
+      newUser.model,
+      JSON.stringify(newUser.allowedModels),
+      newUser.createdAt,
+      1
+    );
     return newUser;
   }
 
   function updateUser(id: string, patch: Partial<GatewayUser>): GatewayUser | null {
-    const data = load();
-    const idx = data.users.findIndex((u) => u.id === id);
-    if (idx === -1) return null;
+    const row = db.prepare('SELECT * FROM users WHERE id = ?').get(id) as UserRow | undefined;
+    if (!row) return null;
     const { key: _key, ...safePatch } = patch;
-    data.users[idx] = { ...data.users[idx], ...safePatch };
-    save(data);
-    return data.users[idx];
+    const updated = { ...rowToUser(row), ...safePatch };
+    db.prepare(
+      'UPDATE users SET name=?, model=?, allowed_models=?, active=? WHERE id=?'
+    ).run(
+      updated.name,
+      updated.model,
+      JSON.stringify(updated.allowedModels),
+      updated.active ? 1 : 0,
+      id
+    );
+    return updated;
   }
 
   function deleteUser(id: string): boolean {
-    const data = load();
-    const before = data.users.length;
-    data.users = data.users.filter((u) => u.id !== id);
-    if (data.users.length === before) return false;
-    save(data);
-    return true;
+    return db.prepare('DELETE FROM users WHERE id = ?').run(id).changes > 0;
   }
 
   // ── Export / Import ────────────────────────────────────────────────────────
 
-  function exportAll(): ExportPayload & { providers: { id: string; providerType: string; key?: string; url?: string }[] } {
-    const data = load();
+  function exportAll(): ExportPayload & {
+    providers: { id: string; providerType: string; key?: string; url?: string }[];
+  } {
+    const allModels = (
+      db.prepare('SELECT * FROM models ORDER BY created_at ASC').all() as ModelRow[]
+    ).map(rowToModel);
+    const allUsers = (
+      db.prepare('SELECT * FROM users ORDER BY created_at ASC').all() as UserRow[]
+    ).map(rowToUser);
     return {
       _gateway_export: true,
       _module: 'all',
       _version: '2.0',
       _exported_at: new Date().toISOString(),
-      models: data.models,
-      users: data.users,
-      providers: providersDb.list().map((p) => ({ id: p.id, providerType: p.providerType, key: p.key, url: p.url })),
+      models: allModels,
+      users: allUsers,
+      providers: resolvedProviders
+        .list()
+        .map((p) => ({ id: p.id, providerType: p.providerType, key: p.key, url: p.url })),
     };
   }
 
-  function importAll(payload: ExportPayload & { providers?: unknown[] }, mode: 'merge' | 'replace' = 'merge'): ImportReport {
+  function importAll(
+    payload: ExportPayload & { providers?: unknown[] },
+    mode: 'merge' | 'replace' = 'merge'
+  ): ImportReport {
     if (!payload?._gateway_export) {
       throw new Error('Arquivo inválido: não é uma exportação do LLM Switch.');
     }
@@ -235,13 +376,21 @@ function createStore(dataFile?: string) {
   }
 
   function exportModule(module: 'models' | 'users'): ExportPayload {
-    const data = load();
+    const allModels =
+      module === 'models'
+        ? (db.prepare('SELECT * FROM models ORDER BY created_at ASC').all() as ModelRow[]).map(rowToModel)
+        : undefined;
+    const allUsers =
+      module === 'users'
+        ? (db.prepare('SELECT * FROM users ORDER BY created_at ASC').all() as UserRow[]).map(rowToUser)
+        : undefined;
     return {
       _gateway_export: true,
       _module: module,
       _version: '2.0',
       _exported_at: new Date().toISOString(),
-      [module]: data[module],
+      ...(allModels && { models: allModels }),
+      ...(allUsers && { users: allUsers }),
     };
   }
 
@@ -264,48 +413,67 @@ function createStore(dataFile?: string) {
     modules: ('models' | 'users')[],
     mode: 'merge' | 'replace'
   ): ImportReport {
-    const current = load();
     const report: ImportReport = { added: {}, skipped: {} };
 
     for (const mod of modules) {
       report.added[mod] = 0;
       report.skipped[mod] = 0;
-      const items = (payload[mod] as StoreData[typeof mod]) ?? [];
 
-      if (mode === 'replace') {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (current as any)[mod] = items.map((e: any) => ({
-          ...e,
-          id: e.id || `${mod}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-        }));
-        report.added[mod] = current[mod].length;
-      } else {
-        const keyFn =
-          mod === 'users'
-            ? (x: GatewayUser) => x.name + '|' + x.key
-            : (x: GatewayModel) => x.value;
-
-        for (const item of items as (GatewayUser | GatewayModel)[]) {
-          const exists = (current[mod] as (GatewayUser | GatewayModel)[]).find(
-            (e) => keyFn(e as GatewayUser & GatewayModel) === keyFn(item as GatewayUser & GatewayModel)
-          );
-          if (exists) {
+      if (mod === 'models') {
+        const items = payload.models ?? [];
+        if (mode === 'replace') db.prepare('DELETE FROM models').run();
+        for (const m of items) {
+          const id = m.id || `m_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+          if (mode === 'merge' && db.prepare('SELECT id FROM models WHERE value = ?').get(m.value)) {
             report.skipped[mod]++;
-          } else {
-            (current[mod] as (GatewayUser | GatewayModel)[]).push({
-              ...item,
-              id:
-                (item as { id?: string }).id ||
-                `${mod}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-            });
-            report.added[mod]++;
+            continue;
           }
+          db.prepare(
+            'INSERT OR IGNORE INTO models (id, value, label, active, input_cost_per1m, output_cost_per1m, rate_limit_json) VALUES (?, ?, ?, ?, ?, ?, ?)'
+          ).run(
+            id,
+            m.value,
+            m.label,
+            m.active ? 1 : 0,
+            m.inputCostPer1M ?? null,
+            m.outputCostPer1M ?? null,
+            m.rateLimit ? JSON.stringify(m.rateLimit) : null
+          );
+          report.added[mod]++;
+        }
+      } else {
+        const items = payload.users ?? [];
+        if (mode === 'replace') db.prepare('DELETE FROM users').run();
+        for (const u of items) {
+          const id = u.id || `u_${Date.now()}`;
+          if (
+            mode === 'merge' &&
+            db.prepare('SELECT id FROM users WHERE name = ? OR api_key = ?').get(u.name, u.key)
+          ) {
+            report.skipped[mod]++;
+            continue;
+          }
+          db.prepare(
+            'INSERT OR IGNORE INTO users (id, name, api_key, model, allowed_models, created_at, active) VALUES (?, ?, ?, ?, ?, ?, ?)'
+          ).run(
+            id,
+            u.name,
+            u.key,
+            u.model ?? null,
+            JSON.stringify(u.allowedModels ?? []),
+            u.createdAt,
+            u.active ? 1 : 0
+          );
+          report.added[mod]++;
         }
       }
     }
 
-    save(current);
     return report;
+  }
+
+  function close(): void {
+    db.close();
   }
 
   return {
@@ -325,10 +493,10 @@ function createStore(dataFile?: string) {
     importAll,
     exportModule,
     importModule,
+    close,
   };
 }
 
 export type StoreService = ReturnType<typeof createStore>;
-
 export const store = createStore();
 export { createStore };
