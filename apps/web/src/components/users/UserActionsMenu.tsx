@@ -27,12 +27,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { UserFormFields, NO_MODEL } from './UserFormFields';
+import { ModelPriorityList } from './ModelPriorityList';
 import type { UserPublic } from '@/types';
 
 interface FormState {
   name: string;
-  model: string;
   allowedModels: string[];
 }
 
@@ -46,38 +45,16 @@ export function UserActionsMenu({ user, onUpdated, onDeleted }: Props) {
   const { data: models } = useModels();
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<FormState>({ name: '', model: '', allowedModels: [] });
+  const [form, setForm] = useState<FormState>({ name: '', allowedModels: [] });
 
   const activeModels = models?.filter((m) => m.active) ?? [];
 
   function openEdit() {
     setForm({
       name: user.name,
-      model: user.model ?? '',
       allowedModels: [...user.allowedModels],
     });
     setEditOpen(true);
-  }
-
-  function handleModelChange(value: string) {
-    const model = value === NO_MODEL ? '' : value;
-    setForm((f) => ({
-      ...f,
-      model,
-      allowedModels:
-        model && !f.allowedModels.includes(model)
-          ? [...f.allowedModels, model]
-          : f.allowedModels,
-    }));
-  }
-
-  function handleAllowedModelsChange(value: string, checked: boolean) {
-    setForm((f) => ({
-      ...f,
-      allowedModels: checked
-        ? [...f.allowedModels, value]
-        : f.allowedModels.filter((m) => m !== value),
-    }));
   }
 
   async function handleSave() {
@@ -86,7 +63,7 @@ export function UserActionsMenu({ user, onUpdated, onDeleted }: Props) {
     try {
       await apiClient.users.update(user.id, {
         name: form.name,
-        model: form.model || null,
+        model: null,
         allowedModels: form.allowedModels,
         active: user.active,
       });
@@ -140,13 +117,13 @@ export function UserActionsMenu({ user, onUpdated, onDeleted }: Props) {
       </Tooltip>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Usuário</DialogTitle>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="border-b border-border pb-4 mb-2">
+            <DialogTitle className="text-base font-semibold">Editar Usuário</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
-              <Label>Nome *</Label>
+              <Label className="text-field-label">Nome *</Label>
               <Input
                 placeholder="minha-equipe"
                 value={form.name}
@@ -154,16 +131,13 @@ export function UserActionsMenu({ user, onUpdated, onDeleted }: Props) {
                 className="mt-1.5"
               />
             </div>
-            <UserFormFields
-              model={form.model}
+            <ModelPriorityList
               allowedModels={form.allowedModels}
               activeModels={activeModels}
-              idPrefix={`edit-${user.id}`}
-              onModelChange={handleModelChange}
-              onAllowedModelsChange={handleAllowedModelsChange}
+              onChange={(models) => setForm((f) => ({ ...f, allowedModels: models }))}
             />
           </div>
-          <DialogFooter>
+          <DialogFooter className="border-t border-border pt-4 mt-2">
             <Button variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving ? 'Salvando...' : 'Salvar'}

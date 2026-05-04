@@ -2,20 +2,13 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { AlertCircle, Plus, Users } from 'lucide-react';
+import { Plus, Users } from 'lucide-react';
 import { useUsers } from '@/hooks/useUsers';
 import { useModels } from '@/hooks/useModels';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -27,37 +20,54 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { UserActionsMenu } from './UserActionsMenu';
 import { CreateUserDialog } from './CreateUserDialog';
-import { NO_MODEL } from './UserFormFields';
 import { ImportExportActions } from '@/components/shared/ImportExportActions';
 import { PageHeader } from '@/components/layout/PageHeader';
+import type { GatewayModel } from '@/types';
+
+function ModelsSummary({ allowedModels, modelMap }: { allowedModels: string[]; modelMap: Map<string, GatewayModel> }) {
+  if (allowedModels.length === 0) {
+    return <span className="text-xs text-muted-foreground/50 italic">nenhum</span>;
+  }
+
+  const first = modelMap.get(allowedModels[0]);
+  const firstName = first?.label ?? allowedModels[0];
+  const rest = allowedModels.length - 1;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="text-sm cursor-default">
+          <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{firstName}</span>
+          {rest > 0 && (
+            <span className="ml-1.5 text-xs text-muted-foreground">+{rest}</span>
+          )}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-xs">
+        <p className="text-xs font-medium mb-1">Fila de prioridade:</p>
+        <ol className="text-xs space-y-0.5 list-none">
+          {allowedModels.map((v, i) => (
+            <li key={v}>
+              <span className="text-muted-foreground mr-1">{i + 1}.</span>
+              {modelMap.get(v)?.label ?? v}
+            </li>
+          ))}
+        </ol>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 export function UsersClient() {
   const { data: users, isLoading, mutate } = useUsers();
   const { data: models } = useModels();
   const [createOpen, setCreateOpen] = useState(false);
 
-  const activeModels = models?.filter((m) => m.active) ?? [];
+  const modelMap = new Map((models ?? []).map((m) => [m.value, m]));
 
   async function handleToggle(id: string, active: boolean) {
     try {
       await apiClient.users.update(id, { active });
-      await mutate();
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
-  }
-
-  async function handleInlineModelChange(
-    id: string,
-    currentAllowedModels: string[],
-    value: string,
-  ) {
-    const newModel = value === NO_MODEL ? null : value;
-    const merged = newModel
-      ? Array.from(new Set([...currentAllowedModels, newModel]))
-      : currentAllowedModels;
-    try {
-      await apiClient.users.update(id, { model: newModel, allowedModels: merged });
       await mutate();
     } catch (err) {
       toast.error((err as Error).message);
@@ -85,7 +95,7 @@ export function UsersClient() {
           <div className="rounded-lg border overflow-hidden">
             <div className="bg-muted/40 px-4 py-2.5 border-b">
               <div className="flex gap-8">
-                {['Nome', 'Key', 'Modelo padrão', 'Ativo', ''].map((h) => (
+                {['Nome', 'Key', 'Modelos', 'Ativo', ''].map((h) => (
                   <Skeleton key={h} className="h-3 w-16" />
                 ))}
               </div>
@@ -95,7 +105,7 @@ export function UsersClient() {
                 <div key={i} className="flex items-center gap-8 px-4 py-3">
                   <Skeleton className="h-4 w-32" />
                   <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-7 w-48" />
+                  <Skeleton className="h-4 w-40" />
                   <Skeleton className="h-5 w-9 rounded-full" />
                   <Skeleton className="h-4 w-4 ml-auto" />
                 </div>
@@ -119,7 +129,7 @@ export function UsersClient() {
                 <TableRow className="bg-muted/40 hover:bg-muted/40">
                   <TableHead className="text-section-title h-10">Nome</TableHead>
                   <TableHead className="text-section-title h-10">Key</TableHead>
-                  <TableHead className="text-section-title h-10">Modelo padrão</TableHead>
+                  <TableHead className="text-section-title h-10">Modelos (prioridade)</TableHead>
                   <TableHead className="text-section-title h-10">Ativo</TableHead>
                   <TableHead className="h-10" />
                 </TableRow>
@@ -134,33 +144,7 @@ export function UsersClient() {
                       </code>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <Select
-                          value={user.model && activeModels.some(m => m.value === user.model) ? user.model : undefined}
-                          onValueChange={(v) =>
-                            handleInlineModelChange(user.id, user.allowedModels, v)
-                          }
-                        >
-                          <SelectTrigger className={`h-7 w-52 text-xs${!user.model || !activeModels.some(m => m.value === user.model) ? ' border-destructive' : ''}`}>
-                            <SelectValue placeholder="Selecione um modelo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {activeModels.map((m) => (
-                              <SelectItem key={m.id} value={m.value}>
-                                {m.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {user.model && !activeModels.some(m => m.value === user.model) && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
-                            </TooltipTrigger>
-                            <TooltipContent>Modelo &quot;{user.model}&quot; não encontrado</TooltipContent>
-                          </Tooltip>
-                        )}
-                      </div>
+                      <ModelsSummary allowedModels={user.allowedModels} modelMap={modelMap} />
                     </TableCell>
                     <TableCell>
                       <Switch

@@ -22,53 +22,21 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
     stream?: boolean;
   };
 
-  const providerModel =
-    (req.body as { model?: string }).model ||
-    req.userModel;
+  // Model is always determined by the user's priority queue — clients cannot choose
+  const allowedModels = req.user?.allowedModels ?? [];
 
-  if (!providerModel) {
+  if (allowedModels.length === 0) {
     res.status(400).json({
       error: {
         message:
-          'Nenhum modelo configurado para este cliente. Atribua um modelo ao usuário, defina DEFAULT_PROVIDER no servidor ou informe o modelo na requisição.',
+          'Nenhum modelo configurado para este cliente. Configure a fila de modelos no painel admin.',
         type: 'model_not_configured',
       },
     });
     return;
   }
 
-  const allowedModels = req.user?.allowedModels ?? [];
-  const userDefaultModel = req.userModel;
-
-  if (allowedModels.length > 0) {
-    if (!allowedModels.includes(providerModel)) {
-      res.status(403).json({
-        error: {
-          message: `Modelo '${providerModel}' não permitido para este token.`,
-          type: 'model_not_allowed',
-        },
-      });
-      return;
-    }
-  } else if (userDefaultModel && providerModel !== userDefaultModel) {
-    res.status(403).json({
-      error: {
-        message: `Modelo '${providerModel}' não permitido. Apenas o modelo padrão '${userDefaultModel}' está disponível.`,
-        type: 'model_not_allowed',
-      },
-    });
-    return;
-  }
-
-  // Build candidate list for quota-aware selection.
-  // If user has an explicit allowedModels list, iterate it in order (requested first).
-  // Otherwise only the requested model is a candidate (no restriction = no fallback pool).
-  const candidates =
-    allowedModels.length > 0
-      ? [providerModel, ...allowedModels.filter((m) => m !== providerModel)]
-      : [providerModel];
-
-  const selectedModel = selectAvailableModel(candidates);
+  const selectedModel = selectAvailableModel(allowedModels);
 
   if (!selectedModel) {
     res.status(429).json({

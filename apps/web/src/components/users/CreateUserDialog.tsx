@@ -20,7 +20,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { UserFormFields, NO_MODEL } from './UserFormFields';
+import { ModelPriorityList } from './ModelPriorityList';
 
 interface Props {
   open: boolean;
@@ -31,11 +31,10 @@ interface Props {
 interface FormState {
   name: string;
   key: string;
-  model: string;
   allowedModels: string[];
 }
 
-const emptyForm: FormState = { name: '', key: '', model: '', allowedModels: [] };
+const emptyForm: FormState = { name: '', key: '', allowedModels: [] };
 
 export function CreateUserDialog({ open, onOpenChange, onCreated }: Props) {
   const { data: models } = useModels();
@@ -53,27 +52,6 @@ export function CreateUserDialog({ open, onOpenChange, onCreated }: Props) {
     }
   }
 
-  function handleModelChange(value: string) {
-    const model = value === NO_MODEL ? '' : value;
-    setForm((f) => ({
-      ...f,
-      model,
-      allowedModels:
-        model && !f.allowedModels.includes(model)
-          ? [...f.allowedModels, model]
-          : f.allowedModels,
-    }));
-  }
-
-  function handleAllowedModelsChange(value: string, checked: boolean) {
-    setForm((f) => ({
-      ...f,
-      allowedModels: checked
-        ? [...f.allowedModels, value]
-        : f.allowedModels.filter((m) => m !== value),
-    }));
-  }
-
   function handleClose() {
     setForm(emptyForm);
     onOpenChange(false);
@@ -87,7 +65,7 @@ export function CreateUserDialog({ open, onOpenChange, onCreated }: Props) {
       await apiClient.users.add({
         name: form.name,
         key: form.key,
-        model: form.model || null,
+        model: null,
         allowedModels: form.allowedModels,
       });
       toast.success('Usuário criado');
@@ -102,7 +80,7 @@ export function CreateUserDialog({ open, onOpenChange, onCreated }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader className="border-b border-border pb-4 mb-2">
           <DialogTitle className="text-base font-semibold">Criar Usuário</DialogTitle>
         </DialogHeader>
@@ -152,13 +130,10 @@ export function CreateUserDialog({ open, onOpenChange, onCreated }: Props) {
               </Tooltip>
             </div>
           </div>
-          <UserFormFields
-            model={form.model}
+          <ModelPriorityList
             allowedModels={form.allowedModels}
             activeModels={activeModels}
-            idPrefix="create"
-            onModelChange={handleModelChange}
-            onAllowedModelsChange={handleAllowedModelsChange}
+            onChange={(models) => setForm((f) => ({ ...f, allowedModels: models }))}
           />
         </div>
         <DialogFooter className="border-t border-border pt-4 mt-2">
