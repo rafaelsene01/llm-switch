@@ -11,7 +11,12 @@
       "WebFetch(domain:openrouter.ai)",
       "Bash(Get-ChildItem -Path \"d:\\\\llm-switch\\\\apps\\\\api\\\\src\" -Recurse -File)",
       "Bash(Select-Object FullName)",
-      "Bash(Sort-Object FullName)"
+      "Bash(Sort-Object FullName)",
+      "Read(//d/llm-gateway/apps/web/src/components/activity/**)",
+      "Read(//d/llm-gateway/apps/web/src/hooks/**)",
+      "Read(//d/llm-gateway/apps/web/src/types/**)",
+      "Bash(sqlite3 data/activity.db \".schema activity_logs\")",
+      "Bash(findstr -i lib)"
     ]
   }
 }

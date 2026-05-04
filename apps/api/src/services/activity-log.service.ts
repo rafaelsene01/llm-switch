@@ -46,6 +46,7 @@ export interface ActivityLogRow {
   token_preview: string;
   message_preview: string;
   provider_model: string;
+  provider_id: string;
   blocked: boolean;
   file_path: string | null;
   created_at: string;
@@ -91,6 +92,7 @@ function initDb(dbPath: string): Database.Database {
     ['input_cost_usd', 'REAL NOT NULL DEFAULT 0'],
     ['output_cost_usd', 'REAL NOT NULL DEFAULT 0'],
     ['error_message', 'TEXT'],
+    ['provider_id', 'TEXT NOT NULL DEFAULT \'\''],
   ]) {
     try {
       db.exec(`ALTER TABLE activity_logs ADD COLUMN ${col} ${type}`);
@@ -161,17 +163,19 @@ export function createActivityLogService(
       writeFileSync(filePath, buildMarkdown(entry, now), 'utf8');
 
       const preview = extractMessagePreview(entry.originalMessages);
+      const providerId = entry.providerModel.slice(0, entry.providerModel.indexOf(':')) || entry.providerModel;
       getDb().prepare(
         `INSERT INTO activity_logs
-         (request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
+         (request_id, user_name, token_preview, message_preview, provider_model, provider_id, blocked, file_path, created_at,
           prompt_tokens, completion_tokens, total_tokens, cost_usd, input_cost_usd, output_cost_usd, error_message)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         entry.requestId,
         entry.userName,
         entry.tokenPreview,
         preview,
         entry.providerModel,
+        providerId,
         entry.blocked ? 1 : 0,
         filePath,
         now,
@@ -191,7 +195,7 @@ export function createActivityLogService(
   function getById(id: number): ActivityLogRow | null {
     const row = getDb()
       .prepare(
-        `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
+        `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, provider_id, blocked, file_path, created_at,
                 prompt_tokens, completion_tokens, total_tokens, cost_usd, input_cost_usd, output_cost_usd, error_message
          FROM activity_logs WHERE id = ?`
       )
@@ -211,7 +215,7 @@ export function createActivityLogService(
         .get(pattern) as { count: number };
       const rows = db
         .prepare(
-          `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
+          `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, provider_id, blocked, file_path, created_at,
                   prompt_tokens, completion_tokens, total_tokens, cost_usd, input_cost_usd, output_cost_usd, error_message
            FROM activity_logs
            WHERE user_name LIKE ?
@@ -230,7 +234,7 @@ export function createActivityLogService(
       .get() as { count: number };
     const rows = db
       .prepare(
-        `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, blocked, file_path, created_at,
+        `SELECT id, request_id, user_name, token_preview, message_preview, provider_model, provider_id, blocked, file_path, created_at,
                 prompt_tokens, completion_tokens, total_tokens, cost_usd, input_cost_usd, output_cost_usd, error_message
          FROM activity_logs
          ORDER BY created_at DESC

@@ -91,9 +91,32 @@ interface PriceEditState {
   output: string;
 }
 
+type AmountSuffix = 'raw' | 'K' | 'M' | 'B' | 'T';
+
+const SUFFIX_MULTIPLIER: Record<AmountSuffix, number> = {
+  raw: 1,
+  K: 1_000,
+  M: 1_000_000,
+  B: 1_000_000_000,
+  T: 1_000_000_000_000,
+};
+
+function detectSuffix(amount: number): { base: string; suffix: AmountSuffix } {
+  if (amount >= 1_000_000_000_000 && amount % 1_000_000_000_000 === 0)
+    return { base: String(amount / 1_000_000_000_000), suffix: 'T' };
+  if (amount >= 1_000_000_000 && amount % 1_000_000_000 === 0)
+    return { base: String(amount / 1_000_000_000), suffix: 'B' };
+  if (amount >= 1_000_000 && amount % 1_000_000 === 0)
+    return { base: String(amount / 1_000_000), suffix: 'M' };
+  if (amount >= 1_000 && amount % 1_000 === 0)
+    return { base: String(amount / 1_000), suffix: 'K' };
+  return { base: String(amount), suffix: 'raw' };
+}
+
 interface LimitEditState {
   modelId: string;
-  amount: string;
+  amountBase: string;
+  amountSuffix: AmountSuffix;
   unit: ModelRateLimit['unit'];
   interval: ModelRateLimit['interval'];
   intervalHours: string;
@@ -284,9 +307,13 @@ export function ModelsClient() {
   }
 
   function startLimitEdit(model: GatewayModel) {
+    const { base, suffix } = model.rateLimit
+      ? detectSuffix(model.rateLimit.amount)
+      : { base: '', suffix: 'M' as AmountSuffix };
     setLimitEdit({
       modelId: model.id,
-      amount: model.rateLimit ? String(model.rateLimit.amount) : '',
+      amountBase: base,
+      amountSuffix: suffix,
       unit: model.rateLimit?.unit ?? 'tokens',
       interval: model.rateLimit?.interval ?? 'weekly',
       intervalHours: model.rateLimit?.intervalHours ? String(model.rateLimit.intervalHours) : '1',
@@ -295,11 +322,12 @@ export function ModelsClient() {
 
   async function saveLimitEdit() {
     if (!limitEdit) return;
-    const amount = parseInt(limitEdit.amount, 10);
-    if (!limitEdit.amount || isNaN(amount) || amount <= 0) {
+    const base = parseFloat(limitEdit.amountBase);
+    if (!limitEdit.amountBase || isNaN(base) || base <= 0) {
       toast.error('Quantidade inválida');
       return;
     }
+    const amount = Math.round(base * SUFFIX_MULTIPLIER[limitEdit.amountSuffix]);
     const intervalHours = limitEdit.interval === 'hourly' ? parseInt(limitEdit.intervalHours, 10) : undefined;
     if (limitEdit.interval === 'hourly' && (!intervalHours || isNaN(intervalHours) || intervalHours <= 0)) {
       toast.error('Intervalo de horas inválido');
@@ -615,13 +643,35 @@ export function ModelsClient() {
               <div className="space-y-4">
                 <div>
                   <Label className="text-field-label">Quantidade</Label>
-                  <Input
-                    className="mt-1.5 font-mono"
-                    placeholder="ex: 1000000"
-                    value={limitEdit.amount}
-                    onChange={(e) => setLimitEdit({ ...limitEdit, amount: e.target.value })}
-                    autoFocus
-                  />
+                  <div className="mt-1.5 flex gap-2">
+                    <Input
+                      className="font-mono"
+                      placeholder="ex: 500"
+                      value={limitEdit.amountBase}
+                      onChange={(e) => setLimitEdit({ ...limitEdit, amountBase: e.target.value })}
+                      autoFocus
+                    />
+                    <Select
+                      value={limitEdit.amountSuffix}
+                      onValueChange={(v) => setLimitEdit({ ...limitEdit, amountSuffix: v as AmountSuffix })}
+                    >
+                      <SelectTrigger className="w-28 font-mono [&>span]:flex-1 [&>span]:text-left">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="raw">Unidade</SelectItem>
+                        <SelectItem value="K">K (mil)</SelectItem>
+                        <SelectItem value="M">M (milhão)</SelectItem>
+                        <SelectItem value="B">B (bilhão)</SelectItem>
+                        <SelectItem value="T">T (trilhão)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {limitEdit.amountBase && !isNaN(parseFloat(limitEdit.amountBase)) && (
+                    <p className="mt-1 text-xs text-muted-foreground font-mono">
+                      = {(parseFloat(limitEdit.amountBase) * SUFFIX_MULTIPLIER[limitEdit.amountSuffix]).toLocaleString('pt-BR')}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-field-label">Unidade</Label>
