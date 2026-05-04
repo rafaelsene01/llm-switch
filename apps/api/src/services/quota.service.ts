@@ -38,7 +38,10 @@ export function selectAvailableModel(candidates: string[]): string | null {
 
   for (const modelValue of candidates) {
     const model = modelMap.get(modelValue);
-    if (!model || !model.active) continue;
+    // If model is not in the store (provider not configured in DB), treat as available —
+    // resolveModel() will handle provider resolution and may still succeed.
+    if (!model) return modelValue;
+    if (!model.active) continue;
     if (isModelUnderQuota(model)) return modelValue;
   }
 

@@ -22,10 +22,14 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
     stream?: boolean;
   };
 
-  // Model is always determined by the user's priority queue — clients cannot choose
+  // Model is always determined by the user's priority queue — clients cannot choose.
+  // Fall back to req.userModel for backward compatibility with users that have model but no allowedModels.
   const allowedModels = req.user?.allowedModels ?? [];
+  const candidates = allowedModels.length > 0
+    ? allowedModels
+    : req.userModel ? [req.userModel] : [];
 
-  if (allowedModels.length === 0) {
+  if (candidates.length === 0) {
     res.status(400).json({
       error: {
         message:
@@ -36,7 +40,7 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
     return;
   }
 
-  const selectedModel = selectAvailableModel(allowedModels);
+  const selectedModel = selectAvailableModel(candidates);
 
   if (!selectedModel) {
     res.status(429).json({
