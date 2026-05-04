@@ -16,7 +16,8 @@
       "Read(//d/llm-gateway/apps/web/src/hooks/**)",
       "Read(//d/llm-gateway/apps/web/src/types/**)",
       "Bash(sqlite3 data/activity.db \".schema activity_logs\")",
-      "Bash(findstr -i lib)"
+      "Bash(findstr -i lib)",
+      "Bash(sqlite3 \"data/gateway.db\" \".tables\")"
     ]
   }
 }

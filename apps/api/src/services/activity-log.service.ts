@@ -356,7 +356,20 @@ export function createActivityLogService(
     return { byModel, byUser };
   }
 
-  return { log, list, getById, deleteById, deleteAll, deleteOlderThan, analytics };
+  function getModelUsage(modelValue: string, since: string): { tokens: number; requests: number } {
+    const result = getDb()
+      .prepare(
+        `SELECT COALESCE(SUM(total_tokens), 0) AS tokens, COUNT(*) AS requests
+         FROM activity_logs
+         WHERE provider_model = ?
+           AND created_at >= ?
+           AND (error_message IS NULL OR error_message = '')`
+      )
+      .get(modelValue, since) as { tokens: number; requests: number };
+    return result;
+  }
+
+  return { log, list, getById, deleteById, deleteAll, deleteOlderThan, analytics, getModelUsage };
 }
 
 export const activityLog = createActivityLogService();

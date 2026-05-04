@@ -120,6 +120,7 @@ interface LimitEditState {
   unit: ModelRateLimit['unit'];
   interval: ModelRateLimit['interval'];
   intervalHours: string;
+  bufferPercent: string;
 }
 
 function formatRateLimit(rl: ModelRateLimit): string {
@@ -133,7 +134,9 @@ function formatRateLimit(rl: ModelRateLimit): string {
     rl.interval === 'weekly' ? 'sem' :
     rl.interval === 'daily' ? 'dia' :
     `${rl.intervalHours ?? 1}h`;
-  return `${amt} ${unit}/${interval}`;
+  const buffer = rl.bufferPercent ?? 10;
+  const usedPct = 100 - buffer;
+  return `${amt} ${unit}/${interval} · ${usedPct}%`;
 }
 
 export function ModelsClient() {
@@ -317,6 +320,7 @@ export function ModelsClient() {
       unit: model.rateLimit?.unit ?? 'tokens',
       interval: model.rateLimit?.interval ?? 'weekly',
       intervalHours: model.rateLimit?.intervalHours ? String(model.rateLimit.intervalHours) : '1',
+      bufferPercent: model.rateLimit?.bufferPercent !== undefined ? String(model.rateLimit.bufferPercent) : '10',
     });
   }
 
@@ -333,11 +337,17 @@ export function ModelsClient() {
       toast.error('Intervalo de horas inválido');
       return;
     }
+    const bufferPercent = parseInt(limitEdit.bufferPercent, 10);
+    if (isNaN(bufferPercent) || bufferPercent < 0 || bufferPercent > 99) {
+      toast.error('Margem de segurança deve ser entre 0 e 99%');
+      return;
+    }
     const rateLimit: ModelRateLimit = {
       amount,
       unit: limitEdit.unit,
       interval: limitEdit.interval,
       ...(intervalHours ? { intervalHours } : {}),
+      ...(bufferPercent !== 10 ? { bufferPercent } : {}),
     };
     setSavingLimit(true);
     try {
@@ -715,6 +725,24 @@ export function ModelsClient() {
                     />
                   </div>
                 )}
+                <div>
+                  <Label className="text-field-label">Margem de segurança (%)</Label>
+                  <Input
+                    className="mt-1.5 font-mono"
+                    placeholder="10"
+                    value={limitEdit.bufferPercent}
+                    onChange={(e) => setLimitEdit({ ...limitEdit, bufferPercent: e.target.value })}
+                  />
+                  {(() => {
+                    const v = parseInt(limitEdit.bufferPercent, 10);
+                    const usedPct = isNaN(v) ? '—' : `${100 - v}%`;
+                    return (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Padrão: 10% — uso máximo permitido: <span className="font-mono font-medium">{usedPct}</span> do limite
+                      </p>
+                    );
+                  })()}
+                </div>
               </div>
             )}
             <DialogFooter className="border-t border-border pt-4 mt-2">

@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { chatService } from '../services/chat.service';
+import { selectAvailableModel } from '../services/quota.service';
 import type { OpenAIMessage, OpenAITool, OpenAIToolCall } from '../types';
 
 export async function chatCompletions(req: Request, res: Response): Promise<void> {
@@ -59,9 +60,29 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
     return;
   }
 
+  // Build candidate list for quota-aware selection.
+  // If user has an explicit allowedModels list, iterate it in order (requested first).
+  // Otherwise only the requested model is a candidate (no restriction = no fallback pool).
+  const candidates =
+    allowedModels.length > 0
+      ? [providerModel, ...allowedModels.filter((m) => m !== providerModel)]
+      : [providerModel];
+
+  const selectedModel = selectAvailableModel(candidates);
+
+  if (!selectedModel) {
+    res.status(429).json({
+      error: {
+        message: 'Limite de uso atingido para todos os modelos disponíveis.',
+        type: 'quota_exceeded',
+      },
+    });
+    return;
+  }
+
   const serviceOpts = {
     messages,
-    providerModel,
+    providerModel: selectedModel,
     clientLabel: req.clientLabel,
     tokenPreview: req.tokenPreview,
     user: req.user,
@@ -77,7 +98,7 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
     try {
       handle = await chatService.streamComplete(serviceOpts);
     } catch (err) {
-      res.status(502).json({ error: { message: `Erro ao chamar o provider "${providerModel}": ${(err as Error).message}`, type: 'provider_error' } });
+      res.status(502).json({ error: { message: `Erro ao chamar o provider "${selectedModel}": ${(err as Error).message}`, type: 'provider_error' } });
       return;
     }
 
@@ -87,15 +108,15 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Request-Id', handle.requestId);
 
-    const firstChunk = { id: handle.requestId, object: 'chat.completion.chunk', created, model: providerModel, choices: [{ index: 0, delta: { role: 'assistant', content: '' }, finish_reason: null }] };
+    const firstChunk = { id: handle.requestId, object: 'chat.completion.chunk', created, model: selectedModel, choices: [{ index: 0, delta: { role: 'assistant', content: '' }, finish_reason: null }] };
     res.write(`data: ${JSON.stringify(firstChunk)}\n\n`);
 
     for await (const text of handle.textStream) {
-      const chunk = { id: handle.requestId, object: 'chat.completion.chunk', created, model: providerModel, choices: [{ index: 0, delta: { content: text }, finish_reason: null }] };
+      const chunk = { id: handle.requestId, object: 'chat.completion.chunk', created, model: selectedModel, choices: [{ index: 0, delta: { content: text }, finish_reason: null }] };
       res.write(`data: ${JSON.stringify(chunk)}\n\n`);
     }
 
-    const doneChunk = { id: handle.requestId, object: 'chat.completion.chunk', created, model: providerModel, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] };
+    const doneChunk = { id: handle.requestId, object: 'chat.completion.chunk', created, model: selectedModel, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] };
     res.write(`data: ${JSON.stringify(doneChunk)}\n\n`);
     res.write('data: [DONE]\n\n');
     res.end();
@@ -106,7 +127,7 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
   try {
     result = await chatService.complete(serviceOpts);
   } catch (err) {
-    res.status(502).json({ error: { message: `Erro ao chamar o provider "${providerModel}": ${(err as Error).message}`, type: 'provider_error' } });
+    res.status(502).json({ error: { message: `Erro ao chamar o provider "${selectedModel}": ${(err as Error).message}`, type: 'provider_error' } });
     return;
   }
 
@@ -130,7 +151,7 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
   res.json({
     id: result.requestId,
     object: 'chat.completion',
-    model: providerModel,
+    model: selectedModel,
     choices: [
       {
         index: 0,
@@ -149,7 +170,7 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
     },
     gateway: {
       request_id: result.requestId,
-      provider: providerModel,
+      provider: selectedModel,
     },
   });
 }
