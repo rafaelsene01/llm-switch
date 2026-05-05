@@ -47,24 +47,26 @@ interface ProviderColors {
 }
 
 const PROVIDER_COLOR_MAP: Record<string, ProviderColors> = {
-  openai:    { chipActive: 'bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600',    chipInactive: 'border-emerald-500/40 text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20',    providerText: 'text-emerald-500',  row: 'bg-emerald-500/[0.04]' },
-  anthropic: { chipActive: 'bg-orange-500 border-orange-500 text-white hover:bg-orange-600',       chipInactive: 'border-orange-500/40 text-orange-500 bg-orange-500/10 hover:bg-orange-500/20',       providerText: 'text-orange-500',   row: 'bg-orange-500/[0.04]' },
-  google:    { chipActive: 'bg-blue-500 border-blue-500 text-white hover:bg-blue-600',             chipInactive: 'border-blue-500/40 text-blue-500 bg-blue-500/10 hover:bg-blue-500/20',             providerText: 'text-blue-500',     row: 'bg-blue-500/[0.04]' },
-  mistral:   { chipActive: 'bg-violet-500 border-violet-500 text-white hover:bg-violet-600',       chipInactive: 'border-violet-500/40 text-violet-500 bg-violet-500/10 hover:bg-violet-500/20',       providerText: 'text-violet-500',   row: 'bg-violet-500/[0.04]' },
-  cohere:    { chipActive: 'bg-teal-500 border-teal-500 text-white hover:bg-teal-600',             chipInactive: 'border-teal-500/40 text-teal-500 bg-teal-500/10 hover:bg-teal-500/20',             providerText: 'text-teal-500',     row: 'bg-teal-500/[0.04]' },
-  meta:      { chipActive: 'bg-indigo-500 border-indigo-500 text-white hover:bg-indigo-600',       chipInactive: 'border-indigo-500/40 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20',       providerText: 'text-indigo-500',   row: 'bg-indigo-500/[0.04]' },
-  groq:      { chipActive: 'bg-amber-500 border-amber-500 text-white hover:bg-amber-600',          chipInactive: 'border-amber-500/40 text-amber-500 bg-amber-500/10 hover:bg-amber-500/20',          providerText: 'text-amber-500',    row: 'bg-amber-500/[0.04]' },
-  bedrock:   { chipActive: 'bg-rose-500 border-rose-500 text-white hover:bg-rose-600',             chipInactive: 'border-rose-500/40 text-rose-500 bg-rose-500/10 hover:bg-rose-500/20',             providerText: 'text-rose-500',     row: 'bg-rose-500/[0.04]' },
-  azure:     { chipActive: 'bg-sky-500 border-sky-500 text-white hover:bg-sky-600',                chipInactive: 'border-sky-500/40 text-sky-500 bg-sky-500/10 hover:bg-sky-500/20',                providerText: 'text-sky-500',      row: 'bg-sky-500/[0.04]' },
-  ollama:    { chipActive: 'bg-slate-500 border-slate-500 text-white hover:bg-slate-600',          chipInactive: 'border-slate-400/40 text-slate-400 bg-slate-500/10 hover:bg-slate-500/20',          providerText: 'text-slate-400',    row: 'bg-slate-500/[0.04]' },
+  openai:     { chipActive: 'bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600',         chipInactive: 'border-emerald-500/40 text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20',    providerText: 'text-emerald-500',  row: 'bg-emerald-500/[0.04]' },
+  anthropic:  { chipActive: 'bg-orange-500 border-orange-500 text-white hover:bg-orange-600',            chipInactive: 'border-orange-500/40 text-orange-500 bg-orange-500/10 hover:bg-orange-500/20',       providerText: 'text-orange-500',   row: 'bg-orange-500/[0.04]' },
+  google:     { chipActive: 'bg-blue-500 border-blue-500 text-white hover:bg-blue-600',                  chipInactive: 'border-blue-500/40 text-blue-500 bg-blue-500/10 hover:bg-blue-500/20',             providerText: 'text-blue-500',     row: 'bg-blue-500/[0.04]' },
+  mistral:    { chipActive: 'bg-violet-500 border-violet-500 text-white hover:bg-violet-600',            chipInactive: 'border-violet-500/40 text-violet-500 bg-violet-500/10 hover:bg-violet-500/20',       providerText: 'text-violet-500',   row: 'bg-violet-500/[0.04]' },
+  cohere:     { chipActive: 'bg-teal-500 border-teal-500 text-white hover:bg-teal-600',                  chipInactive: 'border-teal-500/40 text-teal-500 bg-teal-500/10 hover:bg-teal-500/20',             providerText: 'text-teal-500',     row: 'bg-teal-500/[0.04]' },
+  meta:       { chipActive: 'bg-indigo-500 border-indigo-500 text-white hover:bg-indigo-600',            chipInactive: 'border-indigo-500/40 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20',       providerText: 'text-indigo-500',   row: 'bg-indigo-500/[0.04]' },
+  groq:       { chipActive: 'bg-amber-500 border-amber-500 text-white hover:bg-amber-600',               chipInactive: 'border-amber-500/40 text-amber-500 bg-amber-500/10 hover:bg-amber-500/20',          providerText: 'text-amber-500',    row: 'bg-amber-500/[0.04]' },
+  bedrock:    { chipActive: 'bg-rose-500 border-rose-500 text-white hover:bg-rose-600',                  chipInactive: 'border-rose-500/40 text-rose-500 bg-rose-500/10 hover:bg-rose-500/20',             providerText: 'text-rose-500',     row: 'bg-rose-500/[0.04]' },
+  azure:      { chipActive: 'bg-sky-500 border-sky-500 text-white hover:bg-sky-600',                     chipInactive: 'border-sky-500/40 text-sky-500 bg-sky-500/10 hover:bg-sky-500/20',                providerText: 'text-sky-500',      row: 'bg-sky-500/[0.04]' },
+  ollama:     { chipActive: 'bg-slate-500 border-slate-500 text-white hover:bg-slate-600',               chipInactive: 'border-slate-400/40 text-slate-400 bg-slate-500/10 hover:bg-slate-500/20',          providerText: 'text-slate-400',    row: 'bg-slate-500/[0.04]' },
+  openrouter: { chipActive: 'bg-purple-500 border-purple-500 text-white hover:bg-purple-600',            chipInactive: 'border-purple-500/40 text-purple-500 bg-purple-500/10 hover:bg-purple-500/20',       providerText: 'text-purple-500',   row: 'bg-purple-500/[0.04]' },
+  lmstudio:   { chipActive: 'bg-pink-500 border-pink-500 text-white hover:bg-pink-600',                  chipInactive: 'border-pink-500/40 text-pink-500 bg-pink-500/10 hover:bg-pink-500/20',             providerText: 'text-pink-500',     row: 'bg-pink-500/[0.04]' },
 };
 
 const FALLBACK_PALETTE: ProviderColors[] = [
-  { chipActive: 'bg-pink-500 border-pink-500 text-white hover:bg-pink-600',     chipInactive: 'border-pink-500/40 text-pink-500 bg-pink-500/10 hover:bg-pink-500/20',     providerText: 'text-pink-500',    row: 'bg-pink-500/[0.04]' },
-  { chipActive: 'bg-cyan-500 border-cyan-500 text-white hover:bg-cyan-600',     chipInactive: 'border-cyan-500/40 text-cyan-500 bg-cyan-500/10 hover:bg-cyan-500/20',     providerText: 'text-cyan-500',    row: 'bg-cyan-500/[0.04]' },
-  { chipActive: 'bg-lime-500 border-lime-500 text-white hover:bg-lime-600',     chipInactive: 'border-lime-500/40 text-lime-500 bg-lime-500/10 hover:bg-lime-500/20',     providerText: 'text-lime-500',    row: 'bg-lime-500/[0.04]' },
+  { chipActive: 'bg-pink-500 border-pink-500 text-white hover:bg-pink-600',          chipInactive: 'border-pink-500/40 text-pink-500 bg-pink-500/10 hover:bg-pink-500/20',         providerText: 'text-pink-500',    row: 'bg-pink-500/[0.04]' },
+  { chipActive: 'bg-cyan-500 border-cyan-500 text-white hover:bg-cyan-600',          chipInactive: 'border-cyan-500/40 text-cyan-500 bg-cyan-500/10 hover:bg-cyan-500/20',         providerText: 'text-cyan-500',    row: 'bg-cyan-500/[0.04]' },
+  { chipActive: 'bg-lime-500 border-lime-500 text-white hover:bg-lime-600',          chipInactive: 'border-lime-500/40 text-lime-500 bg-lime-500/10 hover:bg-lime-500/20',         providerText: 'text-lime-500',    row: 'bg-lime-500/[0.04]' },
   { chipActive: 'bg-fuchsia-500 border-fuchsia-500 text-white hover:bg-fuchsia-600', chipInactive: 'border-fuchsia-500/40 text-fuchsia-500 bg-fuchsia-500/10 hover:bg-fuchsia-500/20', providerText: 'text-fuchsia-500', row: 'bg-fuchsia-500/[0.04]' },
-  { chipActive: 'bg-red-500 border-red-500 text-white hover:bg-red-600',        chipInactive: 'border-red-500/40 text-red-500 bg-red-500/10 hover:bg-red-500/20',        providerText: 'text-red-500',     row: 'bg-red-500/[0.04]' },
+  { chipActive: 'bg-red-500 border-red-500 text-white hover:bg-red-600',             chipInactive: 'border-red-500/40 text-red-500 bg-red-500/10 hover:bg-red-500/20',             providerText: 'text-red-500',     row: 'bg-red-500/[0.04]' },
 ];
 
 function getProviderColors(provider: string, fallbackIndex: number): ProviderColors {
@@ -82,11 +84,25 @@ function CostCell({ value }: { value?: number }) {
   return <span className="font-mono text-sm">{formatted}</span>;
 }
 
-type SortKey = 'label' | 'value' | 'inputCostPer1M' | 'outputCostPer1M' | 'active';
+type SortKey = 'label' | 'modelName' | 'inputCostPer1M' | 'outputCostPer1M' | 'active';
 type SortDir = 'asc' | 'desc';
 
+/** One row in the table — represents all instances of the same model across provider instances of the same type */
+interface UnifiedModel {
+  key: string;           // `${providerType}::${modelName}`
+  providerType: string;
+  modelName: string;     // part after the first ":" in model.value
+  label: string;
+  inputCostPer1M?: number;
+  outputCostPer1M?: number;
+  rateLimit?: ModelRateLimit;
+  active: boolean;       // true only if ALL instances are active
+  instances: GatewayModel[];
+}
+
 interface PriceEditState {
-  modelId: string;
+  unifiedKey: string;
+  instanceIds: string[];
   input: string;
   output: string;
 }
@@ -114,7 +130,8 @@ function detectSuffix(amount: number): { base: string; suffix: AmountSuffix } {
 }
 
 interface LimitEditState {
-  modelId: string;
+  unifiedKey: string;
+  instanceIds: string[];
   amountBase: string;
   amountSuffix: AmountSuffix;
   unit: ModelRateLimit['unit'];
@@ -152,21 +169,105 @@ export function ModelsClient() {
   const [filter, setFilter] = useState('');
   const [selectedProviders, setSelectedProviders] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>('label');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   useEffect(() => {
     apiClient.models.sync()
       .then(() => mutate())
       .catch(() => {});
   }, []);
-  const [sortDir, setSortDir] = useState<SortDir>('asc');
 
-  const availableProviders: string[] = models?.length
-    ? [...new Set(models.map((m) => m.value.split(':')[0]).filter(Boolean))].sort()
+  const instanceTypeMap = new Map<string, string>(
+    providers?.map((p) => [p.id, p.providerType]) ?? []
+  );
+
+  function getProviderType(modelValue: string): string {
+    const instanceId = modelValue.split(':')[0];
+    return instanceTypeMap.get(instanceId) ?? instanceId;
+  }
+
+  function getModelName(modelValue: string): string {
+    const idx = modelValue.indexOf(':');
+    return idx >= 0 ? modelValue.slice(idx + 1) : modelValue;
+  }
+
+  const activeProviderIds = providers
+    ? new Set(providers.filter((p) => p.configured && p.enabled !== false).map((p) => p.id))
+    : null;
+
+  // Filter raw models
+  const filteredModels = (() => {
+    if (!models?.length) return models;
+    let result = models;
+    if (activeProviderIds) {
+      result = result.filter((m) => activeProviderIds.has(m.value.split(':')[0]));
+    }
+    if (filter.trim()) {
+      try {
+        const re = new RegExp(filter, 'i');
+        result = result.filter((m) => re.test(m.label) || re.test(m.value));
+      } catch { /* invalid regex — skip */ }
+    }
+    if (selectedProviders.size > 0) {
+      result = result.filter((m) => selectedProviders.has(getProviderType(m.value)));
+    }
+    return result;
+  })();
+
+  // Deduplicate into unified models: one row per (providerType + modelName)
+  const unifiedModels: UnifiedModel[] = (() => {
+    if (!filteredModels?.length) return [];
+    const map = new Map<string, UnifiedModel>();
+    for (const model of filteredModels) {
+      const pt = getProviderType(model.value);
+      const modelName = getModelName(model.value);
+      const key = `${pt}::${modelName}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          providerType: pt,
+          modelName,
+          label: model.label,
+          inputCostPer1M: model.inputCostPer1M,
+          outputCostPer1M: model.outputCostPer1M,
+          rateLimit: model.rateLimit,
+          active: model.active,
+          instances: [model],
+        });
+      } else {
+        const u = map.get(key)!;
+        u.instances.push(model);
+        u.active = u.active && model.active;
+      }
+    }
+    return [...map.values()];
+  })();
+
+  const isFilterInvalid = (() => {
+    if (!filter.trim()) return false;
+    try { new RegExp(filter); return false; } catch { return true; }
+  })();
+
+  const availableProviderTypes: string[] = unifiedModels.length
+    ? [...new Set(unifiedModels.map((u) => u.providerType))].sort()
     : [];
 
   const providerColorsMap = Object.fromEntries(
-    availableProviders.map((p, i) => [p, getProviderColors(p, i)])
+    availableProviderTypes.map((pt, i) => [pt, getProviderColors(pt, i)])
   );
+
+  const sortedUnified = (() => {
+    if (!unifiedModels.length) return unifiedModels;
+    return [...unifiedModels].sort((a, b) => {
+      const dir = sortDir === 'asc' ? 1 : -1;
+      if (sortKey === 'label') return dir * a.label.localeCompare(b.label);
+      if (sortKey === 'modelName') return dir * a.modelName.localeCompare(b.modelName);
+      if (sortKey === 'active') return dir * (Number(a.active) - Number(b.active));
+      const aVal = a[sortKey as 'inputCostPer1M' | 'outputCostPer1M'] ?? (sortDir === 'asc' ? Infinity : -Infinity);
+      const bVal = b[sortKey as 'inputCostPer1M' | 'outputCostPer1M'] ?? (sortDir === 'asc' ? Infinity : -Infinity);
+      return dir * (aVal - bVal);
+    });
+  })();
 
   function toggleProvider(p: string) {
     setSelectedProviders((prev) => {
@@ -184,47 +285,6 @@ export function ModelsClient() {
       setSortDir('asc');
     }
   }
-
-  const activeProviderIds = providers
-    ? new Set(providers.filter((p) => p.configured && p.enabled !== false).map((p) => p.id))
-    : null;
-
-  const filteredModels = (() => {
-    if (!models?.length) return models;
-    let result = models;
-    if (activeProviderIds) {
-      result = result.filter((m) => activeProviderIds.has(m.value.split(':')[0]));
-    }
-    if (filter.trim()) {
-      try {
-        const re = new RegExp(filter, 'i');
-        result = result.filter((m) => re.test(m.label) || re.test(m.value));
-      } catch { /* invalid regex — skip */ }
-    }
-    if (selectedProviders.size > 0) {
-      result = result.filter((m) => selectedProviders.has(m.value.split(':')[0]));
-    }
-    return result;
-  })();
-
-  const isFilterInvalid = (() => {
-    if (!filter.trim()) return false;
-    try { new RegExp(filter); return false; } catch { return true; }
-  })();
-
-  const sortedModels = (() => {
-    if (!filteredModels?.length) return filteredModels;
-    return [...filteredModels].sort((a, b) => {
-      const dir = sortDir === 'asc' ? 1 : -1;
-      if (sortKey === 'label') return dir * a.label.localeCompare(b.label);
-      if (sortKey === 'value') return dir * a.value.localeCompare(b.value);
-      if (sortKey === 'active') return dir * (Number(a.active) - Number(b.active));
-      // numeric columns — undefined/null sorts last regardless of direction
-      const aVal = a[sortKey] ?? (sortDir === 'asc' ? Infinity : -Infinity);
-      const bVal = b[sortKey] ?? (sortDir === 'asc' ? Infinity : -Infinity);
-      return dir * (aVal - bVal);
-    });
-  })();
 
   async function handleSync() {
     setSyncing(true);
@@ -252,10 +312,9 @@ export function ModelsClient() {
     }
   }
 
-
-  async function handleToggleActive(id: string, active: boolean) {
+  async function handleToggleActive(instanceIds: string[], active: boolean) {
     try {
-      await apiClient.models.update(id, { active });
+      await Promise.all(instanceIds.map((id) => apiClient.models.update(id, { active })));
       await mutate();
       toast.success(active ? 'Modelo ativado' : 'Modelo desativado');
     } catch (err) {
@@ -264,10 +323,11 @@ export function ModelsClient() {
   }
 
   async function handleToggleAll(active: boolean) {
-    if (!sortedModels?.length) return;
+    if (!sortedUnified.length) return;
     setTogglingAll(true);
     try {
-      await Promise.all(sortedModels.map((m) => apiClient.models.update(m.id, { active })));
+      const allIds = sortedUnified.flatMap((u) => u.instances.map((m) => m.id));
+      await Promise.all(allIds.map((id) => apiClient.models.update(id, { active })));
       await mutate();
       toast.success(active ? 'Todos os modelos ativados' : 'Todos os modelos desativados');
     } catch (err) {
@@ -277,11 +337,12 @@ export function ModelsClient() {
     }
   }
 
-  function startPriceEdit(model: GatewayModel) {
+  function startPriceEdit(unified: UnifiedModel) {
     setPriceEdit({
-      modelId: model.id,
-      input: model.inputCostPer1M !== undefined ? String(model.inputCostPer1M) : '',
-      output: model.outputCostPer1M !== undefined ? String(model.outputCostPer1M) : '',
+      unifiedKey: unified.key,
+      instanceIds: unified.instances.map((m) => m.id),
+      input: unified.inputCostPer1M !== undefined ? String(unified.inputCostPer1M) : '',
+      output: unified.outputCostPer1M !== undefined ? String(unified.outputCostPer1M) : '',
     });
   }
 
@@ -298,7 +359,9 @@ export function ModelsClient() {
     }
     setSavingPrice(true);
     try {
-      await apiClient.models.update(priceEdit.modelId, { inputCostPer1M, outputCostPer1M });
+      await Promise.all(
+        priceEdit.instanceIds.map((id) => apiClient.models.update(id, { inputCostPer1M, outputCostPer1M }))
+      );
       await mutate();
       toast.success('Preço atualizado');
       setPriceEdit(null);
@@ -309,18 +372,19 @@ export function ModelsClient() {
     }
   }
 
-  function startLimitEdit(model: GatewayModel) {
-    const { base, suffix } = model.rateLimit
-      ? detectSuffix(model.rateLimit.amount)
+  function startLimitEdit(unified: UnifiedModel) {
+    const { base, suffix } = unified.rateLimit
+      ? detectSuffix(unified.rateLimit.amount)
       : { base: '', suffix: 'M' as AmountSuffix };
     setLimitEdit({
-      modelId: model.id,
+      unifiedKey: unified.key,
+      instanceIds: unified.instances.map((m) => m.id),
       amountBase: base,
       amountSuffix: suffix,
-      unit: model.rateLimit?.unit ?? 'tokens',
-      interval: model.rateLimit?.interval ?? 'weekly',
-      intervalHours: model.rateLimit?.intervalHours ? String(model.rateLimit.intervalHours) : '1',
-      bufferPercent: model.rateLimit?.bufferPercent !== undefined ? String(model.rateLimit.bufferPercent) : '10',
+      unit: unified.rateLimit?.unit ?? 'tokens',
+      interval: unified.rateLimit?.interval ?? 'weekly',
+      intervalHours: unified.rateLimit?.intervalHours ? String(unified.rateLimit.intervalHours) : '1',
+      bufferPercent: unified.rateLimit?.bufferPercent !== undefined ? String(unified.rateLimit.bufferPercent) : '10',
     });
   }
 
@@ -351,7 +415,9 @@ export function ModelsClient() {
     };
     setSavingLimit(true);
     try {
-      await apiClient.models.update(limitEdit.modelId, { rateLimit });
+      await Promise.all(
+        limitEdit.instanceIds.map((id) => apiClient.models.update(id, { rateLimit }))
+      );
       await mutate();
       toast.success('Limite salvo');
       setLimitEdit(null);
@@ -362,15 +428,26 @@ export function ModelsClient() {
     }
   }
 
-  async function clearLimit(id: string) {
+  async function clearLimit(instanceIds: string[]) {
     try {
-      await apiClient.models.update(id, { rateLimit: null });
+      await Promise.all(instanceIds.map((id) => apiClient.models.update(id, { rateLimit: null })));
       await mutate();
       toast.success('Limite removido');
     } catch (err) {
       toast.error((err as Error).message);
     }
   }
+
+  // Group sorted unified models by provider type for section headers
+  const groupedByProvider = (() => {
+    const map = new Map<string, UnifiedModel[]>();
+    for (const u of sortedUnified) {
+      if (!map.has(u.providerType)) map.set(u.providerType, []);
+      map.get(u.providerType)!.push(u);
+    }
+    return map;
+  })();
+  const providerTypesSorted = [...groupedByProvider.keys()].sort();
 
   return (
     <TooltipProvider>
@@ -402,7 +479,7 @@ export function ModelsClient() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
               className={cn('pl-9 h-9', isFilterInvalid && 'border-destructive focus-visible:ring-destructive')}
-              placeholder="Filtrar por regex — label ou provider:model"
+              placeholder="Filtrar por regex — label ou model"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             />
@@ -411,9 +488,9 @@ export function ModelsClient() {
             )}
           </div>
 
-          {availableProviders.length > 0 && (
+          {availableProviderTypes.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
-              {availableProviders.map((p) => {
+              {availableProviderTypes.map((p) => {
                 const active = selectedProviders.has(p);
                 const colors = providerColorsMap[p];
                 return (
@@ -459,7 +536,7 @@ export function ModelsClient() {
               ))}
             </div>
           </div>
-        ) : !filteredModels?.length ? (
+        ) : !unifiedModels.length ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
             <Cpu className="mb-3 h-10 w-10 text-muted-foreground/30" />
             <p className="font-medium text-sm">
@@ -476,7 +553,7 @@ export function ModelsClient() {
                   {(
                     [
                       { key: 'label', label: 'Label', className: '' },
-                      { key: 'value', label: 'Provider:Model', className: '' },
+                      { key: 'modelName', label: 'Modelo', className: '' },
                       { key: 'inputCostPer1M', label: 'Input /1M', className: 'text-right' },
                       { key: 'outputCostPer1M', label: 'Output /1M', className: 'text-right' },
                     ] as { key: SortKey; label: string; className: string }[]
@@ -511,133 +588,161 @@ export function ModelsClient() {
                           : <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />}
                       </span>
                       <Switch
-                        checked={!!sortedModels?.length && sortedModels.every((m) => m.active)}
+                        checked={sortedUnified.length > 0 && sortedUnified.every((u) => u.active)}
                         onCheckedChange={handleToggleAll}
-                        disabled={togglingAll || !sortedModels?.length}
+                        disabled={togglingAll || sortedUnified.length === 0}
                         className="scale-75 origin-left"
-                        title={sortedModels?.every((m) => m.active) ? 'Desativar todos' : 'Ativar todos'}
+                        title={sortedUnified.every((u) => u.active) ? 'Desativar todos' : 'Ativar todos'}
                       />
                     </span>
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedModels!.map((model) => {
-                  const isEditing = priceEdit?.modelId === model.id;
-                  const [providerPart, ...modelParts] = model.value.split(':');
-                  const modelPart = modelParts.join(':');
-                  const colors = providerColorsMap[providerPart];
-                  return (
-                    <TableRow key={model.id} className={cn('group hover:bg-muted/30 transition-colors duration-150', colors?.row)}>
-                      <TableCell className="font-medium">{model.label}</TableCell>
-                      <TableCell>
-                        <code className="text-caption font-mono bg-muted px-1.5 py-0.5 rounded">
-                          <span className={colors?.providerText}>{providerPart}</span>
-                          {modelPart && <span className="text-muted-foreground">:{modelPart}</span>}
-                        </code>
+                {providerTypesSorted.flatMap((pt) => {
+                  const ptModels = groupedByProvider.get(pt)!;
+                  const ptColors = providerColorsMap[pt];
+                  const instanceIds = [
+                    ...new Set(
+                      ptModels.flatMap((u) => u.instances.map((m) => m.value.split(':')[0]))
+                    ),
+                  ].sort();
+
+                  return [
+                    <TableRow key={`header-${pt}`} className="bg-muted/40 hover:bg-muted/40 border-t border-border/60">
+                      <TableCell colSpan={8} className="py-1.5 px-4">
+                        <span className={cn('text-xs font-semibold uppercase tracking-wide', ptColors?.providerText)}>
+                          {pt}
+                        </span>
+                        {instanceIds.length > 1 && (
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            · {instanceIds.join(', ')}
+                          </span>
+                        )}
                       </TableCell>
-                      {isEditing ? (
-                        <>
-                          <TableCell className="text-right py-1.5">
-                            <Input
-                              className="h-7 w-24 text-right font-mono text-xs ml-auto"
-                              value={priceEdit.input}
-                              onChange={(e) => setPriceEdit({ ...priceEdit, input: e.target.value })}
-                              placeholder="0.00"
-                              autoFocus
-                            />
+                    </TableRow>,
+                    ...ptModels.map((unified) => {
+                      const isEditing = priceEdit?.unifiedKey === unified.key;
+                      const colors = ptColors;
+                      return (
+                        <TableRow key={unified.key} className={cn('group hover:bg-muted/30 transition-colors duration-150', colors?.row)}>
+                          <TableCell className="font-medium">{unified.label}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1.5">
+                              <code className="text-caption font-mono bg-muted px-1.5 py-0.5 rounded">
+                                <span className="text-muted-foreground">{unified.modelName}</span>
+                              </code>
+                              {unified.instances.length > 1 && (
+                                <span className={cn('text-xs font-semibold tabular-nums', colors?.providerText)}>
+                                  ×{unified.instances.length}
+                                </span>
+                              )}
+                            </div>
                           </TableCell>
-                          <TableCell className="text-right py-1.5">
-                            <Input
-                              className="h-7 w-24 text-right font-mono text-xs ml-auto"
-                              value={priceEdit.output}
-                              onChange={(e) => setPriceEdit({ ...priceEdit, output: e.target.value })}
-                              placeholder="0.00"
-                            />
+                          {isEditing ? (
+                            <>
+                              <TableCell className="text-right py-1.5">
+                                <Input
+                                  className="h-7 w-24 text-right font-mono text-xs ml-auto"
+                                  value={priceEdit.input}
+                                  onChange={(e) => setPriceEdit({ ...priceEdit, input: e.target.value })}
+                                  placeholder="0.00"
+                                  autoFocus
+                                />
+                              </TableCell>
+                              <TableCell className="text-right py-1.5">
+                                <Input
+                                  className="h-7 w-24 text-right font-mono text-xs ml-auto"
+                                  value={priceEdit.output}
+                                  onChange={(e) => setPriceEdit({ ...priceEdit, output: e.target.value })}
+                                  placeholder="0.00"
+                                />
+                              </TableCell>
+                              <TableCell className="w-8 py-1.5">
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7 text-green-500 hover:text-green-400"
+                                    onClick={savePriceEdit}
+                                    disabled={savingPrice}
+                                  >
+                                    <Check className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7"
+                                    onClick={() => setPriceEdit(null)}
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </>
+                          ) : (
+                            <>
+                              <TableCell className="text-right">
+                                <CostCell value={unified.inputCostPer1M} />
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <CostCell value={unified.outputCostPer1M} />
+                              </TableCell>
+                              <TableCell className="w-8">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => startPriceEdit(unified)}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              </TableCell>
+                            </>
+                          )}
+                          <TableCell>
+                            {unified.rateLimit ? (
+                              <span className="font-mono text-xs tabular-nums">
+                                {formatRateLimit(unified.rateLimit)}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground/50 italic">não definido</span>
+                            )}
                           </TableCell>
-                          <TableCell className="w-8 py-1.5">
-                            <div className="flex gap-1">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 text-green-500 hover:text-green-400"
-                                onClick={savePriceEdit}
-                                disabled={savingPrice}
-                              >
-                                <Check className="h-3.5 w-3.5" />
-                              </Button>
+                          <TableCell className="w-8">
+                            <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button
                                 size="icon"
                                 variant="ghost"
                                 className="h-7 w-7"
-                                onClick={() => setPriceEdit(null)}
+                                onClick={() => startLimitEdit(unified)}
+                                title="Editar limite"
                               >
-                                <X className="h-3.5 w-3.5" />
+                                <Pencil className="h-3.5 w-3.5" />
                               </Button>
+                              {unified.rateLimit && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-destructive hover:text-destructive"
+                                  onClick={() => clearLimit(unified.instances.map((m) => m.id))}
+                                  title="Remover limite"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
-                        </>
-                      ) : (
-                        <>
-                          <TableCell className="text-right">
-                            <CostCell value={model.inputCostPer1M} />
+                          <TableCell>
+                            <Switch
+                              checked={unified.active}
+                              onCheckedChange={(checked) => handleToggleActive(unified.instances.map((m) => m.id), checked)}
+                            />
                           </TableCell>
-                          <TableCell className="text-right">
-                            <CostCell value={model.outputCostPer1M} />
-                          </TableCell>
-                          <TableCell className="w-8">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => startPriceEdit(model)}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                          </TableCell>
-                        </>
-                      )}
-                      <TableCell>
-                        {model.rateLimit ? (
-                          <span className="font-mono text-xs tabular-nums">
-                            {formatRateLimit(model.rateLimit)}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground/50 italic">não definido</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="w-8">
-                        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7"
-                            onClick={() => startLimitEdit(model)}
-                            title="Editar limite"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          {model.rateLimit && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 text-destructive hover:text-destructive"
-                              onClick={() => clearLimit(model.id)}
-                              title="Remover limite"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Switch
-                          checked={model.active}
-                          onCheckedChange={(checked) => handleToggleActive(model.id, checked)}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
+                        </TableRow>
+                      );
+                    }),
+                  ];
                 })}
               </TableBody>
             </Table>
