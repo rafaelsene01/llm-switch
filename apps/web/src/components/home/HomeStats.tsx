@@ -66,24 +66,30 @@ export function HomeStats() {
 
   return (
     <div className="grid gap-3 sm:grid-cols-3">
-      <StatCard
-        icon={Users}
-        label="Usuários ativos"
-        value={activeUsers}
-        sub={`${totalUsers} cadastrados`}
-      />
-      <StatCard
-        icon={Cpu}
-        label="Modelos ativos"
-        value={activeModels}
-        sub={`${totalModels} configurados`}
-      />
-      <StatCard
-        icon={Plug}
-        label="Providers"
-        value={configuredProviders}
-        sub={`${totalProviders} disponíveis`}
-      />
+      <div className="animate-fade-in-up">
+        <StatCard
+          icon={Users}
+          label="Usuários ativos"
+          value={activeUsers}
+          sub={`${totalUsers} cadastrados`}
+        />
+      </div>
+      <div className="animate-fade-in-up animate-delay-75">
+        <StatCard
+          icon={Cpu}
+          label="Modelos ativos"
+          value={activeModels}
+          sub={`${totalModels} configurados`}
+        />
+      </div>
+      <div className="animate-fade-in-up animate-delay-150">
+        <StatCard
+          icon={Plug}
+          label="Providers"
+          value={configuredProviders}
+          sub={`${totalProviders} disponíveis`}
+        />
+      </div>
     </div>
   );
 }

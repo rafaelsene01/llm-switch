@@ -26,9 +26,10 @@ export function NavItem({ href, label, icon: Icon, badge }: NavItemProps) {
           : 'text-zinc-500 hover:bg-zinc-200/70 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-200'
       )}
     >
-      {isActive && (
-        <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-emerald-600 dark:bg-emerald-500" />
-      )}
+      <span className={cn(
+        'absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-emerald-600 dark:bg-emerald-500 transition-[opacity,transform] duration-200',
+        isActive ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-50'
+      )} />
       <Icon className="h-[15px] w-[15px] shrink-0" strokeWidth={1.75} />
       <span className="flex-1 truncate">{label}</span>
       {badge !== undefined && badge > 0 && (

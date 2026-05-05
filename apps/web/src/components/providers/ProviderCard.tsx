@@ -40,9 +40,9 @@ export function ProviderCard({ provider, onConfigure, onToggleEnabled, onDelete 
 
   return (
     <Card className={cn(
-      'group relative flex flex-col shadow-card transition-all duration-200',
+      'group relative flex flex-col shadow-card transition-[border-color,box-shadow,opacity,transform] duration-200',
       isEnabled
-        ? 'border-border/50 hover:border-primary/25 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]'
+        ? 'border-border/50 hover:border-primary/25 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:-translate-y-0.5'
         : 'border-border/30 opacity-55 hover:opacity-70'
     )}>
       <CardHeader className="pb-4">
@@ -79,7 +79,7 @@ export function ProviderCard({ provider, onConfigure, onToggleEnabled, onDelete 
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className={cn('h-1.5 w-1.5 rounded-full', isEnabled ? 'bg-emerald-500' : 'bg-zinc-400')} />
+            <div className={cn('h-1.5 w-1.5 rounded-full', isEnabled ? 'bg-emerald-500 animate-pulse-dot' : 'bg-zinc-400')} />
             <span className="text-xs text-muted-foreground">{isEnabled ? 'Ativo' : 'Inativo'}</span>
             <Switch
               checked={isEnabled}
