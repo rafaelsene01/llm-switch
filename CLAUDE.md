@@ -59,7 +59,7 @@ Client → POST /v1/chat/completions
   → chat controller       (selectAvailableModel → resolveModel → AI SDK → log → respond)
 ```
 
-Model selection: controlled entirely by user's `allowedModels` priority queue — clients cannot choose via `body.model`. `selectAvailableModel(allowedModels)` picks first model under quota. Returns 400 if queue empty, 429 if all over quota.
+Model selection: controlled entirely by user's `allowedModels` priority queue — `body.model` from the client is completely ignored. `selectAvailableModel(candidates)` picks the first model under quota; when a candidate is over quota it automatically tries sibling provider instances of the same provider type and model name (e.g. `openrouter_2:claude-3-sonnet` if `openrouter:claude-3-sonnet` is exhausted) before moving to the next item in the queue. Falls back to `req.userModel` only for legacy users with no `allowedModels`. Returns 400 if queue empty, 429 if all candidates (including siblings) are over quota.
 
 Provider format: `"instanceId:modelName"` where instanceId is a provider DB record (e.g. `"openrouter"`, `"ollama"`, `"lmstudio"`).
 
@@ -69,8 +69,8 @@ Provider format: `"instanceId:modelName"` where instanceId is a provider DB reco
 - **[apps/api/src/services/store.service.ts](apps/api/src/services/store.service.ts)** — SQLite store (`data/gateway.db`) for models and users. CRUD + `syncModels()`, `pruneUnconfiguredModels()`, `exportAll()`, `importAll()`.
 - **[apps/api/src/services/providers-db.service.ts](apps/api/src/services/providers-db.service.ts)** — SQLite store (`data/providers.db`) for provider instances. Supported types: `openrouter`, `ollama`, `lmstudio`.
 - **[apps/api/src/services/providers.service.ts](apps/api/src/services/providers.service.ts)** — `listProviderModels(providerType, key, url)` fetches model list from provider API. `testProviderConnection()` sends test prompt.
-- **[apps/api/src/services/activity-log.service.ts](apps/api/src/services/activity-log.service.ts)** — SQLite (`data/activity.db`) + markdown files per request. Tracks tokens, cost, provider, user. `getModelUsage(model, since)` used by quota service.
-- **[apps/api/src/services/quota.service.ts](apps/api/src/services/quota.service.ts)** — `selectAvailableModel(candidates)` returns first model under quota. Checks rate limit via `activityLog.getModelUsage()` with configurable buffer percent (default 10%).
+- **[apps/api/src/services/activity-log.service.ts](apps/api/src/services/activity-log.service.ts)** — SQLite (`data/activity.db`) + markdown files per request. Tracks tokens, cost, provider, user. `getModelUsage(model, since)` used by quota service. Analytics queries strip `instanceId:` prefix so sibling instances (e.g. `openrouter:claude-3` + `openrouter_2:claude-3`) aggregate under same model name.
+- **[apps/api/src/services/quota.service.ts](apps/api/src/services/quota.service.ts)** — `selectAvailableModel(candidates)` returns first model under quota. When candidate is over quota, tries sibling provider instances (same provider type + same model name, not already in queue) before advancing. Uses `providersDb` to map instanceId → providerType for sibling matching. Buffer percent configurable per model (default 10%).
 - **[apps/api/src/services/pricing.service.ts](apps/api/src/services/pricing.service.ts)** — `buildPricingMap()` fetches LiteLLM pricing data. `getPricingForModel()` maps model value to cost per 1M tokens.
 - **[apps/api/src/services/chat.service.ts](apps/api/src/services/chat.service.ts)** — `ChatService.complete()` and `ChatService.streamComplete()`. No sanitization — calls AI SDK directly, logs to activity log with token/cost data.
 - **[apps/api/src/middleware/auth.middleware.ts](apps/api/src/middleware/auth.middleware.ts)** — Validates API key, sets `req.clientLabel`, `req.user` (includes `allowedModels` queue), `req.tokenPreview`.

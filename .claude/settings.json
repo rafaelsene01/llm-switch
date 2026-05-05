@@ -18,6 +18,9 @@
       "Bash(sqlite3 data/activity.db \".schema activity_logs\")",
       "Bash(findstr -i lib)",
       "Bash(sqlite3 \"data/gateway.db\" \".tables\")"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\rafae\\.claude"
     ]
   }
 }
