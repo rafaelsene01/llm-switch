@@ -314,7 +314,9 @@ export function createActivityLogService(
     const db = getDb();
 
     const byModel = db.prepare(`
-      SELECT provider_model AS model,
+      SELECT CASE WHEN instr(provider_model, ':') > 0
+                  THEN substr(provider_model, instr(provider_model, ':') + 1)
+                  ELSE provider_model END AS model,
              COUNT(*)                   AS requestCount,
              SUM(total_tokens)          AS totalTokens,
              SUM(prompt_tokens)         AS promptTokens,
@@ -323,19 +325,26 @@ export function createActivityLogService(
              SUM(input_cost_usd)        AS inputCostUsd,
              SUM(output_cost_usd)       AS outputCostUsd
       FROM activity_logs
-      GROUP BY provider_model
+      GROUP BY CASE WHEN instr(provider_model, ':') > 0
+                    THEN substr(provider_model, instr(provider_model, ':') + 1)
+                    ELSE provider_model END
       ORDER BY totalTokens DESC
     `).all() as ModelStat[];
 
     type UserModelRow = { user: string; model: string; requestCount: number; totalTokens: number; totalCostUsd: number };
     const userModelRows = db.prepare(`
-      SELECT user_name      AS user,
-             provider_model AS model,
+      SELECT user_name AS user,
+             CASE WHEN instr(provider_model, ':') > 0
+                  THEN substr(provider_model, instr(provider_model, ':') + 1)
+                  ELSE provider_model END AS model,
              COUNT(*)       AS requestCount,
              SUM(total_tokens) AS totalTokens,
              SUM(cost_usd)     AS totalCostUsd
       FROM activity_logs
-      GROUP BY user_name, provider_model
+      GROUP BY user_name,
+               CASE WHEN instr(provider_model, ':') > 0
+                    THEN substr(provider_model, instr(provider_model, ':') + 1)
+                    ELSE provider_model END
       ORDER BY user_name, totalTokens DESC
     `).all() as UserModelRow[];
 

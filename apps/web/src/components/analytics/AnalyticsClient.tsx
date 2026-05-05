@@ -60,11 +60,7 @@ export function AnalyticsClient() {
   const totalRequests = data?.byModel.reduce((s, m) => s + m.requestCount, 0) ?? 0;
   const totalCostUsd = data?.byModel.reduce((s, m) => s + m.totalCostUsd, 0) ?? 0;
   const activeUsers = data?.byUser.length ?? 0;
-  const topModel = data?.byModel[0]?.model
-    ? data.byModel[0].model.includes(':')
-      ? data.byModel[0].model.split(':').slice(1).join(':')
-      : data.byModel[0].model
-    : '—';
+  const topModel = data?.byModel[0]?.model ?? '—';
 
   return (
     <div>

@@ -11,8 +11,7 @@ interface Props {
 }
 
 function shortModel(model: string): string {
-  const part = model.includes(':') ? model.split(':').slice(1).join(':') : model;
-  return part.length > 28 ? part.slice(0, 26) + '…' : part;
+  return model.length > 28 ? model.slice(0, 26) + '…' : model;
 }
 
 function fmt(value: number): string {
