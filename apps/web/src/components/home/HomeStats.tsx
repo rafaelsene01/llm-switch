@@ -21,7 +21,7 @@ function StatCard({ icon: Icon, label, value, sub, accent = 'text-primary' }: St
         <Icon className={`h-[18px] w-[18px] ${accent}`} strokeWidth={1.75} />
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">{label}</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
         <p className="mt-0.5 text-2xl font-semibold tabular-nums leading-none tracking-tight">{value}</p>
         {sub && <p className="mt-1 text-xs text-muted-foreground">{sub}</p>}
       </div>

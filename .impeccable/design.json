@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-05T00:00:00Z",
+  "title": "Design System: LLM Switch",
+  "extensions": {
+    "colorMeta": {
+      "primary":          { "role": "primary",     "displayName": "Active Signal Green",  "canonical": "oklch(70% 0.13 152)", "tonalRamp": ["#0A2818","#154230","#1F5C42","#2C7A58","#2C9664","#33CC85","#70E5AB","#B5F5D5"] },
+      "primary-dim":      { "role": "primary",     "displayName": "Active Signal Dim",    "canonical": "oklch(56% 0.12 152)", "tonalRamp": ["#0A2818","#154230","#1F5C42","#2C7A58","#2C9664","#33CC85","#70E5AB","#B5F5D5"] },
+      "background":       { "role": "neutral",     "displayName": "Void",                 "canonical": "oklch(5% 0.01 264)",  "tonalRamp": ["#09090B","#111113","#1A1A1E","#202027","#3A3A44","#52525B","#A1A1AA","#F4F4F5"] },
+      "surface":          { "role": "neutral",     "displayName": "Bench Surface",        "canonical": "oklch(9% 0.01 264)",  "tonalRamp": ["#09090B","#111113","#1A1A1E","#202027","#3A3A44","#52525B","#A1A1AA","#F4F4F5"] },
+      "surface-raised":   { "role": "neutral",     "displayName": "Raised Surface",       "canonical": "oklch(18% 0.01 264)", "tonalRamp": ["#09090B","#111113","#1A1A1E","#202027","#3A3A44","#52525B","#A1A1AA","#F4F4F5"] },
+      "foreground":       { "role": "neutral",     "displayName": "Ash",                  "canonical": "oklch(96% 0.005 264)","tonalRamp": ["#09090B","#111113","#1A1A1E","#202027","#3A3A44","#52525B","#A1A1AA","#F4F4F5"] },
+      "foreground-muted": { "role": "neutral",     "displayName": "Muted Ash",            "canonical": "oklch(55% 0.008 264)","tonalRamp": ["#09090B","#111113","#1A1A1E","#202027","#3A3A44","#52525B","#A1A1AA","#F4F4F5"] },
+      "border":           { "role": "neutral",     "displayName": "Seam",                 "canonical": "oklch(18% 0.01 264)", "tonalRamp": ["#09090B","#111113","#1A1A1E","#202027","#3A3A44","#52525B","#A1A1AA","#F4F4F5"] },
+      "destructive":      { "role": "destructive", "displayName": "Cut Red",              "canonical": "oklch(52% 0.22 27)",  "tonalRamp": ["#3B0A0A","#5C1515","#842020","#A82A2A","#D43A3A","#E87070","#F5A8A8","#FDEAEA"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display",  "purpose": "Page titles. One per view." },
+      "title":   { "displayName": "Title",    "purpose": "Section headers, dialog titles, card headers." },
+      "body":    { "displayName": "Body",     "purpose": "Running text, table cells, form values. Max 65ch." },
+      "label":   { "displayName": "Label",    "purpose": "Section labels, column headers, metadata. Always uppercase." }
+    },
+    "shadows": [
+      { "name": "card",     "value": "0 1px 2px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.35)",          "purpose": "Resting card elevation. Edge definition, not drama." },
+      { "name": "dropdown", "value": "0 8px 32px rgba(0,0,0,0.50), 0 2px 8px rgba(0,0,0,0.30)",          "purpose": "Floating menus, popovers. Lifts above page content." },
+      { "name": "modal",    "value": "0 24px 64px rgba(0,0,0,0.65), 0 8px 24px rgba(0,0,0,0.45)",        "purpose": "Dialogs. Heaviest layer; signals highest elevation." }
+    ],
+    "motion": [
+      { "name": "ease-out-quart",  "value": "cubic-bezier(0.23, 1, 0.32, 1)", "purpose": "Default easing for all state transitions. Entrance animations." },
+      { "name": "fade-in-up",      "value": "opacity 0→1, translateY 6px→0, 280ms ease-out-quart", "purpose": "Content arrival. Applied via .animate-fade-in-up." },
+      { "name": "pulse-dot",       "value": "opacity 1→0.35→1, 2.4s ease-in-out infinite",         "purpose": "Live status indicator pulse." }
+    ],
+    "breakpoints": [
+      { "name": "sm",  "value": "640px" },
+      { "name": "md",  "value": "768px" },
+      { "name": "lg",  "value": "1024px" },
+      { "name": "xl",  "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main CTA. Active Signal Green — used for create, save, confirm actions.",
+      "html": "<button class=\"ds-btn-primary\">Save Changes</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: #33CC85; color: #09090B; padding: 8px 16px; border-radius: 6px; border: none; font-family: Outfit, system-ui, sans-serif; font-size: 14px; font-weight: 600; line-height: 1; cursor: pointer; transition: background 150ms cubic-bezier(0.23,1,0.32,1), transform 100ms cubic-bezier(0.23,1,0.32,1); } .ds-btn-primary:hover { background: #2DB873; } .ds-btn-primary:active { transform: scale(0.98); } .ds-btn-primary:focus-visible { outline: 2px solid #33CC85; outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary action. Transparent bg, border. For cancel, back, secondary options.",
+      "html": "<button class=\"ds-btn-ghost\">Cancel</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: transparent; color: #F4F4F5; padding: 8px 16px; border-radius: 6px; border: 1px solid #25252C; font-family: Outfit, system-ui, sans-serif; font-size: 14px; font-weight: 500; line-height: 1; cursor: pointer; transition: background 150ms cubic-bezier(0.23,1,0.32,1), transform 100ms cubic-bezier(0.23,1,0.32,1); } .ds-btn-ghost:hover { background: #202027; } .ds-btn-ghost:active { transform: scale(0.98); } .ds-btn-ghost:focus-visible { outline: 2px solid #33CC85; outline-offset: 2px; } .ds-btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }"
+    },
+    {
+      "name": "Destructive Button",
+      "kind": "button",
+      "refersTo": "button-destructive",
+      "description": "Delete and irreversible actions only. Cut Red. Never for warnings.",
+      "html": "<button class=\"ds-btn-destructive\">Delete Provider</button>",
+      "css": ".ds-btn-destructive { display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: #D43A3A; color: #F4F4F5; padding: 8px 16px; border-radius: 6px; border: none; font-family: Outfit, system-ui, sans-serif; font-size: 14px; font-weight: 600; line-height: 1; cursor: pointer; transition: background 150ms cubic-bezier(0.23,1,0.32,1), transform 100ms cubic-bezier(0.23,1,0.32,1); } .ds-btn-destructive:hover { background: #B83030; } .ds-btn-destructive:active { transform: scale(0.98); } .ds-btn-destructive:focus-visible { outline: 2px solid #D43A3A; outline-offset: 2px; } .ds-btn-destructive:disabled { opacity: 0.4; cursor: not-allowed; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Standard container. Bench Surface background, Seam border. 8px radius.",
+      "html": "<div class=\"ds-card\"><p class=\"ds-card-title\">Provider Status</p><p class=\"ds-card-body\">OpenRouter · 3 models active</p></div>",
+      "css": ".ds-card { background: #111113; border: 1px solid rgba(37,37,44,0.6); border-radius: 8px; padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.35); } .ds-card-title { font-family: Outfit, system-ui, sans-serif; font-size: 16px; font-weight: 600; color: #F4F4F5; letter-spacing: -0.015em; margin: 0 0 8px; } .ds-card-body { font-family: Outfit, system-ui, sans-serif; font-size: 14px; font-weight: 400; color: #818189; margin: 0; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Form field. Void background, Seam border, 6px radius. Focus ring in Active Signal.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-label\">API KEY</label><input class=\"ds-input\" type=\"text\" placeholder=\"sk-or-v1-…\" /></div>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; } .ds-label { font-family: Outfit, system-ui, sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #818189; } .ds-input { background: #09090B; color: #F4F4F5; border: 1px solid #25252C; border-radius: 6px; padding: 8px 12px; font-family: Outfit, system-ui, sans-serif; font-size: 14px; font-weight: 400; outline: none; transition: box-shadow 150ms cubic-bezier(0.23,1,0.32,1); width: 100%; box-sizing: border-box; } .ds-input::placeholder { color: #818189; } .ds-input:focus { box-shadow: 0 0 0 2px #33CC85; } .ds-input:disabled { background: #202027; opacity: 0.6; cursor: not-allowed; }"
+    },
+    {
+      "name": "Nav Item",
+      "kind": "nav",
+      "refersTo": "button-ghost",
+      "description": "Sidebar navigation item. Default muted, hover raised, active green icon.",
+      "html": "<a class=\"ds-nav-item ds-nav-item--active\" href=\"#\"><svg class=\"ds-nav-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\"/></svg><span class=\"ds-nav-label\">Models</span></a>",
+      "css": ".ds-nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; text-decoration: none; color: #818189; font-family: Outfit, system-ui, sans-serif; font-size: 14px; font-weight: 500; transition: background 120ms cubic-bezier(0.23,1,0.32,1), color 120ms; } .ds-nav-item:hover { background: #202027; color: #F4F4F5; } .ds-nav-item--active { background: #202027; color: #F4F4F5; } .ds-nav-item--active .ds-nav-icon { color: #33CC85; } .ds-nav-icon { flex-shrink: 0; transition: color 120ms; } .ds-nav-label { white-space: nowrap; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "card",
+      "description": "Inline status tag. Three variants: default, active (green), error (red).",
+      "html": "<span class=\"ds-badge ds-badge--active\">Active</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-family: Outfit, system-ui, sans-serif; font-size: 12px; font-weight: 600; line-height: 1.5; } .ds-badge { background: #202027; color: #818189; } .ds-badge--active { background: rgba(51,204,133,0.15); color: #33CC85; } .ds-badge--error { background: rgba(212,58,58,0.15); color: #D43A3A; }"
+    },
+    {
+      "name": "Live Pulse Dot",
+      "kind": "custom",
+      "refersTo": "primary",
+      "description": "Animated status indicator. Green = live/routing. Red = offline/error.",
+      "html": "<span class=\"ds-pulse-dot ds-pulse-dot--live\"></span>",
+      "css": ".ds-pulse-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; } .ds-pulse-dot--live { background: #33CC85; animation: ds-pulse 2.4s ease-in-out infinite; } .ds-pulse-dot--error { background: #D43A3A; animation: ds-pulse 2.4s ease-in-out infinite; } @keyframes ds-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } } @media (prefers-reduced-motion: reduce) { .ds-pulse-dot--live, .ds-pulse-dot--error { animation: none; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Workshop Bench",
+    "overview": "This is a tool, not a product. Tools do not perform. They sit ready, legible under any light, each element placed where it belongs — not where it looks impressive. LLM Switch's visual language follows that discipline: dark by default, density earned through real hierarchy, zero surfaces that exist only to fill space.\n\nThe emerald primary is not an accent for decoration. It is a signal: active, routing, alive. When it appears, something is running. When it doesn't, nothing is asking for attention.\n\nThis system explicitly rejects the vocabulary of SaaS dashboards: gradient hero cards, metric tiles with colored backdrops, glassmorphism panels, illustration-heavy empty states.",
+    "keyCharacteristics": [
+      "Dark-mode default; light mode fully supported but secondary",
+      "Single emerald accent used exclusively for active/live/interactive states",
+      "Tinted near-black neutrals (blue-cast zinc, never pure gray)",
+      "Density through deliberate hierarchy, not by cramming elements",
+      "Shadows as structural layer, never decorative",
+      "Outfit geometric sans throughout"
+    ],
+    "rules": [
+      { "name": "The One Signal Rule",       "body": "Active Signal Green appears on ≤15% of any given screen surface. Its rarity is the information.", "section": "colors" },
+      { "name": "The No Pure Black Rule",    "body": "#000000 and #FFFFFF are prohibited. Every neutral is tinted toward HSL 240°.", "section": "colors" },
+      { "name": "The Gray-On-Color Prohibition", "body": "Never place muted-foreground text on a colored background. Muted text is calibrated against dark neutrals only.", "section": "colors" },
+      { "name": "The Weight-Then-Size Rule", "body": "Hierarchy through weight contrast first, size second. Add weight before adding a new size step.", "section": "typography" },
+      { "name": "The No Decorative Type Rule", "body": "No gradient text, no outlined text, no text shadows. Weight and size are the only tools.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule",  "body": "Surfaces are flat at rest. Hover feedback = background tint shift, not shadow escalation. Shadows are for floating elements only.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use Active Signal Green exclusively for interactive and live-state affordances",
+      "Do tint all neutrals toward HSL 240° (blue-zinc) — never pure gray",
+      "Do use .shadow-card on panels, .shadow-dropdown on menus, .shadow-modal on dialogs",
+      "Do keep body text at 14px minimum, max 65ch line length",
+      "Do use weight contrast (400 vs 600) as the first hierarchy tool",
+      "Do use .animate-fade-in-up (280ms ease-out-quart) for content arrival",
+      "Do respect prefers-reduced-motion for all non-essential animations",
+      "Do maintain WCAG AA contrast on all text"
+    ],
+    "donts": [
+      "Don't build SaaS dashboard layouts with gradient hero cards or colored metric tiles",
+      "Don't produce a generic shadcn/ui defaults clone — every choice must be deliberate",
+      "Don't use illustrations, large decorative icons, or motivational copy in empty states",
+      "Don't use border-left greater than 1px as a colored stripe accent",
+      "Don't use gradient text (background-clip: text) — use solid color",
+      "Don't use glassmorphism decoratively",
+      "Don't nest cards",
+      "Don't place muted-foreground text on any colored background",
+      "Don't animate layout properties — animate transform and opacity only",
+      "Don't use bounce or elastic easing",
+      "Don't add more accent colors beyond emerald and Cut Red"
+    ]
+  }
+}

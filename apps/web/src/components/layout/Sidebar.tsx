@@ -19,20 +19,20 @@ export function Sidebar() {
   const configuredProviders = providers?.filter((p) => p.configured).length;
 
   return (
-    <aside className="flex h-screen w-56 shrink-0 flex-col bg-zinc-100 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800/80">
+    <aside className="flex h-screen w-56 shrink-0 flex-col bg-background border-r border-border">
       {/* Brand */}
       <div className="px-5 pt-6 pb-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-emerald-500">
-            <span className="text-[10px] font-bold text-white leading-none">LS</span>
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary">
+            <span className="text-[10px] font-bold text-foreground leading-none">LS</span>
           </div>
-          <span className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">LLM Switch</span>
+          <span className="text-sm font-semibold tracking-tight text-foreground">LLM Switch</span>
         </div>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-1 space-y-0.5">
-        <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-600">
+        <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           Menu
         </p>
         <NavItem href="/" label="Home" icon={Home} />
@@ -44,7 +44,7 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-zinc-200 dark:border-zinc-800/80 px-4 py-3">
+      <div className="border-t border-border px-4 py-3">
         <ThemeToggle />
       </div>
     </aside>

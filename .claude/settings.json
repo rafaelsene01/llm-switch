@@ -20,7 +20,10 @@
       "Bash(sqlite3 \"data/gateway.db\" \".tables\")",
       "Bash(Get-ChildItem -Path \"d:\\\\llm-switch\\\\apps\\\\web\\\\src\" -Recurse -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(Get-Content \"C:\\\\Users\\\\rafae\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--llm-switch\\\\0f1e6fe4-2cde-4341-b761-4c7f7e4c45bf\\\\tasks\\\\bxxk1rb3f.output\" -Tail 40)"
+      "Bash(Get-Content \"C:\\\\Users\\\\rafae\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--llm-switch\\\\0f1e6fe4-2cde-4341-b761-4c7f7e4c45bf\\\\tasks\\\\bxxk1rb3f.output\" -Tail 40)",
+      "Bash(node \"d:\\\\llm-switch\\\\.claude\\\\skills\\\\impeccable\\\\scripts\\\\load-context.mjs\")",
+      "Bash(Get-ChildItem -Path \"D:\\\\llm-switch\" -Force)",
+      "Bash(Select-Object Name, Mode)"
     ],
     "additionalDirectories": [
       "C:\\Users\\rafae\\.claude"
