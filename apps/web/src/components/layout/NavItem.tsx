@@ -20,24 +20,26 @@ export function NavItem({ href, label, icon: Icon, badge }: NavItemProps) {
     <Link
       href={href}
       className={cn(
-        'group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all duration-150',
+        'group relative flex items-center gap-2.5 rounded-md px-3 py-[7px] text-sm transition-colors duration-150',
         isActive
-          ? 'bg-primary/10 text-primary font-medium'
-          : 'text-muted-foreground hover:bg-white/5 dark:hover:bg-white/5 light:hover:bg-black/5 hover:text-foreground'
+          ? 'bg-zinc-200 text-emerald-700 font-medium dark:bg-zinc-800 dark:text-emerald-400'
+          : 'text-zinc-500 hover:bg-zinc-200/70 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-200'
       )}
     >
       {isActive && (
-        <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-primary" />
+        <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-emerald-600 dark:bg-emerald-500" />
       )}
-      <Icon className={cn('h-4 w-4 shrink-0 transition-colors', isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground')} />
+      <Icon className="h-[15px] w-[15px] shrink-0" strokeWidth={1.75} />
       <span className="flex-1 truncate">{label}</span>
       {badge !== undefined && badge > 0 && (
-        <span className={cn(
-          'ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-medium tabular-nums',
-          isActive
-            ? 'bg-primary/20 text-primary'
-            : 'bg-muted text-muted-foreground'
-        )}>
+        <span
+          className={cn(
+            'ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-medium tabular-nums',
+            isActive
+              ? 'bg-emerald-600/12 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400'
+              : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500'
+          )}
+        >
           {badge > 999 ? '999+' : badge}
         </span>
       )}

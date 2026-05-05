@@ -1,7 +1,6 @@
 'use client';
 
 import { Cpu, Users, Plug } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUsers } from '@/hooks/useUsers';
 import { useModels } from '@/hooks/useModels';
@@ -12,36 +11,34 @@ interface StatCardProps {
   label: string;
   value: string | number;
   sub?: string;
+  accent?: string;
 }
 
-function StatCard({ icon: Icon, label, value, sub }: StatCardProps) {
+function StatCard({ icon: Icon, label, value, sub, accent = 'text-primary' }: StatCardProps) {
   return (
-    <Card className="shadow-card border-border/50">
-      <CardContent className="flex items-center gap-3 pt-4 pb-4">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
-          <Icon className="h-4 w-4 text-primary" />
-        </div>
-        <div>
-          <p className="text-caption">{label}</p>
-          <p className="text-xl font-semibold tabular-nums leading-snug">{value}</p>
-          {sub && <p className="text-caption">{sub}</p>}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex items-center gap-4 rounded-lg border border-border/50 bg-card px-5 py-4 shadow-card">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/8">
+        <Icon className={`h-[18px] w-[18px] ${accent}`} strokeWidth={1.75} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">{label}</p>
+        <p className="mt-0.5 text-2xl font-semibold tabular-nums leading-none tracking-tight">{value}</p>
+        {sub && <p className="mt-1 text-xs text-muted-foreground">{sub}</p>}
+      </div>
+    </div>
   );
 }
 
 function StatCardSkeleton() {
   return (
-    <Card className="shadow-card border-border/50">
-      <CardContent className="flex items-center gap-3 pt-4 pb-4">
-        <Skeleton className="h-9 w-9 rounded-md shrink-0" />
-        <div className="space-y-2">
-          <Skeleton className="h-3 w-16" />
-          <Skeleton className="h-6 w-10" />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex items-center gap-4 rounded-lg border border-border/50 bg-card px-5 py-4">
+      <Skeleton className="h-10 w-10 rounded-md shrink-0" />
+      <div className="space-y-2 flex-1">
+        <Skeleton className="h-2.5 w-20" />
+        <Skeleton className="h-7 w-14" />
+        <Skeleton className="h-2.5 w-16" />
+      </div>
+    </div>
   );
 }
 
@@ -54,7 +51,7 @@ export function HomeStats() {
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => <StatCardSkeleton key={i} />)}
       </div>
     );
@@ -68,18 +65,18 @@ export function HomeStats() {
   const totalProviders = providers?.length ?? 0;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
+    <div className="grid gap-3 sm:grid-cols-3">
       <StatCard
         icon={Users}
-        label="Usuários"
+        label="Usuários ativos"
         value={activeUsers}
-        sub={`${totalUsers} total`}
+        sub={`${totalUsers} cadastrados`}
       />
       <StatCard
         icon={Cpu}
         label="Modelos ativos"
         value={activeModels}
-        sub={`${totalModels} total`}
+        sub={`${totalModels} configurados`}
       />
       <StatCard
         icon={Plug}

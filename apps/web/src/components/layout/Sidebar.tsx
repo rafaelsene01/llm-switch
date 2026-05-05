@@ -3,7 +3,6 @@
 import { Home, Cpu, Users, Plug, Activity, BarChart2 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { NavItem } from './NavItem';
-import { Separator } from '@/components/ui/separator';
 import { useUsers } from '@/hooks/useUsers';
 import { useModels } from '@/hooks/useModels';
 import { useProviders } from '@/hooks/useProviders';
@@ -20,24 +19,22 @@ export function Sidebar() {
   const configuredProviders = providers?.filter((p) => p.configured).length;
 
   return (
-    <aside
-      className="flex h-screen w-56 shrink-0 flex-col border-r border-border/60"
-      style={{ backgroundColor: 'hsl(var(--sidebar-bg))' }}
-    >
+    <aside className="flex h-screen w-56 shrink-0 flex-col bg-zinc-100 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800/80">
       {/* Brand */}
-      <div className="px-4 py-5">
-        <div className="flex items-center gap-2.5 px-1">
-          <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary">
-            <span className="text-xs font-bold text-primary-foreground">LS</span>
+      <div className="px-5 pt-6 pb-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-emerald-500">
+            <span className="text-[10px] font-bold text-white leading-none">LS</span>
           </div>
-          <span className="font-bold text-sm tracking-tight">LLM Switch</span>
+          <span className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">LLM Switch</span>
         </div>
       </div>
 
-      <Separator className="opacity-50" />
-
       {/* Nav */}
-      <nav className="flex-1 space-y-0.5 px-2 py-3">
+      <nav className="flex-1 px-3 py-1 space-y-0.5">
+        <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-600">
+          Menu
+        </p>
         <NavItem href="/" label="Home" icon={Home} />
         <NavItem href="/models" label="Modelos" icon={Cpu} badge={activeModels} />
         <NavItem href="/users" label="Usuários" icon={Users} badge={activeUsers} />
@@ -46,9 +43,8 @@ export function Sidebar() {
         <NavItem href="/analytics" label="Analytics" icon={BarChart2} />
       </nav>
 
-      <Separator className="opacity-50" />
-
-      <div className="px-4 py-3">
+      {/* Footer */}
+      <div className="border-t border-zinc-200 dark:border-zinc-800/80 px-4 py-3">
         <ThemeToggle />
       </div>
     </aside>

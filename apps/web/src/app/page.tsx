@@ -1,6 +1,4 @@
 import { Terminal } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HomeConfigActions } from '@/components/home/HomeConfigActions';
 import { HomeStats } from '@/components/home/HomeStats';
@@ -182,6 +180,36 @@ const response = await client.embeddings.create({
 
 console.log(response.data[0].embedding);`;
 
+function CodeBlock({ code }: { code: string }) {
+  return (
+    <div className="rounded-lg border border-zinc-800 bg-zinc-950 overflow-hidden">
+      <div className="flex items-center gap-1.5 border-b border-zinc-800 px-4 py-2.5">
+        <div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
+        <div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
+        <div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
+      </div>
+      <pre className="overflow-x-auto p-4 text-sm font-mono leading-relaxed text-zinc-300">
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+}
+
+function LangTabs({ curl, python, node }: { curl: string; python: string; node: string }) {
+  return (
+    <Tabs defaultValue="curl">
+      <TabsList className="mb-3">
+        <TabsTrigger value="curl">cURL</TabsTrigger>
+        <TabsTrigger value="python">Python SDK</TabsTrigger>
+        <TabsTrigger value="node">Node.js SDK</TabsTrigger>
+      </TabsList>
+      <TabsContent value="curl"><CodeBlock code={curl} /></TabsContent>
+      <TabsContent value="python"><CodeBlock code={python} /></TabsContent>
+      <TabsContent value="node"><CodeBlock code={node} /></TabsContent>
+    </Tabs>
+  );
+}
+
 export default function HomePage() {
   return (
     <div>
@@ -194,20 +222,24 @@ export default function HomePage() {
       <div className="space-y-8">
         <HomeStats />
 
-        <Separator className="opacity-40" />
+        <div className="h-px bg-border/40" />
 
         {/* Endpoints */}
         <div>
-          <p className="text-section-title mb-4">Endpoints</p>
-          <div className="space-y-2">
+          <p className="text-section-title mb-3">Endpoints</p>
+          <div className="divide-y divide-border/40 rounded-lg border border-border/50 bg-card overflow-hidden">
             {endpoints.map(({ method, path, desc }) => (
-              <div key={path} className="flex items-start gap-3 rounded-lg border border-border/50 bg-card px-4 py-3 shadow-card">
-                <span className="mt-0.5 shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-xs font-mono font-semibold text-primary">
+              <div key={path} className="flex items-start gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
+                <span className={`mt-px shrink-0 rounded px-1.5 py-0.5 text-[10px] font-mono font-semibold tabular-nums ${
+                  method === 'POST'
+                    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                    : 'bg-sky-500/10 text-sky-700 dark:text-sky-400'
+                }`}>
                   {method}
                 </span>
-                <div>
+                <div className="min-w-0">
                   <code className="text-sm font-mono">{path}</code>
-                  <p className="text-caption mt-0.5">{desc}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{desc}</p>
                 </div>
               </div>
             ))}
@@ -216,209 +248,57 @@ export default function HomePage() {
 
         {/* Integration examples */}
         <div>
-          <p className="text-section-title mb-1 flex items-center gap-2">
-            <Terminal className="h-3.5 w-3.5" />
-            Exemplos de integração
-          </p>
-          <p className="text-caption mb-4">
-            Base URL:{' '}
-            <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground">
+          <div className="mb-4 flex items-center gap-2">
+            <Terminal className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.75} />
+            <p className="text-section-title">Exemplos de integração</p>
+            <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs font-mono text-muted-foreground border border-border/40">
               {GATEWAY_URL}
-            </code>
-          </p>
+            </span>
+          </div>
 
           <Tabs defaultValue="chat">
-            <TabsList className="mb-3">
-              <TabsTrigger value="chat">POST /v1/chat/completions</TabsTrigger>
-              <TabsTrigger value="stream">POST /v1/chat/completions (stream)</TabsTrigger>
-              <TabsTrigger value="models">GET /v1/models</TabsTrigger>
-              <TabsTrigger value="model-retrieve">GET /v1/models/:id</TabsTrigger>
-              <TabsTrigger value="embeddings">POST /v1/embeddings</TabsTrigger>
+            <TabsList className="mb-4 flex-wrap h-auto gap-1">
+              <TabsTrigger value="chat">Chat</TabsTrigger>
+              <TabsTrigger value="stream">Stream</TabsTrigger>
+              <TabsTrigger value="models">Listar modelos</TabsTrigger>
+              <TabsTrigger value="model-retrieve">Buscar modelo</TabsTrigger>
+              <TabsTrigger value="embeddings">Embeddings</TabsTrigger>
             </TabsList>
 
             <TabsContent value="chat">
-              <Tabs defaultValue="curl">
-                <TabsList className="mb-3">
-                  <TabsTrigger value="curl">cURL</TabsTrigger>
-                  <TabsTrigger value="python">Python SDK</TabsTrigger>
-                  <TabsTrigger value="node">Node.js SDK</TabsTrigger>
-                </TabsList>
-                <TabsContent value="curl">
-                  <Card className="shadow-card border-border/50">
-                    <CardContent className="pt-4 pb-4">
-                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
-                        <code>{chatCurlExample(GATEWAY_URL)}</code>
-                      </pre>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                <TabsContent value="python">
-                  <Card className="shadow-card border-border/50">
-                    <CardContent className="pt-4 pb-4">
-                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
-                        <code>{chatPythonExample(GATEWAY_URL)}</code>
-                      </pre>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                <TabsContent value="node">
-                  <Card className="shadow-card border-border/50">
-                    <CardContent className="pt-4 pb-4">
-                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
-                        <code>{chatNodeExample(GATEWAY_URL)}</code>
-                      </pre>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
+              <LangTabs
+                curl={chatCurlExample(GATEWAY_URL)}
+                python={chatPythonExample(GATEWAY_URL)}
+                node={chatNodeExample(GATEWAY_URL)}
+              />
             </TabsContent>
-
             <TabsContent value="stream">
-              <Tabs defaultValue="curl">
-                <TabsList className="mb-3">
-                  <TabsTrigger value="curl">cURL</TabsTrigger>
-                  <TabsTrigger value="python">Python SDK</TabsTrigger>
-                  <TabsTrigger value="node">Node.js SDK</TabsTrigger>
-                </TabsList>
-                <TabsContent value="curl">
-                  <Card className="shadow-card border-border/50">
-                    <CardContent className="pt-4 pb-4">
-                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
-                        <code>{streamCurlExample(GATEWAY_URL)}</code>
-                      </pre>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                <TabsContent value="python">
-                  <Card className="shadow-card border-border/50">
-                    <CardContent className="pt-4 pb-4">
-                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
-                        <code>{streamPythonExample(GATEWAY_URL)}</code>
-                      </pre>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                <TabsContent value="node">
-                  <Card className="shadow-card border-border/50">
-                    <CardContent className="pt-4 pb-4">
-                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
-                        <code>{streamNodeExample(GATEWAY_URL)}</code>
-                      </pre>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
+              <LangTabs
+                curl={streamCurlExample(GATEWAY_URL)}
+                python={streamPythonExample(GATEWAY_URL)}
+                node={streamNodeExample(GATEWAY_URL)}
+              />
             </TabsContent>
-
             <TabsContent value="models">
-              <Tabs defaultValue="curl">
-                <TabsList className="mb-3">
-                  <TabsTrigger value="curl">cURL</TabsTrigger>
-                  <TabsTrigger value="python">Python SDK</TabsTrigger>
-                  <TabsTrigger value="node">Node.js SDK</TabsTrigger>
-                </TabsList>
-                <TabsContent value="curl">
-                  <Card className="shadow-card border-border/50">
-                    <CardContent className="pt-4 pb-4">
-                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
-                        <code>{modelsCurlExample(GATEWAY_URL)}</code>
-                      </pre>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                <TabsContent value="python">
-                  <Card className="shadow-card border-border/50">
-                    <CardContent className="pt-4 pb-4">
-                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
-                        <code>{modelsPythonExample(GATEWAY_URL)}</code>
-                      </pre>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                <TabsContent value="node">
-                  <Card className="shadow-card border-border/50">
-                    <CardContent className="pt-4 pb-4">
-                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
-                        <code>{modelsNodeExample(GATEWAY_URL)}</code>
-                      </pre>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
+              <LangTabs
+                curl={modelsCurlExample(GATEWAY_URL)}
+                python={modelsPythonExample(GATEWAY_URL)}
+                node={modelsNodeExample(GATEWAY_URL)}
+              />
             </TabsContent>
-
             <TabsContent value="model-retrieve">
-              <Tabs defaultValue="curl">
-                <TabsList className="mb-3">
-                  <TabsTrigger value="curl">cURL</TabsTrigger>
-                  <TabsTrigger value="python">Python SDK</TabsTrigger>
-                  <TabsTrigger value="node">Node.js SDK</TabsTrigger>
-                </TabsList>
-                <TabsContent value="curl">
-                  <Card className="shadow-card border-border/50">
-                    <CardContent className="pt-4 pb-4">
-                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
-                        <code>{retrieveModelCurlExample(GATEWAY_URL)}</code>
-                      </pre>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                <TabsContent value="python">
-                  <Card className="shadow-card border-border/50">
-                    <CardContent className="pt-4 pb-4">
-                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
-                        <code>{retrieveModelPythonExample(GATEWAY_URL)}</code>
-                      </pre>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                <TabsContent value="node">
-                  <Card className="shadow-card border-border/50">
-                    <CardContent className="pt-4 pb-4">
-                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
-                        <code>{retrieveModelNodeExample(GATEWAY_URL)}</code>
-                      </pre>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
+              <LangTabs
+                curl={retrieveModelCurlExample(GATEWAY_URL)}
+                python={retrieveModelPythonExample(GATEWAY_URL)}
+                node={retrieveModelNodeExample(GATEWAY_URL)}
+              />
             </TabsContent>
-
             <TabsContent value="embeddings">
-              <Tabs defaultValue="curl">
-                <TabsList className="mb-3">
-                  <TabsTrigger value="curl">cURL</TabsTrigger>
-                  <TabsTrigger value="python">Python SDK</TabsTrigger>
-                  <TabsTrigger value="node">Node.js SDK</TabsTrigger>
-                </TabsList>
-                <TabsContent value="curl">
-                  <Card className="shadow-card border-border/50">
-                    <CardContent className="pt-4 pb-4">
-                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
-                        <code>{embeddingsCurlExample(GATEWAY_URL)}</code>
-                      </pre>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                <TabsContent value="python">
-                  <Card className="shadow-card border-border/50">
-                    <CardContent className="pt-4 pb-4">
-                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
-                        <code>{embeddingsPythonExample(GATEWAY_URL)}</code>
-                      </pre>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                <TabsContent value="node">
-                  <Card className="shadow-card border-border/50">
-                    <CardContent className="pt-4 pb-4">
-                      <pre className="overflow-x-auto text-sm font-mono leading-relaxed">
-                        <code>{embeddingsNodeExample(GATEWAY_URL)}</code>
-                      </pre>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
+              <LangTabs
+                curl={embeddingsCurlExample(GATEWAY_URL)}
+                python={embeddingsPythonExample(GATEWAY_URL)}
+                node={embeddingsNodeExample(GATEWAY_URL)}
+              />
             </TabsContent>
           </Tabs>
         </div>

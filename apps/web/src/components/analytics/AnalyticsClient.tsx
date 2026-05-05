@@ -5,7 +5,6 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { GlobalModelsChart } from './GlobalModelsChart';
 import { UserModelChart } from './UserModelChart';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { formatCost } from '@/lib/utils';
 
@@ -27,29 +26,39 @@ function KpiCard({
   sub?: string;
 }) {
   return (
-    <Card className="shadow-card border-border/50">
-      <CardContent className="flex items-start gap-3 pt-4 pb-4">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10">
-          <Icon className="h-4 w-4 text-primary" />
+    <div className="flex flex-col gap-3 rounded-lg border border-border/50 bg-card px-5 py-4 shadow-card">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70 truncate">{label}</p>
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/8">
+          <Icon className="h-3.5 w-3.5 text-primary" strokeWidth={1.75} />
         </div>
-        <div className="min-w-0">
-          <p className="text-caption truncate">{label}</p>
-          <p className="mt-0.5 text-xl font-semibold tabular-nums leading-none">{value}</p>
-          {sub && <p className="mt-1 text-caption truncate">{sub}</p>}
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div>
+        <p className="text-2xl font-semibold tabular-nums leading-none tracking-tight">{value}</p>
+        {sub && <p className="mt-1.5 text-xs text-muted-foreground truncate">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+function KpiSkeleton() {
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border border-border/50 bg-card px-5 py-4">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-2.5 w-24" />
+        <Skeleton className="h-7 w-7 rounded-md" />
+      </div>
+      <Skeleton className="h-7 w-20" />
+    </div>
   );
 }
 
 function ChartSkeleton() {
   return (
-    <Card className="shadow-card border-border/50">
-      <CardContent className="pt-5 space-y-3">
-        <Skeleton className="h-5 w-48" />
-        <Skeleton className="h-[200px] w-full" />
-      </CardContent>
-    </Card>
+    <div className="rounded-lg border border-border/50 bg-card p-5 shadow-card space-y-3">
+      <Skeleton className="h-4 w-40" />
+      <Skeleton className="h-[200px] w-full" />
+    </div>
   );
 }
 
@@ -71,18 +80,8 @@ export function AnalyticsClient() {
 
       {isLoading ? (
         <div className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Card key={i} className="shadow-card border-border/50">
-                <CardContent className="flex items-start gap-3 pt-4 pb-4">
-                  <Skeleton className="h-9 w-9 rounded-md" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-3 w-20" />
-                    <Skeleton className="h-6 w-16" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {Array.from({ length: 5 }).map((_, i) => <KpiSkeleton key={i} />)}
           </div>
           <ChartSkeleton />
           <div className="grid gap-4 sm:grid-cols-2">
@@ -91,21 +90,21 @@ export function AnalyticsClient() {
           </div>
         </div>
       ) : error ? (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           Erro ao carregar analytics: {(error as Error).message ?? 'Erro desconhecido'}
         </div>
       ) : (
         <div className="space-y-6">
           {/* KPI Row */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <KpiCard
               icon={Activity}
-              label="Total de requisições"
+              label="Requisições"
               value={totalRequests.toLocaleString('pt-BR')}
             />
             <KpiCard
               icon={BarChart2}
-              label="Total de tokens"
+              label="Tokens"
               value={fmt(totalTokens)}
             />
             <KpiCard
@@ -120,7 +119,7 @@ export function AnalyticsClient() {
             />
             <KpiCard
               icon={Cpu}
-              label="Modelo mais usado"
+              label="Modelo principal"
               value={topModel}
               sub={data?.byModel[0] ? `${data.byModel[0].requestCount.toLocaleString()} req` : undefined}
             />
@@ -142,10 +141,14 @@ export function AnalyticsClient() {
           )}
 
           {!data?.byUser.length && !data?.byModel.length && (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
-              <BarChart2 className="mb-3 h-10 w-10 text-muted-foreground/30" />
-              <p className="font-medium text-sm">Nenhuma atividade registrada</p>
-              <p className="mt-1 text-caption">Os dados aparecerão conforme o gateway recebe requisições</p>
+            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border/60 py-20 text-center">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                <BarChart2 className="h-5 w-5 text-muted-foreground/40" strokeWidth={1.5} />
+              </div>
+              <p className="text-sm font-medium">Nenhuma atividade registrada</p>
+              <p className="mt-1 text-xs text-muted-foreground max-w-[280px]">
+                Os dados aparecem conforme o gateway recebe requisições
+              </p>
             </div>
           )}
         </div>

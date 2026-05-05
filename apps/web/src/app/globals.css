@@ -4,60 +4,67 @@
 
 @layer base {
   :root {
-    --background: 220 20% 98%;
-    --foreground: 222 47% 11%;
+    /* Zinc + Emerald system — light mode */
+    --background: 0 0% 100%;
+    --foreground: 240 6% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 240 6% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 217 91% 50%;
+    --popover-foreground: 240 6% 10%;
+    --primary: 152 55% 38%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 214 30% 93%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 214 25% 94%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 214 25% 94%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 84% 60%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 240 5% 94%;
+    --accent-foreground: 240 6% 10%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 30% 88%;
-    --input: 214 30% 88%;
-    --ring: 217 91% 50%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 152 55% 38%;
     --radius: 0.5rem;
-    --sidebar-bg: 220 25% 95%;
-    --switch-on: 142 60% 32%;
+
+    /* Switch */
+    --switch-on: 152 55% 38%;
     --switch-off: 0 60% 48%;
-    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
-    --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 24px rgba(0, 0, 0, 0.1);
-    --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
+
+    /* Shadows — leve, sem preto puro */
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.06);
+    --shadow-modal: 0 24px 64px rgba(0,0,0,0.10), 0 8px 24px rgba(0,0,0,0.07);
+    --shadow-dropdown: 0 8px 32px rgba(0,0,0,0.09), 0 2px 8px rgba(0,0,0,0.05);
   }
 
   .dark {
-    --background: 224 20% 5%;
-    --foreground: 210 40% 96%;
-    --card: 224 28% 7%;
-    --card-foreground: 210 40% 96%;
-    --popover: 224 28% 7%;
-    --popover-foreground: 210 40% 96%;
-    --primary: 174 85% 48%;
-    --primary-foreground: 224 20% 5%;
-    --secondary: 220 20% 13%;
-    --secondary-foreground: 210 40% 96%;
-    --muted: 220 20% 12%;
-    --muted-foreground: 215 20% 58%;
-    --accent: 220 20% 13%;
-    --accent-foreground: 210 40% 96%;
-    --destructive: 0 63% 55%;
-    --destructive-foreground: 210 40% 96%;
-    --border: 220 25% 14%;
-    --input: 220 25% 14%;
-    --ring: 174 85% 48%;
-    --sidebar-bg: 224 22% 4%;
-    --switch-on: 142 65% 42%;
+    --background: 240 10% 4%;
+    --foreground: 240 5% 96%;
+    --card: 240 6% 7%;
+    --card-foreground: 240 5% 96%;
+    --popover: 240 6% 7%;
+    --popover-foreground: 240 5% 96%;
+    --primary: 152 60% 50%;
+    --primary-foreground: 240 10% 4%;
+    --secondary: 240 4% 14%;
+    --secondary-foreground: 240 5% 96%;
+    --muted: 240 4% 14%;
+    --muted-foreground: 240 4% 52%;
+    --accent: 240 4% 14%;
+    --accent-foreground: 240 5% 96%;
+    --destructive: 0 62% 52%;
+    --destructive-foreground: 240 5% 96%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 152 60% 50%;
+
+    /* Switch */
+    --switch-on: 152 60% 50%;
     --switch-off: 0 60% 52%;
-    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.35);
-    --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.25);
+
+    /* Shadows — dark mode mais densos */
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.35);
+    --shadow-modal: 0 24px 64px rgba(0,0,0,0.65), 0 8px 24px rgba(0,0,0,0.45);
+    --shadow-dropdown: 0 8px 32px rgba(0,0,0,0.50), 0 2px 8px rgba(0,0,0,0.30);
   }
 }
 
@@ -67,16 +74,24 @@
   }
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 @layer utilities {
   .text-page-title {
-    @apply text-2xl font-semibold tracking-tight;
+    @apply text-xl font-semibold tracking-tight;
   }
 
   .text-section-title {
-    @apply text-xs font-semibold uppercase tracking-wider text-muted-foreground;
+    @apply text-[10px] font-semibold uppercase tracking-widest text-muted-foreground;
   }
 
   .text-field-label {

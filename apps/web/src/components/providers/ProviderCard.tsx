@@ -3,7 +3,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import type { GatewayProvider } from '@/types';
 import { cn } from '@/lib/utils';
@@ -15,9 +14,9 @@ const PROVIDER_ICONS: Record<string, string> = {
 };
 
 const PROVIDER_COLORS: Record<string, string> = {
-  openrouter: 'bg-rose-500/15 text-rose-600 dark:text-rose-400',
-  ollama: 'bg-slate-500/15 text-slate-600 dark:text-slate-400',
-  lmstudio: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400',
+  openrouter: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
+  ollama: 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400',
+  lmstudio: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
 };
 
 interface ProviderCardProps {
@@ -41,70 +40,72 @@ export function ProviderCard({ provider, onConfigure, onToggleEnabled, onDelete 
 
   return (
     <Card className={cn(
-      'group relative flex flex-col gap-0 shadow-card border-border/50 transition-all duration-200',
+      'group relative flex flex-col shadow-card transition-all duration-200',
       isEnabled
-        ? 'hover:border-primary/30 hover:shadow-md'
-        : 'opacity-60 hover:opacity-75'
+        ? 'border-border/50 hover:border-primary/25 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]'
+        : 'border-border/30 opacity-55 hover:opacity-70'
     )}>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-4">
         <div className="flex items-start gap-3">
-          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-xs font-bold ${iconColor}`}>
+          <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-xs font-bold tracking-tight', iconColor)}>
             {icon}
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold leading-none truncate">{provider.name}</p>
-            <p className="mt-1 text-caption">
+            <p className="mt-1 text-xs text-muted-foreground">
               {provider.type === 'cloud' ? 'Cloud API' : 'Local'}
             </p>
           </div>
-          <div className="shrink-0 flex flex-col items-end gap-2">
+          <div className="shrink-0">
             {provider.configured ? (
-              <Badge variant="default" className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 text-xs px-2">
+              <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
                 Configurado
               </Badge>
             ) : (
-              <Badge variant="outline" className="text-muted-foreground text-xs px-2">
+              <Badge variant="outline" className="text-muted-foreground">
                 Não configurado
               </Badge>
             )}
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-muted-foreground">{isEnabled ? 'Ativo' : 'Inativo'}</span>
-              <Switch
-                checked={isEnabled}
-                onCheckedChange={onToggleEnabled}
-                disabled={!provider.configured}
-                className="scale-75 origin-right"
-              />
-            </div>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3 pt-0">
+
+      <CardContent className="flex flex-col gap-4 pt-0">
         {provider.type === 'local' && provider.url && (
-          <>
-            <Separator className="opacity-50" />
-            <p className="truncate rounded-md bg-muted px-2 py-1.5 text-xs font-mono text-muted-foreground">
-              {provider.url}
-            </p>
-          </>
+          <p className="truncate rounded-md bg-muted/60 px-2.5 py-1.5 text-xs font-mono text-muted-foreground border border-border/40">
+            {provider.url}
+          </p>
         )}
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant={provider.configured ? 'outline' : 'default'}
-            onClick={onConfigure}
-            className="flex-1"
-          >
-            {provider.configured ? 'Editar' : 'Configurar'}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleDelete}
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive px-2"
-          >
-            Remover
-          </Button>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className={cn('h-1.5 w-1.5 rounded-full', isEnabled ? 'bg-emerald-500' : 'bg-zinc-400')} />
+            <span className="text-xs text-muted-foreground">{isEnabled ? 'Ativo' : 'Inativo'}</span>
+            <Switch
+              checked={isEnabled}
+              onCheckedChange={onToggleEnabled}
+              disabled={!provider.configured}
+              className="scale-[0.8] origin-left"
+            />
+          </div>
+          <div className="flex gap-1.5">
+            <Button
+              size="sm"
+              variant={provider.configured ? 'outline' : 'default'}
+              onClick={onConfigure}
+              className="h-7 px-3 text-xs"
+            >
+              {provider.configured ? 'Editar' : 'Configurar'}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleDelete}
+              className="h-7 px-2 text-xs text-destructive/70 hover:bg-destructive/8 hover:text-destructive"
+            >
+              Remover
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
