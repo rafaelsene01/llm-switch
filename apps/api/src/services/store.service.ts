@@ -323,15 +323,15 @@ function createStore(dbFile?: string, _providers?: Pick<ProvidersDb, 'list'>) {
   function updateUser(id: string, patch: Partial<GatewayUser>): GatewayUser | null {
     const row = db.prepare('SELECT * FROM users WHERE id = ?').get(id) as UserRow | undefined;
     if (!row) return null;
-    const { key: _key, ...safePatch } = patch;
-    const updated = { ...rowToUser(row), ...safePatch };
+    const updated = { ...rowToUser(row), ...patch };
     db.prepare(
-      'UPDATE users SET name=?, model=?, allowed_models=?, active=? WHERE id=?'
+      'UPDATE users SET name=?, model=?, allowed_models=?, active=?, api_key=? WHERE id=?'
     ).run(
       updated.name,
       updated.model,
       JSON.stringify(updated.allowedModels),
       updated.active ? 1 : 0,
+      updated.key,
       id
     );
     return updated;

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { MoreHorizontal, Trash2, Pencil } from 'lucide-react';
+import { MoreHorizontal, Trash2, Pencil, RefreshCw, Copy, Check } from 'lucide-react';
 import { useModels } from '@/hooks/useModels';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,7 @@ import type { UserPublic } from '@/types';
 interface FormState {
   name: string;
   allowedModels: string[];
+  newKey: string | null;
 }
 
 interface Props {
@@ -45,16 +46,36 @@ export function UserActionsMenu({ user, onUpdated, onDeleted }: Props) {
   const { data: models } = useModels();
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<FormState>({ name: '', allowedModels: [] });
+  const [generatingKey, setGeneratingKey] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [form, setForm] = useState<FormState>({ name: '', allowedModels: [], newKey: null });
 
   const activeModels = models?.filter((m) => m.active) ?? [];
 
   function openEdit() {
-    setForm({
-      name: user.name,
-      allowedModels: [...user.allowedModels],
-    });
+    setForm({ name: user.name, allowedModels: [...user.allowedModels], newKey: null });
+    setCopied(false);
     setEditOpen(true);
+  }
+
+  async function handleGenerateKey() {
+    setGeneratingKey(true);
+    try {
+      const { key } = await apiClient.users.generateKey();
+      setForm((f) => ({ ...f, newKey: key }));
+      setCopied(false);
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setGeneratingKey(false);
+    }
+  }
+
+  async function handleCopy() {
+    if (!form.newKey) return;
+    await navigator.clipboard.writeText(form.newKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   async function handleSave() {
@@ -66,6 +87,7 @@ export function UserActionsMenu({ user, onUpdated, onDeleted }: Props) {
         model: null,
         allowedModels: form.allowedModels,
         active: user.active,
+        ...(form.newKey ? { key: form.newKey } : {}),
       });
       toast.success('Usuário atualizado');
       setEditOpen(false);
@@ -130,6 +152,43 @@ export function UserActionsMenu({ user, onUpdated, onDeleted }: Props) {
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 className="mt-1.5"
               />
+            </div>
+            <div>
+              <Label className="text-field-label">API Key</Label>
+              <div className="mt-1.5 space-y-2">
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 text-xs font-mono bg-muted px-3 py-2 rounded border border-border text-muted-foreground truncate">
+                    {form.newKey ?? user.keyPreview}
+                  </code>
+                  {form.newKey && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 shrink-0"
+                      onClick={handleCopy}
+                    >
+                      {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateKey}
+                  disabled={generatingKey}
+                  className="w-full"
+                >
+                  <RefreshCw className={`mr-2 h-3.5 w-3.5 ${generatingKey ? 'animate-spin' : ''}`} />
+                  {generatingKey ? 'Gerando...' : 'Gerar novo token'}
+                </Button>
+                {form.newKey && (
+                  <p className="text-xs text-amber-500">
+                    Copie o token agora — ele não será exibido novamente após salvar.
+                  </p>
+                )}
+              </div>
             </div>
             <ModelPriorityList
               allowedModels={form.allowedModels}
