@@ -1,8 +1,10 @@
 import path from 'path';
 
+const isStandalone = process.env.NEXT_STANDALONE === 'true';
+
 const nextConfig = {
-  output: 'standalone',
-  outputFileTracingRoot: path.resolve(__dirname, '../..'),
+  output: isStandalone ? 'standalone' : undefined,
+  outputFileTracingRoot: isStandalone ? path.resolve(__dirname, '../..') : undefined,
   typescript: {
     ignoreBuildErrors: true,
   },

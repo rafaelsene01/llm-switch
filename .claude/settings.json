@@ -23,7 +23,9 @@
       "Bash(Get-Content \"C:\\\\Users\\\\rafae\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--llm-switch\\\\0f1e6fe4-2cde-4341-b761-4c7f7e4c45bf\\\\tasks\\\\bxxk1rb3f.output\" -Tail 40)",
       "Bash(node \"d:\\\\llm-switch\\\\.claude\\\\skills\\\\impeccable\\\\scripts\\\\load-context.mjs\")",
       "Bash(Get-ChildItem -Path \"D:\\\\llm-switch\" -Force)",
-      "Bash(Select-Object Name, Mode)"
+      "Bash(Select-Object Name, Mode)",
+      "Bash(npx next *)",
+      "Bash(dir apps\\\\web /b)"
     ],
     "additionalDirectories": [
       "C:\\Users\\rafae\\.claude"

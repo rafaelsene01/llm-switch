@@ -23,6 +23,7 @@ RUN npm install --omit=dev
 FROM deps AS build-web
 ARG API_URL=http://api:3000
 ENV API_URL=${API_URL}
+ENV NEXT_STANDALONE=true
 COPY . .
 RUN cd apps/web && node_modules/.bin/next build && mkdir -p public
 
