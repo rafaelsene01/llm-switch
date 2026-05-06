@@ -13,9 +13,15 @@ interface ToolCall {
   };
 }
 
+interface ContentPart {
+  type: string;
+  text?: string;
+  [key: string]: unknown;
+}
+
 interface Message {
   role: string;
-  content: string | null;
+  content: string | ContentPart[] | null;
   name?: string;
   tool_calls?: ToolCall[];
   tool_call_id?: string;
@@ -63,6 +69,15 @@ function resolveToolContent(content: string): string {
   }
 }
 
+function resolveContent(content: string | ContentPart[] | null): string | null {
+  if (content === null) return null;
+  if (typeof content === 'string') return content;
+  const parts = content
+    .map((part) => (part.type === 'text' && typeof part.text === 'string' ? part.text : null))
+    .filter((t): t is string => t !== null);
+  return parts.length > 0 ? parts.join('\n\n') : null;
+}
+
 function RoleBadge({ role }: { role: string }) {
   const cls = ROLE_STYLES[role] ?? 'bg-muted text-muted-foreground';
   return (
@@ -73,7 +88,8 @@ function RoleBadge({ role }: { role: string }) {
 }
 
 function MessageItem({ message }: { message: Message }) {
-  const hasContent = message.content !== null && message.content !== '';
+  const resolvedContent = resolveContent(message.content);
+  const hasContent = resolvedContent !== null && resolvedContent !== '';
   const hasToolCalls = message.tool_calls && message.tool_calls.length > 0;
 
   return (
@@ -96,7 +112,7 @@ function MessageItem({ message }: { message: Message }) {
           prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:rounded
           prose-p:my-1 prose-p:leading-relaxed">
           <ReactMarkdown>
-            {message.role === 'tool' ? resolveToolContent(message.content!) : message.content!}
+            {message.role === 'tool' ? resolveToolContent(resolvedContent!) : resolvedContent!}
           </ReactMarkdown>
         </div>
       )}
