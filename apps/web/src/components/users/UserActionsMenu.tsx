@@ -139,11 +139,11 @@ export function UserActionsMenu({ user, onUpdated, onDeleted }: Props) {
       </Tooltip>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="border-b border-border pb-4 mb-2">
+        <DialogContent className="flex flex-col max-h-[90vh] p-0 gap-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
             <DialogTitle className="text-base font-semibold">Editar Usuário</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
             <div>
               <Label className="text-field-label">Nome *</Label>
               <Input
@@ -196,7 +196,7 @@ export function UserActionsMenu({ user, onUpdated, onDeleted }: Props) {
               onChange={(models) => setForm((f) => ({ ...f, allowedModels: models }))}
             />
           </div>
-          <DialogFooter className="border-t border-border pt-4 mt-2">
+          <DialogFooter className="px-6 py-4 border-t shrink-0">
             <Button variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving ? 'Salvando...' : 'Salvar'}
