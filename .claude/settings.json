@@ -25,7 +25,11 @@
       "Bash(Get-ChildItem -Path \"D:\\\\llm-switch\" -Force)",
       "Bash(Select-Object Name, Mode)",
       "Bash(npx next *)",
-      "Bash(dir apps\\\\web /b)"
+      "Bash(dir apps\\\\web /b)",
+      "PowerShell(npx nx run api:serve 2>&1)",
+      "Bash(Get-Content \"C:\\\\Users\\\\rafae\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--llm-switch\\\\f98452a9-c69c-4b35-81b3-80ca4032f330\\\\tasks\\\\bq0u8e3sm.output\" -Wait)",
+      "Bash(Select-String -Pattern \"error|Error|listen|started|ready|warn|Warn\" --line-buffered)",
+      "PowerShell(npx nx run web:dev 2>&1)"
     ],
     "additionalDirectories": [
       "C:\\Users\\rafae\\.claude"

@@ -3,6 +3,18 @@ import { chatService } from '../services/chat.service';
 import { selectAvailableModel } from '../services/quota.service';
 import type { OpenAIMessage, OpenAITool, OpenAIToolCall } from '../types';
 
+function formatStreamError(model: string, message: string): string {
+  return `⚠️ **Erro no LLM Switch**\n\nO modelo \`${model}\` não é compatível com esta requisição.\n\n**Detalhes:** ${message}\n\n**O que fazer:** Acesse o painel admin do LLM Switch e troque o modelo configurado para um que suporte as funcionalidades necessárias (ex: suporte a ferramentas/tool_choice).`;
+}
+
+function makeDeltaChunk(id: string, created: number, model: string, content: string) {
+  return { id, object: 'chat.completion.chunk', created, model, choices: [{ index: 0, delta: { content }, finish_reason: null }] };
+}
+
+function makeDoneChunk(id: string, created: number, model: string) {
+  return { id, object: 'chat.completion.chunk', created, model, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] };
+}
+
 export async function chatCompletions(req: Request, res: Response): Promise<void> {
   const {
     messages = [],
@@ -80,16 +92,28 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Request-Id', handle.requestId);
 
-    const firstChunk = { id: handle.requestId, object: 'chat.completion.chunk', created, model: selectedModel, choices: [{ index: 0, delta: { role: 'assistant', content: '' }, finish_reason: null }] };
-    res.write(`data: ${JSON.stringify(firstChunk)}\n\n`);
+    res.write(`data: ${JSON.stringify({ id: handle.requestId, object: 'chat.completion.chunk', created, model: selectedModel, choices: [{ index: 0, delta: { role: 'assistant', content: '' }, finish_reason: null }] })}\n\n`);
 
-    for await (const text of handle.textStream) {
-      const chunk = { id: handle.requestId, object: 'chat.completion.chunk', created, model: selectedModel, choices: [{ index: 0, delta: { content: text }, finish_reason: null }] };
-      res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+    try {
+      for await (const text of handle.textStream) {
+        res.write(`data: ${JSON.stringify(makeDeltaChunk(handle.requestId, created, selectedModel, text))}\n\n`);
+      }
+    } catch (streamErr) {
+      const errText = formatStreamError(selectedModel, (streamErr as Error).message);
+      res.write(`data: ${JSON.stringify(makeDeltaChunk(handle.requestId, created, selectedModel, errText))}\n\n`);
+      res.write(`data: ${JSON.stringify(makeDoneChunk(handle.requestId, created, selectedModel))}\n\n`);
+      res.write('data: [DONE]\n\n');
+      res.end();
+      return;
     }
 
-    const doneChunk = { id: handle.requestId, object: 'chat.completion.chunk', created, model: selectedModel, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] };
-    res.write(`data: ${JSON.stringify(doneChunk)}\n\n`);
+    const internalErr = handle.getStreamError();
+    if (internalErr) {
+      const errText = formatStreamError(selectedModel, internalErr.message);
+      res.write(`data: ${JSON.stringify(makeDeltaChunk(handle.requestId, created, selectedModel, errText))}\n\n`);
+    }
+
+    res.write(`data: ${JSON.stringify(makeDoneChunk(handle.requestId, created, selectedModel))}\n\n`);
     res.write('data: [DONE]\n\n');
     res.end();
     return;

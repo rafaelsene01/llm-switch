@@ -136,6 +136,7 @@ export interface ChatStreamHandle {
   requestId: string;
   textStream: AsyncIterable<string>;
   finishStream: Promise<void>;
+  getStreamError: () => Error | null;
 }
 
 export class ChatService {
@@ -150,6 +151,8 @@ export class ChatService {
     const sdkToolChoice = convertToolChoice(toolChoice);
     const coreMessages = convertMessagesToCore(messages);
 
+    let capturedStreamError: Error | null = null;
+
     const result = streamText({
       model,
       messages: coreMessages,
@@ -158,6 +161,9 @@ export class ChatService {
       maxTokens,
       ...(sdkTools ? { tools: sdkTools } : {}),
       ...(sdkToolChoice ? { toolChoice: sdkToolChoice } : {}),
+      onError: ({ error }) => {
+        capturedStreamError = error as Error;
+      },
       onFinish: async ({ usage, text }) => {
         const durationMs = Date.now() - startTime;
         const promptTokens = usage?.promptTokens ?? 0;
@@ -182,9 +188,9 @@ export class ChatService {
       },
     });
 
-    const finishStream = result.consumeStream().catch(() => {});
+    const finishStream = result.consumeStream().catch(() => { });
 
-    return { requestId, textStream: result.textStream, finishStream };
+    return { requestId, textStream: result.textStream, finishStream, getStreamError: () => capturedStreamError };
   }
 
   async complete(opts: ChatServiceOptions): Promise<ChatServiceResult> {

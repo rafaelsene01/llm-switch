@@ -5,9 +5,10 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
   const authHeader = req.headers['authorization'] ?? '';
   const xApiKey = req.headers['x-api-key'] ?? '';
   const queryKey = (req.query?.api_key as string) ?? '';
+  const skApiKeyHeader = Object.entries(req.headers).find(([, v]) => typeof v === 'string' && v.startsWith('sk-'))?.[1] ?? '';
   const token = authHeader.startsWith('Bearer ')
     ? authHeader.slice(7).trim()
-    : (xApiKey as string).trim() || queryKey.trim();
+    : (xApiKey as string).trim() || queryKey.trim() || (skApiKeyHeader as string).trim();
 
   if (!token) {
     res.status(401).json({
