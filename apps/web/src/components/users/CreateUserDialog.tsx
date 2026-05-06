@@ -98,7 +98,7 @@ export function CreateUserDialog({ open, onOpenChange, onCreated }: Props) {
             <Label className="text-field-label">API Key *</Label>
             <div className="mt-1.5 flex gap-2">
               <Input
-                placeholder="gw_..."
+                placeholder="sk-..."
                 value={form.key}
                 onChange={(e) => setForm({ ...form, key: e.target.value })}
                 className="font-mono"

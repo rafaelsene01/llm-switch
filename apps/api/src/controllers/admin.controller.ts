@@ -179,7 +179,7 @@ export function createAdminRouter(): Router {
   );
 
   router.get('/users/generate-key', (_req, res) => {
-    res.json({ key: 'gw_' + randomBytes(20).toString('hex') });
+    res.json({ key: 'sk-' + randomBytes(20).toString('hex') });
   });
 
   router.post(
