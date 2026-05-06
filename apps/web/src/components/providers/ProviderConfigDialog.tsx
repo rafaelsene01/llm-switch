@@ -11,6 +11,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
@@ -35,6 +36,7 @@ type SaveStage = 'idle' | 'validating' | 'saving';
 export function ProviderConfigDialog({ provider, open, onClose, onSaved }: ProviderConfigDialogProps) {
   const [apiKey, setApiKey] = useState('');
   const [url, setUrl] = useState(provider.url ?? '');
+  const [label, setLabel] = useState(provider.label ?? '');
   // Unconfigured providers will auto-enable on first configure; configured ones respect stored state
   const [enabled, setEnabled] = useState(provider.configured ? provider.enabled : true);
   const [keyError, setKeyError] = useState('');
@@ -98,7 +100,7 @@ export function ProviderConfigDialog({ provider, open, onClose, onSaved }: Provi
 
     setSaveStage('saving');
     try {
-      const body: { key?: string; url?: string; enabled?: boolean } = { enabled };
+      const body: { key?: string; url?: string; enabled?: boolean; label?: string } = { enabled, label: label.trim() || undefined };
       if (apiKey.trim()) body.key = apiKey.trim();
       if (provider.type === 'local') body.url = url.trim().replace(/\/$/, '');
       await apiClient.providers.update(provider.id, body);
@@ -154,6 +156,20 @@ export function ProviderConfigDialog({ provider, open, onClose, onSaved }: Provi
               checked={enabled}
               onCheckedChange={setEnabled}
               disabled={!provider.configured}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="config-provider-label" className="text-xs text-muted-foreground">
+              Label <span className="text-muted-foreground/60">(opcional)</span>
+            </Label>
+            <Input
+              id="config-provider-label"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder="ex: Conta pessoal, Empresa, Projeto X..."
+              className="h-8 text-sm"
+              disabled={isSaving}
             />
           </div>
 

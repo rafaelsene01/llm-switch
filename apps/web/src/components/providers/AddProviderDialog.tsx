@@ -10,6 +10,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { apiClient } from '@/lib/api-client';
 import type { GatewayProvider } from '@/types';
 import { cn } from '@/lib/utils';
@@ -46,17 +48,19 @@ interface AddProviderDialogProps {
 
 export function AddProviderDialog({ open, onClose, onAdded }: AddProviderDialogProps) {
   const [selected, setSelected] = useState<string | null>(null);
+  const [label, setLabel] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function handleAdd() {
     if (!selected) return;
     setLoading(true);
     try {
-      const provider = await apiClient.providers.create(selected);
+      const provider = await apiClient.providers.create(selected, label.trim() || undefined);
       toast.success(`${provider.name} adicionado.`);
       onAdded(provider);
       onClose();
       setSelected(null);
+      setLabel('');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao adicionar provider.');
     } finally {
@@ -67,6 +71,7 @@ export function AddProviderDialog({ open, onClose, onAdded }: AddProviderDialogP
   function handleClose() {
     if (loading) return;
     setSelected(null);
+    setLabel('');
     onClose();
   }
 
@@ -99,6 +104,20 @@ export function AddProviderDialog({ open, onClose, onAdded }: AddProviderDialogP
               </div>
             </button>
           ))}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="provider-label" className="text-xs text-muted-foreground">
+            Label <span className="text-muted-foreground/60">(opcional)</span>
+          </Label>
+          <Input
+            id="provider-label"
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            placeholder="ex: Conta pessoal, Empresa, Projeto X..."
+            className="h-8 text-sm"
+            disabled={loading}
+          />
         </div>
 
         <div className="flex gap-2 pt-2 border-t border-border mt-2">

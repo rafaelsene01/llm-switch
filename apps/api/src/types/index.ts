@@ -45,6 +45,7 @@ export interface GatewayProvider {
   id: string;
   providerType: string;
   name: string;
+  label?: string;
   type: ProviderType;
   key?: string;
   url?: string;

@@ -16,6 +16,7 @@ interface ProviderRow {
   id: string;
   provider_type: string;
   name: string;
+  label: string | null;
   type: string;
   key: string | null;
   url: string | null;
@@ -28,6 +29,7 @@ function rowToProvider(row: ProviderRow): GatewayProvider {
     id: row.id,
     providerType: row.provider_type,
     name: row.name,
+    label: row.label ?? undefined,
     type: row.type as 'cloud' | 'local',
     key: row.key ?? undefined,
     url: row.url ?? undefined,
@@ -46,6 +48,7 @@ function createProvidersDb(dbFile?: string) {
       id           TEXT PRIMARY KEY,
       provider_type TEXT NOT NULL,
       name         TEXT NOT NULL,
+      label        TEXT,
       type         TEXT NOT NULL,
       key          TEXT,
       url          TEXT,
@@ -54,6 +57,12 @@ function createProvidersDb(dbFile?: string) {
       created_at   TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
+
+  // migration: add label column if it doesn't exist yet
+  const cols = (db.prepare("PRAGMA table_info(providers)").all() as { name: string }[]).map((c) => c.name);
+  if (!cols.includes('label')) {
+    db.exec('ALTER TABLE providers ADD COLUMN label TEXT');
+  }
 
   function list(): GatewayProvider[] {
     return (db.prepare('SELECT * FROM providers ORDER BY created_at ASC').all() as ProviderRow[]).map(rowToProvider);
@@ -64,7 +73,7 @@ function createProvidersDb(dbFile?: string) {
     return row ? rowToProvider(row) : null;
   }
 
-  function add(providerType: AllowedProviderType): GatewayProvider {
+  function add(providerType: AllowedProviderType, label?: string): GatewayProvider {
     const meta = PROVIDER_META[providerType];
     const existing = db.prepare(
       'SELECT id FROM providers WHERE provider_type = ? ORDER BY created_at ASC'
@@ -84,21 +93,22 @@ function createProvidersDb(dbFile?: string) {
     const url = meta.defaultUrl ?? null;
 
     db.prepare(
-      'INSERT INTO providers (id, provider_type, name, type, url) VALUES (?, ?, ?, ?, ?)'
-    ).run(id, providerType, name, meta.type, url);
+      'INSERT INTO providers (id, provider_type, name, label, type, url) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(id, providerType, name, label ?? null, meta.type, url);
 
     return getById(id)!;
   }
 
   function update(
     id: string,
-    patch: Partial<Pick<GatewayProvider, 'key' | 'url' | 'enabled'>>
+    patch: Partial<Pick<GatewayProvider, 'key' | 'url' | 'enabled' | 'label'>>
   ): GatewayProvider | null {
     const current = getById(id);
     if (!current) return null;
 
     const newKey = 'key' in patch ? patch.key : current.key;
     const newUrl = 'url' in patch ? patch.url : current.url;
+    const newLabel = 'label' in patch ? (patch.label ?? null) : (current.label ?? null);
     const configured = current.type === 'cloud' ? Boolean(newKey) : Boolean(newUrl);
 
     let newEnabled: boolean;
@@ -111,8 +121,8 @@ function createProvidersDb(dbFile?: string) {
     }
 
     db.prepare(
-      'UPDATE providers SET key=?, url=?, configured=?, enabled=? WHERE id=?'
-    ).run(newKey ?? null, newUrl ?? null, configured ? 1 : 0, newEnabled ? 1 : 0, id);
+      'UPDATE providers SET key=?, url=?, label=?, configured=?, enabled=? WHERE id=?'
+    ).run(newKey ?? null, newUrl ?? null, newLabel, configured ? 1 : 0, newEnabled ? 1 : 0, id);
 
     return getById(id)!;
   }

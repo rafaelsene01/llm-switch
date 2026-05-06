@@ -53,7 +53,7 @@ export function ProviderCard({ provider, onConfigure, onToggleEnabled, onDelete 
           <div className="flex-1 min-w-0">
             <p className="font-semibold leading-none truncate">{provider.name}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {provider.type === 'cloud' ? 'Cloud API' : 'Local'}
+              {provider.label ? provider.label : provider.type === 'cloud' ? 'Cloud API' : 'Local'}
             </p>
           </div>
           <div className="shrink-0">

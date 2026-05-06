@@ -99,12 +99,12 @@ export const apiClient = {
 
   providers: {
     list: () => apiFetch<{ providers: GatewayProvider[] }>('/admin/providers').then((r) => r.providers),
-    create: (providerType: string) =>
+    create: (providerType: string, label?: string) =>
       apiFetch<{ provider: GatewayProvider }>('/admin/providers', {
         method: 'POST',
-        body: JSON.stringify({ providerType }),
+        body: JSON.stringify({ providerType, label }),
       }).then((r) => r.provider),
-    update: (id: string, body: { key?: string; url?: string; enabled?: boolean }) =>
+    update: (id: string, body: { key?: string; url?: string; enabled?: boolean; label?: string }) =>
       apiFetch<{ provider: GatewayProvider }>(`/admin/providers/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(body),

@@ -243,7 +243,7 @@ export function createAdminRouter(): Router {
   router.post(
     '/providers',
     wrap(async (req, res) => {
-      const { providerType } = req.body as { providerType?: string };
+      const { providerType, label } = req.body as { providerType?: string; label?: string };
       if (!providerType) {
         res.status(400).json({ error: { message: "Campo 'providerType' obrigatório." } });
         return;
@@ -254,7 +254,7 @@ export function createAdminRouter(): Router {
         });
         return;
       }
-      const provider = providersDb.add(providerType as AllowedProviderType);
+      const provider = providersDb.add(providerType as AllowedProviderType, label?.trim() || undefined);
       res.status(201).json({ provider: { ...provider, key: undefined } });
     })
   );
@@ -262,9 +262,10 @@ export function createAdminRouter(): Router {
   router.patch(
     '/providers/:id',
     wrap(async (req, res) => {
-      const { key, url, enabled } = req.body as { key?: string; url?: string; enabled?: boolean };
-      const patch: { key?: string; url?: string; enabled?: boolean } = { key, url };
+      const { key, url, enabled, label } = req.body as { key?: string; url?: string; enabled?: boolean; label?: string };
+      const patch: { key?: string; url?: string; enabled?: boolean; label?: string } = { key, url };
       if (enabled !== undefined) patch.enabled = enabled;
+      if (label !== undefined) patch.label = label?.trim() || undefined;
       const provider = providersDb.update(req.params.id, patch);
       if (!provider) {
         res.status(404).json({ error: { message: 'Provider não encontrado.' } });
