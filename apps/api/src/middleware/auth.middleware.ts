@@ -4,9 +4,10 @@ import { store } from '../services/store.service';
 export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers['authorization'] ?? '';
   const xApiKey = req.headers['x-api-key'] ?? '';
+  const queryKey = (req.query?.api_key as string) ?? '';
   const token = authHeader.startsWith('Bearer ')
     ? authHeader.slice(7).trim()
-    : (xApiKey as string).trim();
+    : (xApiKey as string).trim() || queryKey.trim();
 
   if (!token) {
     res.status(401).json({
