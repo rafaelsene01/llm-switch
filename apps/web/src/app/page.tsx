@@ -3,6 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HomeConfigActions } from '@/components/home/HomeConfigActions';
 import { HomeStats } from '@/components/home/HomeStats';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { LangTabs } from '@/components/home/CodeBlock';
+import { CopyUrlBadge } from '@/components/home/CopyUrlBadge';
 
 const GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL ?? 'https://seu-gateway.com';
 
@@ -180,35 +182,6 @@ const response = await client.embeddings.create({
 
 console.log(response.data[0].embedding);`;
 
-function CodeBlock({ code }: { code: string }) {
-  return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-950 overflow-hidden">
-      <div className="flex items-center gap-1.5 border-b border-zinc-800 px-4 py-2.5">
-        <div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
-        <div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
-        <div className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
-      </div>
-      <pre className="overflow-x-auto p-4 text-sm font-mono leading-relaxed text-zinc-300">
-        <code>{code}</code>
-      </pre>
-    </div>
-  );
-}
-
-function LangTabs({ curl, python, node }: { curl: string; python: string; node: string }) {
-  return (
-    <Tabs defaultValue="curl">
-      <TabsList className="mb-3">
-        <TabsTrigger value="curl">cURL</TabsTrigger>
-        <TabsTrigger value="python">Python SDK</TabsTrigger>
-        <TabsTrigger value="node">Node.js SDK</TabsTrigger>
-      </TabsList>
-      <TabsContent value="curl"><CodeBlock code={curl} /></TabsContent>
-      <TabsContent value="python"><CodeBlock code={python} /></TabsContent>
-      <TabsContent value="node"><CodeBlock code={node} /></TabsContent>
-    </Tabs>
-  );
-}
 
 export default function HomePage() {
   return (
@@ -251,9 +224,7 @@ export default function HomePage() {
           <div className="mb-4 flex items-center gap-2">
             <Terminal className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.75} />
             <p className="text-section-title">Exemplos de integração</p>
-            <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs font-mono text-muted-foreground border border-border/40">
-              {GATEWAY_URL}
-            </span>
+            <CopyUrlBadge url={GATEWAY_URL} />
           </div>
 
           <Tabs defaultValue="chat">
