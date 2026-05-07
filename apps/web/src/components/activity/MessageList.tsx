@@ -1,8 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 interface ToolCall {
   id: string;
@@ -87,14 +90,22 @@ function RoleBadge({ role }: { role: string }) {
   );
 }
 
-function MessageItem({ message }: { message: Message }) {
+function MessageItem({ message, defaultOpen = true }: { message: Message; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
   const resolvedContent = resolveContent(message.content);
   const hasContent = resolvedContent !== null && resolvedContent !== '';
   const hasToolCalls = message.tool_calls && message.tool_calls.length > 0;
+  const hasBody = hasContent || hasToolCalls;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
+    <div>
+      <button
+        onClick={() => hasBody && setOpen((v) => !v)}
+        className={cn(
+          'w-full flex items-center gap-2 py-1 text-left',
+          hasBody ? 'cursor-pointer' : 'cursor-default'
+        )}
+      >
         <RoleBadge role={message.role} />
         {message.role === 'tool' && message.name && (
           <span className="text-xs font-mono text-muted-foreground">· {message.name}</span>
@@ -104,10 +115,18 @@ function MessageItem({ message }: { message: Message }) {
             id:{message.tool_call_id}
           </span>
         )}
-      </div>
+        {hasBody && (
+          <ChevronDown
+            className={cn(
+              'ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform duration-200',
+              open ? '' : '-rotate-90'
+            )}
+          />
+        )}
+      </button>
 
-      {hasContent && (
-        <div className="pl-1 prose prose-sm dark:prose-invert max-w-none
+      {open && hasContent && (
+        <div className="mt-2 pl-1 prose prose-sm dark:prose-invert max-w-none
           prose-pre:bg-muted prose-pre:text-sm prose-pre:rounded-md
           prose-code:text-xs prose-code:bg-muted prose-code:px-1 prose-code:rounded
           prose-p:my-1 prose-p:leading-relaxed">
@@ -117,8 +136,8 @@ function MessageItem({ message }: { message: Message }) {
         </div>
       )}
 
-      {hasToolCalls && (
-        <div className="pl-1 space-y-2">
+      {open && hasToolCalls && (
+        <div className="mt-2 pl-1 space-y-2">
           {message.tool_calls!.map((tc) => (
             <div
               key={tc.id}

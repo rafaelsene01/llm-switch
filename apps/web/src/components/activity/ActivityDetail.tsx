@@ -18,11 +18,10 @@ interface Props {
 
 const SECTION_TITLES: Record<string, string> = {
   'Original Request': 'Original Request',
-  'Sanitized Request': 'Sanitized Request',
   'LLM Response': 'LLM Response',
 };
 
-const REQUEST_SECTIONS = new Set(['Original Request', 'Sanitized Request']);
+const REQUEST_SECTIONS = new Set(['Original Request']);
 
 function extractLlmText(content: string): string {
   const trimmed = content.trim();
@@ -174,10 +173,10 @@ export function ActivityDetail({ detail }: Props) {
       {/* Log sections */}
       {!markdown ? (
         !row.error_message && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-300">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
-          Arquivo de log não encontrado no servidor.
-        </div>
+          <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-300">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            Arquivo de log não encontrado no servidor.
+          </div>
         )
       ) : (
         <div className="space-y-3">
