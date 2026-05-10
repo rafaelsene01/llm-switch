@@ -168,6 +168,7 @@ export function ModelsClient() {
   const [togglingAll, setTogglingAll] = useState(false);
   const [filter, setFilter] = useState('');
   const [selectedProviders, setSelectedProviders] = useState<Set<string>>(new Set());
+  const [showFreeOnly, setShowFreeOnly] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('label');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
@@ -210,6 +211,9 @@ export function ModelsClient() {
     }
     if (selectedProviders.size > 0) {
       result = result.filter((m) => selectedProviders.has(getProviderType(m.value)));
+    }
+    if (showFreeOnly) {
+      result = result.filter((m) => m.label.toLowerCase().includes('(free)') || m.value.toLowerCase().includes('(free)'));
     }
     return result;
   })();
@@ -488,35 +492,44 @@ export function ModelsClient() {
             )}
           </div>
 
-          {availableProviderTypes.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {availableProviderTypes.map((p) => {
-                const active = selectedProviders.has(p);
-                const colors = providerColorsMap[p];
-                return (
-                  <button
-                    key={p}
-                    onClick={() => toggleProvider(p)}
-                    className={cn(
-                      'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors cursor-pointer select-none',
-                      active ? colors.chipActive : colors.chipInactive
-                    )}
-                  >
-                    {p}
-                  </button>
-                );
-              })}
-              {selectedProviders.size > 0 && (
-                <button
-                  onClick={() => setSelectedProviders(new Set())}
-                  className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors cursor-pointer select-none border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-                >
-                  <X className="mr-1 h-3 w-3" />
-                  Limpar
-                </button>
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              onClick={() => setShowFreeOnly((v) => !v)}
+              className={cn(
+                'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors cursor-pointer select-none',
+                showFreeOnly
+                  ? 'bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600'
+                  : 'border-emerald-500/40 text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20'
               )}
-            </div>
-          )}
+            >
+              Grátis
+            </button>
+            {availableProviderTypes.map((p) => {
+              const active = selectedProviders.has(p);
+              const colors = providerColorsMap[p];
+              return (
+                <button
+                  key={p}
+                  onClick={() => toggleProvider(p)}
+                  className={cn(
+                    'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors cursor-pointer select-none',
+                    active ? colors.chipActive : colors.chipInactive
+                  )}
+                >
+                  {p}
+                </button>
+              );
+            })}
+            {(selectedProviders.size > 0 || showFreeOnly) && (
+              <button
+                onClick={() => { setSelectedProviders(new Set()); setShowFreeOnly(false); }}
+                className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors cursor-pointer select-none border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                <X className="mr-1 h-3 w-3" />
+                Limpar
+              </button>
+            )}
+          </div>
         </div>
 
         {isLoading ? (
@@ -540,7 +553,7 @@ export function ModelsClient() {
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
             <Cpu className="mb-3 h-10 w-10 text-muted-foreground/30" />
             <p className="font-medium text-sm">
-              {filter.trim() || selectedProviders.size > 0
+              {filter.trim() || selectedProviders.size > 0 || showFreeOnly
                 ? 'Nenhum modelo corresponde ao filtro'
                 : 'Nenhum modelo cadastrado'}
             </p>
