@@ -213,7 +213,7 @@ export function ModelsClient() {
       result = result.filter((m) => selectedProviders.has(getProviderType(m.value)));
     }
     if (showFreeOnly) {
-      result = result.filter((m) => m.label.toLowerCase().includes('(free)') || m.value.toLowerCase().includes('(free)'));
+      result = result.filter((m) => m.value.toLowerCase().includes(':free') || m.label.toLowerCase().includes(':free') || m.label.toLowerCase().includes('(free)'));
     }
     return result;
   })();
