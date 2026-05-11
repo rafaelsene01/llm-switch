@@ -4,7 +4,6 @@ import type {
   AnalyticsData,
   GatewayModel,
   GatewayProvider,
-  ModelRateLimit,
   ProviderModelInfo,
   TestResult,
   UserPublic,
@@ -73,7 +72,7 @@ export const apiClient = {
     list: () => apiFetch<GatewayModel[]>('/admin/models'),
     add: (body: { value: string; label?: string }) =>
       apiFetch<GatewayModel>('/admin/models', { method: 'POST', body: JSON.stringify(body) }),
-    update: (id: string, patch: { active?: boolean; inputCostPer1M?: number; outputCostPer1M?: number; rateLimit?: ModelRateLimit | null }) =>
+    update: (id: string, patch: { active?: boolean; inputCostPer1M?: number; outputCostPer1M?: number }) =>
       apiFetch<GatewayModel>(`/admin/models/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
     remove: (id: string) =>
       apiFetch<{ success: boolean }>(`/admin/models/${id}`, { method: 'DELETE' }),

@@ -159,6 +159,7 @@ export class ChatService {
       system,
       temperature,
       maxTokens,
+      maxRetries: 0,
       ...(sdkTools ? { tools: sdkTools } : {}),
       ...(sdkToolChoice ? { toolChoice: sdkToolChoice } : {}),
       onError: ({ error }) => {
@@ -222,6 +223,7 @@ export class ChatService {
         system,
         temperature,
         maxTokens,
+        maxRetries: 0,
         ...(sdkTools ? { tools: sdkTools } : {}),
         ...(sdkToolChoice ? { toolChoice: sdkToolChoice } : {}),
       });

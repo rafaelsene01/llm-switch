@@ -12,7 +12,6 @@ interface ModelRow {
   active: number;
   input_cost_per1m: number | null;
   output_cost_per1m: number | null;
-  rate_limit_json: string | null;
   created_at: string;
 }
 
@@ -48,7 +47,6 @@ function rowToModel(row: ModelRow): GatewayModel {
     active: Boolean(row.active),
     ...(row.input_cost_per1m !== null && { inputCostPer1M: row.input_cost_per1m }),
     ...(row.output_cost_per1m !== null && { outputCostPer1M: row.output_cost_per1m }),
-    ...(row.rate_limit_json ? { rateLimit: JSON.parse(row.rate_limit_json) } : {}),
   };
 }
 
@@ -77,7 +75,7 @@ function migrateFromJson(db: Database.Database): void {
     const users: GatewayUser[] = raw.users ?? [];
 
     const insertModel = db.prepare(
-      'INSERT OR IGNORE INTO models (id, value, label, active, input_cost_per1m, output_cost_per1m, rate_limit_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT OR IGNORE INTO models (id, value, label, active, input_cost_per1m, output_cost_per1m, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
     const insertUser = db.prepare(
       'INSERT OR IGNORE INTO users (id, name, api_key, model, allowed_models, created_at, active) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -92,7 +90,6 @@ function migrateFromJson(db: Database.Database): void {
           m.active ? 1 : 0,
           m.inputCostPer1M ?? null,
           m.outputCostPer1M ?? null,
-          m.rateLimit ? JSON.stringify(m.rateLimit) : null,
           new Date().toISOString()
         );
       }
@@ -131,7 +128,6 @@ function createStore(dbFile?: string, _providers?: Pick<ProvidersDb, 'list'>) {
       active            INTEGER NOT NULL DEFAULT 1,
       input_cost_per1m  REAL,
       output_cost_per1m REAL,
-      rate_limit_json   TEXT,
       created_at        TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS users (
@@ -223,19 +219,18 @@ function createStore(dbFile?: string, _providers?: Pick<ProvidersDb, 'list'>) {
 
   function updateModel(
     id: string,
-    patch: Partial<Pick<GatewayModel, 'active' | 'label' | 'inputCostPer1M' | 'outputCostPer1M' | 'rateLimit'>>
+    patch: Partial<Pick<GatewayModel, 'active' | 'label' | 'inputCostPer1M' | 'outputCostPer1M'>>
   ): GatewayModel | null {
     const row = db.prepare('SELECT * FROM models WHERE id = ?').get(id) as ModelRow | undefined;
     if (!row) return null;
     const updated = { ...rowToModel(row), ...patch };
     db.prepare(
-      'UPDATE models SET label=?, active=?, input_cost_per1m=?, output_cost_per1m=?, rate_limit_json=? WHERE id=?'
+      'UPDATE models SET label=?, active=?, input_cost_per1m=?, output_cost_per1m=? WHERE id=?'
     ).run(
       updated.label,
       updated.active ? 1 : 0,
       updated.inputCostPer1M ?? null,
       updated.outputCostPer1M ?? null,
-      updated.rateLimit ? JSON.stringify(updated.rateLimit) : null,
       id
     );
     return updated;
@@ -429,15 +424,14 @@ function createStore(dbFile?: string, _providers?: Pick<ProvidersDb, 'list'>) {
             continue;
           }
           db.prepare(
-            'INSERT OR IGNORE INTO models (id, value, label, active, input_cost_per1m, output_cost_per1m, rate_limit_json) VALUES (?, ?, ?, ?, ?, ?, ?)'
+            'INSERT OR IGNORE INTO models (id, value, label, active, input_cost_per1m, output_cost_per1m) VALUES (?, ?, ?, ?, ?, ?)'
           ).run(
             id,
             m.value,
             m.label,
             m.active ? 1 : 0,
             m.inputCostPer1M ?? null,
-            m.outputCostPer1M ?? null,
-            m.rateLimit ? JSON.stringify(m.rateLimit) : null
+            m.outputCostPer1M ?? null
           );
           report.added[mod]++;
         }

@@ -139,17 +139,15 @@ export function createAdminRouter(): Router {
   router.patch(
     '/models/:id',
     wrap(async (req, res) => {
-      const { active, inputCostPer1M, outputCostPer1M, rateLimit } = req.body as {
+      const { active, inputCostPer1M, outputCostPer1M } = req.body as {
         active?: boolean;
         inputCostPer1M?: number;
         outputCostPer1M?: number;
-        rateLimit?: import('../types').ModelRateLimit | null;
       };
       const patch: Parameters<typeof store.updateModel>[1] = {};
       if (active !== undefined) patch.active = active;
       if (inputCostPer1M !== undefined) patch.inputCostPer1M = inputCostPer1M;
       if (outputCostPer1M !== undefined) patch.outputCostPer1M = outputCostPer1M;
-      if (rateLimit !== undefined) patch.rateLimit = rateLimit ?? undefined;
       const model = store.updateModel(req.params.id, patch);
       if (!model) {
         res.status(404).json({ error: { message: 'Modelo não encontrado.' } });

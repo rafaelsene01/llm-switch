@@ -31,10 +31,13 @@
       "Bash(Select-String -Pattern \"error|Error|listen|started|ready|warn|Warn\" --line-buffered)",
       "PowerShell(npx nx run web:dev 2>&1)",
       "Skill(update-config)",
-      "Skill(update-config:*)"
+      "Skill(update-config:*)",
+      "Bash(mkdir -p \"d:\\\\llm-switch\\\\.specs\\\\features\\\\api-fallback\")",
+      "Bash(Remove-Item \"d:\\\\llm-switch\\\\apps\\\\api\\\\src\\\\services\\\\quota.service.ts\" -Force)"
     ],
     "additionalDirectories": [
-      "C:\\Users\\rafae\\.claude"
+      "C:\\Users\\rafae\\.claude",
+      "d:\\llm-switch\\.specs\\features"
     ]
   }
 }

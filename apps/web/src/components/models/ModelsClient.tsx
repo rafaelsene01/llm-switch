@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Label } from '@/components/ui/label';
 import {
   Table,
   TableBody,
@@ -19,25 +18,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { cn } from '@/lib/utils';
-import type { GatewayModel, ModelRateLimit } from '@/types';
-
+import type { GatewayModel } from '@/types';
 
 interface ProviderColors {
   chipActive: string;
@@ -87,16 +71,14 @@ function CostCell({ value }: { value?: number }) {
 type SortKey = 'label' | 'modelName' | 'inputCostPer1M' | 'outputCostPer1M' | 'active';
 type SortDir = 'asc' | 'desc';
 
-/** One row in the table — represents all instances of the same model across provider instances of the same type */
 interface UnifiedModel {
-  key: string;           // `${providerType}::${modelName}`
+  key: string;
   providerType: string;
-  modelName: string;     // part after the first ":" in model.value
+  modelName: string;
   label: string;
   inputCostPer1M?: number;
   outputCostPer1M?: number;
-  rateLimit?: ModelRateLimit;
-  active: boolean;       // true only if ALL instances are active
+  active: boolean;
   instances: GatewayModel[];
 }
 
@@ -107,55 +89,6 @@ interface PriceEditState {
   output: string;
 }
 
-type AmountSuffix = 'raw' | 'K' | 'M' | 'B' | 'T';
-
-const SUFFIX_MULTIPLIER: Record<AmountSuffix, number> = {
-  raw: 1,
-  K: 1_000,
-  M: 1_000_000,
-  B: 1_000_000_000,
-  T: 1_000_000_000_000,
-};
-
-function detectSuffix(amount: number): { base: string; suffix: AmountSuffix } {
-  if (amount >= 1_000_000_000_000 && amount % 1_000_000_000_000 === 0)
-    return { base: String(amount / 1_000_000_000_000), suffix: 'T' };
-  if (amount >= 1_000_000_000 && amount % 1_000_000_000 === 0)
-    return { base: String(amount / 1_000_000_000), suffix: 'B' };
-  if (amount >= 1_000_000 && amount % 1_000_000 === 0)
-    return { base: String(amount / 1_000_000), suffix: 'M' };
-  if (amount >= 1_000 && amount % 1_000 === 0)
-    return { base: String(amount / 1_000), suffix: 'K' };
-  return { base: String(amount), suffix: 'raw' };
-}
-
-interface LimitEditState {
-  unifiedKey: string;
-  instanceIds: string[];
-  amountBase: string;
-  amountSuffix: AmountSuffix;
-  unit: ModelRateLimit['unit'];
-  interval: ModelRateLimit['interval'];
-  intervalHours: string;
-  bufferPercent: string;
-}
-
-function formatRateLimit(rl: ModelRateLimit): string {
-  const amt = rl.amount >= 1_000_000
-    ? `${(rl.amount / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}M`
-    : rl.amount >= 1_000
-    ? `${(rl.amount / 1_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}k`
-    : String(rl.amount);
-  const unit = rl.unit === 'tokens' ? 'tokens' : 'req';
-  const interval =
-    rl.interval === 'weekly' ? 'sem' :
-    rl.interval === 'daily' ? 'dia' :
-    `${rl.intervalHours ?? 1}h`;
-  const buffer = rl.bufferPercent ?? 10;
-  const usedPct = 100 - buffer;
-  return `${amt} ${unit}/${interval} · ${usedPct}%`;
-}
-
 export function ModelsClient() {
   const { data: models, isLoading, mutate } = useModels();
   const { data: providers } = useProviders();
@@ -163,8 +96,6 @@ export function ModelsClient() {
   const [syncingPrices, setSyncingPrices] = useState(false);
   const [priceEdit, setPriceEdit] = useState<PriceEditState | null>(null);
   const [savingPrice, setSavingPrice] = useState(false);
-  const [limitEdit, setLimitEdit] = useState<LimitEditState | null>(null);
-  const [savingLimit, setSavingLimit] = useState(false);
   const [togglingAll, setTogglingAll] = useState(false);
   const [filter, setFilter] = useState('');
   const [selectedProviders, setSelectedProviders] = useState<Set<string>>(new Set());
@@ -196,7 +127,6 @@ export function ModelsClient() {
     ? new Set(providers.filter((p) => p.configured && p.enabled !== false).map((p) => p.id))
     : null;
 
-  // Filter raw models
   const filteredModels = (() => {
     if (!models?.length) return models;
     let result = models;
@@ -218,7 +148,6 @@ export function ModelsClient() {
     return result;
   })();
 
-  // Deduplicate into unified models: one row per (providerType + modelName)
   const unifiedModels: UnifiedModel[] = (() => {
     if (!filteredModels?.length) return [];
     const map = new Map<string, UnifiedModel>();
@@ -234,7 +163,6 @@ export function ModelsClient() {
           label: model.label,
           inputCostPer1M: model.inputCostPer1M,
           outputCostPer1M: model.outputCostPer1M,
-          rateLimit: model.rateLimit,
           active: model.active,
           instances: [model],
         });
@@ -376,73 +304,6 @@ export function ModelsClient() {
     }
   }
 
-  function startLimitEdit(unified: UnifiedModel) {
-    const { base, suffix } = unified.rateLimit
-      ? detectSuffix(unified.rateLimit.amount)
-      : { base: '', suffix: 'M' as AmountSuffix };
-    setLimitEdit({
-      unifiedKey: unified.key,
-      instanceIds: unified.instances.map((m) => m.id),
-      amountBase: base,
-      amountSuffix: suffix,
-      unit: unified.rateLimit?.unit ?? 'tokens',
-      interval: unified.rateLimit?.interval ?? 'weekly',
-      intervalHours: unified.rateLimit?.intervalHours ? String(unified.rateLimit.intervalHours) : '1',
-      bufferPercent: unified.rateLimit?.bufferPercent !== undefined ? String(unified.rateLimit.bufferPercent) : '10',
-    });
-  }
-
-  async function saveLimitEdit() {
-    if (!limitEdit) return;
-    const base = parseFloat(limitEdit.amountBase);
-    if (!limitEdit.amountBase || isNaN(base) || base <= 0) {
-      toast.error('Quantidade inválida');
-      return;
-    }
-    const amount = Math.round(base * SUFFIX_MULTIPLIER[limitEdit.amountSuffix]);
-    const intervalHours = limitEdit.interval === 'hourly' ? parseInt(limitEdit.intervalHours, 10) : undefined;
-    if (limitEdit.interval === 'hourly' && (!intervalHours || isNaN(intervalHours) || intervalHours <= 0)) {
-      toast.error('Intervalo de horas inválido');
-      return;
-    }
-    const bufferPercent = parseInt(limitEdit.bufferPercent, 10);
-    if (isNaN(bufferPercent) || bufferPercent < 0 || bufferPercent > 99) {
-      toast.error('Margem de segurança deve ser entre 0 e 99%');
-      return;
-    }
-    const rateLimit: ModelRateLimit = {
-      amount,
-      unit: limitEdit.unit,
-      interval: limitEdit.interval,
-      ...(intervalHours ? { intervalHours } : {}),
-      ...(bufferPercent !== 10 ? { bufferPercent } : {}),
-    };
-    setSavingLimit(true);
-    try {
-      await Promise.all(
-        limitEdit.instanceIds.map((id) => apiClient.models.update(id, { rateLimit }))
-      );
-      await mutate();
-      toast.success('Limite salvo');
-      setLimitEdit(null);
-    } catch (err) {
-      toast.error((err as Error).message);
-    } finally {
-      setSavingLimit(false);
-    }
-  }
-
-  async function clearLimit(instanceIds: string[]) {
-    try {
-      await Promise.all(instanceIds.map((id) => apiClient.models.update(id, { rateLimit: null })));
-      await mutate();
-      toast.success('Limite removido');
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
-  }
-
-  // Group sorted unified models by provider type for section headers
   const groupedByProvider = (() => {
     const map = new Map<string, UnifiedModel[]>();
     for (const u of sortedUnified) {
@@ -587,8 +448,6 @@ export function ModelsClient() {
                     );
                   })}
                   <TableHead className="text-section-title h-10 w-8" />
-                  <TableHead className="text-section-title h-10">Limite</TableHead>
-                  <TableHead className="text-section-title h-10 w-8" />
                   <TableHead className="text-section-title h-10">
                     <span className="inline-flex items-center gap-2">
                       <span
@@ -623,7 +482,7 @@ export function ModelsClient() {
 
                   return [
                     <TableRow key={`header-${pt}`} className="bg-muted/40 hover:bg-muted/40 border-t border-border/60">
-                      <TableCell colSpan={8} className="py-1.5 px-4">
+                      <TableCell colSpan={6} className="py-1.5 px-4">
                         <span className={cn('text-xs font-semibold uppercase tracking-wide', ptColors?.providerText)}>
                           {pt}
                         </span>
@@ -714,39 +573,6 @@ export function ModelsClient() {
                             </>
                           )}
                           <TableCell>
-                            {unified.rateLimit ? (
-                              <span className="font-mono text-xs tabular-nums">
-                                {formatRateLimit(unified.rateLimit)}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground/50 italic">não definido</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="w-8">
-                            <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7"
-                                onClick={() => startLimitEdit(unified)}
-                                title="Editar limite"
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                              {unified.rateLimit && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7 text-destructive hover:text-destructive"
-                                  onClick={() => clearLimit(unified.instances.map((m) => m.id))}
-                                  title="Remover limite"
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
                             <Switch
                               checked={unified.active}
                               onCheckedChange={(checked) => handleToggleActive(unified.instances.map((m) => m.id), checked)}
@@ -761,117 +587,6 @@ export function ModelsClient() {
             </Table>
           </div>
         )}
-
-        <Dialog open={!!limitEdit} onOpenChange={(o) => !o && setLimitEdit(null)}>
-          <DialogContent>
-            <DialogHeader className="border-b border-border pb-4 mb-2">
-              <DialogTitle className="text-base font-semibold">Editar Limite de Uso</DialogTitle>
-            </DialogHeader>
-            {limitEdit && (
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-field-label">Quantidade</Label>
-                  <div className="mt-1.5 flex gap-2">
-                    <Input
-                      className="font-mono"
-                      placeholder="ex: 500"
-                      value={limitEdit.amountBase}
-                      onChange={(e) => setLimitEdit({ ...limitEdit, amountBase: e.target.value })}
-                      autoFocus
-                    />
-                    <Select
-                      value={limitEdit.amountSuffix}
-                      onValueChange={(v) => setLimitEdit({ ...limitEdit, amountSuffix: v as AmountSuffix })}
-                    >
-                      <SelectTrigger className="w-28 font-mono [&>span]:flex-1 [&>span]:text-left">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="raw">Unidade</SelectItem>
-                        <SelectItem value="K">K (mil)</SelectItem>
-                        <SelectItem value="M">M (milhão)</SelectItem>
-                        <SelectItem value="B">B (bilhão)</SelectItem>
-                        <SelectItem value="T">T (trilhão)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {limitEdit.amountBase && !isNaN(parseFloat(limitEdit.amountBase)) && (
-                    <p className="mt-1 text-xs text-muted-foreground font-mono">
-                      = {(parseFloat(limitEdit.amountBase) * SUFFIX_MULTIPLIER[limitEdit.amountSuffix]).toLocaleString('pt-BR')}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Label className="text-field-label">Unidade</Label>
-                  <Select
-                    value={limitEdit.unit}
-                    onValueChange={(v) => setLimitEdit({ ...limitEdit, unit: v as ModelRateLimit['unit'] })}
-                  >
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="tokens">Tokens</SelectItem>
-                      <SelectItem value="requests">Requisições</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-field-label">Intervalo</Label>
-                  <Select
-                    value={limitEdit.interval}
-                    onValueChange={(v) => setLimitEdit({ ...limitEdit, interval: v as ModelRateLimit['interval'] })}
-                  >
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="hourly">Por hora</SelectItem>
-                      <SelectItem value="daily">Por dia</SelectItem>
-                      <SelectItem value="weekly">Por semana</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {limitEdit.interval === 'hourly' && (
-                  <div>
-                    <Label className="text-field-label">A cada quantas horas</Label>
-                    <Input
-                      className="mt-1.5 font-mono"
-                      placeholder="ex: 1"
-                      value={limitEdit.intervalHours}
-                      onChange={(e) => setLimitEdit({ ...limitEdit, intervalHours: e.target.value })}
-                    />
-                  </div>
-                )}
-                <div>
-                  <Label className="text-field-label">Margem de segurança (%)</Label>
-                  <Input
-                    className="mt-1.5 font-mono"
-                    placeholder="10"
-                    value={limitEdit.bufferPercent}
-                    onChange={(e) => setLimitEdit({ ...limitEdit, bufferPercent: e.target.value })}
-                  />
-                  {(() => {
-                    const v = parseInt(limitEdit.bufferPercent, 10);
-                    const usedPct = isNaN(v) ? '—' : `${100 - v}%`;
-                    return (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Padrão: 10% — uso máximo permitido: <span className="font-mono font-medium">{usedPct}</span> do limite
-                      </p>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
-            <DialogFooter className="border-t border-border pt-4 mt-2">
-              <Button variant="outline" onClick={() => setLimitEdit(null)}>Cancelar</Button>
-              <Button onClick={saveLimitEdit} disabled={savingLimit}>
-                {savingLimit ? 'Salvando...' : 'Salvar'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
       </div>
     </TooltipProvider>
   );

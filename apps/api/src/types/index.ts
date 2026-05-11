@@ -1,12 +1,4 @@
 // Models
-export interface ModelRateLimit {
-  amount: number;
-  unit: 'tokens' | 'requests';
-  interval: 'hourly' | 'daily' | 'weekly';
-  intervalHours?: number;
-  bufferPercent?: number; // % to keep in reserve; default 10 → use up to 90%
-}
-
 export interface GatewayModel {
   id: string;
   value: string;
@@ -14,7 +6,6 @@ export interface GatewayModel {
   active: boolean;
   inputCostPer1M?: number;
   outputCostPer1M?: number;
-  rateLimit?: ModelRateLimit;
 }
 
 // Users
