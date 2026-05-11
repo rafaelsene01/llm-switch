@@ -1,5 +1,6 @@
 # Stage 1: deps — installs all packages, shared by build stages
 FROM node:22-alpine AS deps
+RUN apk add --no-cache python3 make g++
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /workspace
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
