@@ -33,7 +33,10 @@
       "Skill(update-config)",
       "Skill(update-config:*)",
       "Bash(mkdir -p \"d:\\\\llm-switch\\\\.specs\\\\features\\\\api-fallback\")",
-      "Bash(Remove-Item \"d:\\\\llm-switch\\\\apps\\\\api\\\\src\\\\services\\\\quota.service.ts\" -Force)"
+      "Bash(Remove-Item \"d:\\\\llm-switch\\\\apps\\\\api\\\\src\\\\services\\\\quota.service.ts\" -Force)",
+      "Bash(Get-ChildItem -Path \"d:\\\\llm-switch\\\\apps\\\\api\\\\src\\\\\" -Recurse -Force | Select-Object FullName | head -50)",
+      "Bash(Select-String '\"ai\"')",
+      "Bash(node_modules/.bin/tsc -p apps/api/tsconfig.app.json --noEmit)"
     ],
     "additionalDirectories": [
       "C:\\Users\\rafae\\.claude",

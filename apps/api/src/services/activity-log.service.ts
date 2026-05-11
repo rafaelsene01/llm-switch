@@ -179,12 +179,12 @@ export function createActivityLogService(
         entry.blocked ? 1 : 0,
         filePath,
         now,
-        entry.promptTokens,
-        entry.completionTokens,
-        entry.totalTokens,
-        entry.costUsd,
-        entry.inputCostUsd,
-        entry.outputCostUsd,
+        entry.promptTokens ?? 0,
+        entry.completionTokens ?? 0,
+        entry.totalTokens ?? 0,
+        entry.costUsd ?? 0,
+        entry.inputCostUsd ?? 0,
+        entry.outputCostUsd ?? 0,
         entry.errorMessage ?? null
       );
     } catch (err) {

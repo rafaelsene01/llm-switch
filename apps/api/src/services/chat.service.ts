@@ -132,6 +132,21 @@ function extractTextFromResult(text: string | null | undefined): string | null {
   return text;
 }
 
+export type FullStreamPart =
+  | { type: 'text-delta'; textDelta: string }
+  | { type: 'reasoning'; textDelta: string }
+  | { type: 'tool-call-streaming-start'; toolCallId: string; toolName: string }
+  | { type: 'tool-call-delta'; toolCallId: string; toolName: string; argsTextDelta: string }
+  | { type: 'tool-call'; toolCallId: string; toolName: string; args: unknown }
+  | { type: 'finish'; finishReason: string; usage: { promptTokens: number; completionTokens: number; totalTokens: number } }
+  | { type: 'error'; error: unknown }
+  | { type: string; [key: string]: unknown };
+
+export interface RawStreamHandle {
+  requestId: string;
+  fullStream: AsyncIterable<FullStreamPart>;
+}
+
 export interface ChatStreamHandle {
   requestId: string;
   textStream: AsyncIterable<string>;
@@ -192,6 +207,55 @@ export class ChatService {
     const finishStream = result.consumeStream().catch(() => { });
 
     return { requestId, textStream: result.textStream, finishStream, getStreamError: () => capturedStreamError };
+  }
+
+  async streamRaw(opts: ChatServiceOptions): Promise<RawStreamHandle> {
+    const requestId = uuidv4();
+    const startTime = Date.now();
+    const { messages, providerModel, clientLabel, tokenPreview, system, tools: rawTools, toolChoice, temperature, maxTokens } = opts;
+
+    const model = resolveModel(providerModel);
+    const sdkTools = convertTools(rawTools);
+    const sdkToolChoice = convertToolChoice(toolChoice);
+    const coreMessages = convertMessagesToCore(messages);
+
+    const result = streamText({
+      model,
+      messages: coreMessages,
+      system,
+      temperature,
+      maxTokens,
+      maxRetries: 0,
+      ...(sdkTools ? { tools: sdkTools } : {}),
+      ...(sdkToolChoice ? { toolChoice: sdkToolChoice } : {}),
+      onFinish: async ({ usage, text }) => {
+        const durationMs = Date.now() - startTime;
+        const promptTokens = usage?.promptTokens ?? 0;
+        const completionTokens = usage?.completionTokens ?? 0;
+        const { inputCostUsd, outputCostUsd } = computeCosts(providerModel, promptTokens, completionTokens);
+        logRequest({ requestId, clientLabel, providerModel, originalMessages: messages, responseTokens: usage?.totalTokens, durationMs });
+        activityLog.log({
+          requestId,
+          userName: opts.user?.name ?? clientLabel,
+          tokenPreview,
+          originalMessages: messages as Array<{ role: string; content: unknown }>,
+          llmResponse: extractTextFromResult(text),
+          providerModel,
+          blocked: false,
+          promptTokens,
+          completionTokens,
+          totalTokens: usage?.totalTokens ?? 0,
+          costUsd: inputCostUsd + outputCostUsd,
+          inputCostUsd,
+          outputCostUsd,
+        });
+      },
+    });
+
+    return {
+      requestId,
+      fullStream: result.fullStream as AsyncIterable<FullStreamPart>,
+    };
   }
 
   async complete(opts: ChatServiceOptions): Promise<ChatServiceResult> {
