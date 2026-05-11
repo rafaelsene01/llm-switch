@@ -31,26 +31,26 @@ interface ProviderColors {
 }
 
 const PROVIDER_COLOR_MAP: Record<string, ProviderColors> = {
-  openai:     { chipActive: 'bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600',         chipInactive: 'border-emerald-500/40 text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20',    providerText: 'text-emerald-500',  row: 'bg-emerald-500/[0.04]' },
-  anthropic:  { chipActive: 'bg-orange-500 border-orange-500 text-white hover:bg-orange-600',            chipInactive: 'border-orange-500/40 text-orange-500 bg-orange-500/10 hover:bg-orange-500/20',       providerText: 'text-orange-500',   row: 'bg-orange-500/[0.04]' },
-  google:     { chipActive: 'bg-blue-500 border-blue-500 text-white hover:bg-blue-600',                  chipInactive: 'border-blue-500/40 text-blue-500 bg-blue-500/10 hover:bg-blue-500/20',             providerText: 'text-blue-500',     row: 'bg-blue-500/[0.04]' },
-  mistral:    { chipActive: 'bg-violet-500 border-violet-500 text-white hover:bg-violet-600',            chipInactive: 'border-violet-500/40 text-violet-500 bg-violet-500/10 hover:bg-violet-500/20',       providerText: 'text-violet-500',   row: 'bg-violet-500/[0.04]' },
-  cohere:     { chipActive: 'bg-teal-500 border-teal-500 text-white hover:bg-teal-600',                  chipInactive: 'border-teal-500/40 text-teal-500 bg-teal-500/10 hover:bg-teal-500/20',             providerText: 'text-teal-500',     row: 'bg-teal-500/[0.04]' },
-  meta:       { chipActive: 'bg-indigo-500 border-indigo-500 text-white hover:bg-indigo-600',            chipInactive: 'border-indigo-500/40 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20',       providerText: 'text-indigo-500',   row: 'bg-indigo-500/[0.04]' },
-  groq:       { chipActive: 'bg-amber-500 border-amber-500 text-white hover:bg-amber-600',               chipInactive: 'border-amber-500/40 text-amber-500 bg-amber-500/10 hover:bg-amber-500/20',          providerText: 'text-amber-500',    row: 'bg-amber-500/[0.04]' },
-  bedrock:    { chipActive: 'bg-rose-500 border-rose-500 text-white hover:bg-rose-600',                  chipInactive: 'border-rose-500/40 text-rose-500 bg-rose-500/10 hover:bg-rose-500/20',             providerText: 'text-rose-500',     row: 'bg-rose-500/[0.04]' },
-  azure:      { chipActive: 'bg-sky-500 border-sky-500 text-white hover:bg-sky-600',                     chipInactive: 'border-sky-500/40 text-sky-500 bg-sky-500/10 hover:bg-sky-500/20',                providerText: 'text-sky-500',      row: 'bg-sky-500/[0.04]' },
-  ollama:     { chipActive: 'bg-slate-500 border-slate-500 text-white hover:bg-slate-600',               chipInactive: 'border-slate-400/40 text-slate-400 bg-slate-500/10 hover:bg-slate-500/20',          providerText: 'text-slate-400',    row: 'bg-slate-500/[0.04]' },
-  openrouter: { chipActive: 'bg-purple-500 border-purple-500 text-white hover:bg-purple-600',            chipInactive: 'border-purple-500/40 text-purple-500 bg-purple-500/10 hover:bg-purple-500/20',       providerText: 'text-purple-500',   row: 'bg-purple-500/[0.04]' },
-  lmstudio:   { chipActive: 'bg-pink-500 border-pink-500 text-white hover:bg-pink-600',                  chipInactive: 'border-pink-500/40 text-pink-500 bg-pink-500/10 hover:bg-pink-500/20',             providerText: 'text-pink-500',     row: 'bg-pink-500/[0.04]' },
+  openai: { chipActive: 'bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600', chipInactive: 'border-emerald-500/40 text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20', providerText: 'text-emerald-500', row: 'bg-emerald-500/[0.04]' },
+  anthropic: { chipActive: 'bg-orange-500 border-orange-500 text-white hover:bg-orange-600', chipInactive: 'border-orange-500/40 text-orange-500 bg-orange-500/10 hover:bg-orange-500/20', providerText: 'text-orange-500', row: 'bg-orange-500/[0.04]' },
+  google: { chipActive: 'bg-blue-500 border-blue-500 text-white hover:bg-blue-600', chipInactive: 'border-blue-500/40 text-blue-500 bg-blue-500/10 hover:bg-blue-500/20', providerText: 'text-blue-500', row: 'bg-blue-500/[0.04]' },
+  mistral: { chipActive: 'bg-violet-500 border-violet-500 text-white hover:bg-violet-600', chipInactive: 'border-violet-500/40 text-violet-500 bg-violet-500/10 hover:bg-violet-500/20', providerText: 'text-violet-500', row: 'bg-violet-500/[0.04]' },
+  cohere: { chipActive: 'bg-teal-500 border-teal-500 text-white hover:bg-teal-600', chipInactive: 'border-teal-500/40 text-teal-500 bg-teal-500/10 hover:bg-teal-500/20', providerText: 'text-teal-500', row: 'bg-teal-500/[0.04]' },
+  meta: { chipActive: 'bg-indigo-500 border-indigo-500 text-white hover:bg-indigo-600', chipInactive: 'border-indigo-500/40 text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20', providerText: 'text-indigo-500', row: 'bg-indigo-500/[0.04]' },
+  groq: { chipActive: 'bg-amber-500 border-amber-500 text-white hover:bg-amber-600', chipInactive: 'border-amber-500/40 text-amber-500 bg-amber-500/10 hover:bg-amber-500/20', providerText: 'text-amber-500', row: 'bg-amber-500/[0.04]' },
+  bedrock: { chipActive: 'bg-rose-500 border-rose-500 text-white hover:bg-rose-600', chipInactive: 'border-rose-500/40 text-rose-500 bg-rose-500/10 hover:bg-rose-500/20', providerText: 'text-rose-500', row: 'bg-rose-500/[0.04]' },
+  azure: { chipActive: 'bg-sky-500 border-sky-500 text-white hover:bg-sky-600', chipInactive: 'border-sky-500/40 text-sky-500 bg-sky-500/10 hover:bg-sky-500/20', providerText: 'text-sky-500', row: 'bg-sky-500/[0.04]' },
+  ollama: { chipActive: 'bg-slate-500 border-slate-500 text-white hover:bg-slate-600', chipInactive: 'border-slate-400/40 text-slate-400 bg-slate-500/10 hover:bg-slate-500/20', providerText: 'text-slate-400', row: 'bg-slate-500/[0.04]' },
+  openrouter: { chipActive: 'bg-purple-500 border-purple-500 text-white hover:bg-purple-600', chipInactive: 'border-purple-500/40 text-purple-500 bg-purple-500/10 hover:bg-purple-500/20', providerText: 'text-purple-500', row: 'bg-purple-500/[0.04]' },
+  lmstudio: { chipActive: 'bg-pink-500 border-pink-500 text-white hover:bg-pink-600', chipInactive: 'border-pink-500/40 text-pink-500 bg-pink-500/10 hover:bg-pink-500/20', providerText: 'text-pink-500', row: 'bg-pink-500/[0.04]' },
 };
 
 const FALLBACK_PALETTE: ProviderColors[] = [
-  { chipActive: 'bg-pink-500 border-pink-500 text-white hover:bg-pink-600',          chipInactive: 'border-pink-500/40 text-pink-500 bg-pink-500/10 hover:bg-pink-500/20',         providerText: 'text-pink-500',    row: 'bg-pink-500/[0.04]' },
-  { chipActive: 'bg-cyan-500 border-cyan-500 text-white hover:bg-cyan-600',          chipInactive: 'border-cyan-500/40 text-cyan-500 bg-cyan-500/10 hover:bg-cyan-500/20',         providerText: 'text-cyan-500',    row: 'bg-cyan-500/[0.04]' },
-  { chipActive: 'bg-lime-500 border-lime-500 text-white hover:bg-lime-600',          chipInactive: 'border-lime-500/40 text-lime-500 bg-lime-500/10 hover:bg-lime-500/20',         providerText: 'text-lime-500',    row: 'bg-lime-500/[0.04]' },
+  { chipActive: 'bg-pink-500 border-pink-500 text-white hover:bg-pink-600', chipInactive: 'border-pink-500/40 text-pink-500 bg-pink-500/10 hover:bg-pink-500/20', providerText: 'text-pink-500', row: 'bg-pink-500/[0.04]' },
+  { chipActive: 'bg-cyan-500 border-cyan-500 text-white hover:bg-cyan-600', chipInactive: 'border-cyan-500/40 text-cyan-500 bg-cyan-500/10 hover:bg-cyan-500/20', providerText: 'text-cyan-500', row: 'bg-cyan-500/[0.04]' },
+  { chipActive: 'bg-lime-500 border-lime-500 text-white hover:bg-lime-600', chipInactive: 'border-lime-500/40 text-lime-500 bg-lime-500/10 hover:bg-lime-500/20', providerText: 'text-lime-500', row: 'bg-lime-500/[0.04]' },
   { chipActive: 'bg-fuchsia-500 border-fuchsia-500 text-white hover:bg-fuchsia-600', chipInactive: 'border-fuchsia-500/40 text-fuchsia-500 bg-fuchsia-500/10 hover:bg-fuchsia-500/20', providerText: 'text-fuchsia-500', row: 'bg-fuchsia-500/[0.04]' },
-  { chipActive: 'bg-red-500 border-red-500 text-white hover:bg-red-600',             chipInactive: 'border-red-500/40 text-red-500 bg-red-500/10 hover:bg-red-500/20',             providerText: 'text-red-500',     row: 'bg-red-500/[0.04]' },
+  { chipActive: 'bg-red-500 border-red-500 text-white hover:bg-red-600', chipInactive: 'border-red-500/40 text-red-500 bg-red-500/10 hover:bg-red-500/20', providerText: 'text-red-500', row: 'bg-red-500/[0.04]' },
 ];
 
 function getProviderColors(provider: string, fallbackIndex: number): ProviderColors {
@@ -106,7 +106,7 @@ export function ModelsClient() {
   useEffect(() => {
     apiClient.models.sync()
       .then(() => mutate())
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const instanceTypeMap = new Map<string, string>(
@@ -143,7 +143,7 @@ export function ModelsClient() {
       result = result.filter((m) => selectedProviders.has(getProviderType(m.value)));
     }
     if (showFreeOnly) {
-      result = result.filter((m) => m.value.toLowerCase().includes(':free') || m.label.toLowerCase().includes(':free') || m.label.toLowerCase().includes('(free)'));
+      result = result.filter((m) => m.value.toLowerCase().includes('free') || m.label.toLowerCase().includes('free') || m.label.toLowerCase().includes('(free)'));
     }
     return result;
   })();
