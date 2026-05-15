@@ -17,14 +17,18 @@ function getProviderBase(instanceId: string) {
   return instanceId.replace(/_\d+$/, '');
 }
 
+function modelBaseKey(value: string) {
+  const [instanceId, ...rest] = value.split(':');
+  return `${getProviderBase(instanceId)}:${rest.join(':')}`;
+}
+
 function deduplicateAvailable(models: GatewayModel[], allowedModels: string[]): GatewayModel[] {
+  const allowedKeys = new Set(allowedModels.map(modelBaseKey));
   const seen = new Set<string>();
   const result: GatewayModel[] = [];
   for (const model of models) {
-    if (allowedModels.includes(model.value)) continue;
-    const [instanceId, ...rest] = model.value.split(':');
-    const modelName = rest.join(':');
-    const key = `${getProviderBase(instanceId)}:${modelName}`;
+    const key = modelBaseKey(model.value);
+    if (allowedKeys.has(key)) continue;
     if (!seen.has(key)) {
       seen.add(key);
       result.push(model);
@@ -78,87 +82,95 @@ export function ModelPriorityList({ allowedModels, activeModels, onChange }: Pro
     setDragOver(null);
   }
 
-  return (
-    <div className="space-y-3">
-      <div>
-        <Label className="text-field-label">Fila de prioridade</Label>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          O sistema usa o primeiro modelo com quota disponível, na ordem abaixo. Arraste para reordenar.
-        </p>
-        {allowedModels.length === 0 ? (
-          <div className="mt-1.5 rounded-md border border-dashed px-3 py-4 text-center">
-            <p className="text-xs text-muted-foreground">Nenhum modelo adicionado</p>
-          </div>
-        ) : (
-          <div className="mt-1.5 rounded-md border divide-y overflow-hidden">
-            {allowedModels.map((value, index) => {
-              const model = modelMap.get(value);
-              const isOver = dragOver === index;
-              return (
-                <div
-                  key={value}
-                  draggable
-                  onDragStart={() => handleDragStart(index)}
-                  onDragOver={(e) => handleDragOver(e, index)}
-                  onDrop={(e) => handleDrop(e, index)}
-                  onDragEnd={handleDragEnd}
-                  className={cn(
-                    'flex items-center gap-2 px-3 py-2 bg-background transition-colors select-none',
-                    isOver ? 'bg-muted/60 border-t-2 border-t-primary' : 'hover:bg-muted/30',
-                  )}
-                >
-                  <GripVertical className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 cursor-grab active:cursor-grabbing" />
-                  <span className="text-xs text-muted-foreground font-mono w-4 shrink-0 text-center">
-                    {index + 1}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium">{model?.label ?? value}</span>
-                    <span className="ml-1.5 font-mono text-xs text-muted-foreground">
-                      {value}
-                    </span>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
-                    onClick={() => remove(value)}
-                    title="Remover"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+  const isEmpty = allowedModels.length === 0 && available.length === 0;
 
-      {available.length > 0 && (
-        <div>
-          <Label className="text-field-label text-muted-foreground">Adicionar à fila</Label>
-          <div className="mt-1.5 rounded-md border divide-y overflow-hidden">
-            {available.map((model) => (
-              <div key={model.id} className="flex items-center gap-2 px-3 py-2 hover:bg-muted/30 transition-colors">
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-field-label">Fila de prioridade</Label>
+      <p className="text-xs text-muted-foreground">
+        O sistema usa o primeiro modelo com quota disponível. Arraste para reordenar.
+      </p>
+
+      {isEmpty ? (
+        <div className="rounded-md border border-dashed px-3 py-4 text-center">
+          <p className="text-xs text-muted-foreground">Nenhum modelo ativo disponível</p>
+        </div>
+      ) : (
+        <div className="rounded-md border divide-y overflow-hidden">
+          {allowedModels.map((value, index) => {
+            const model = modelMap.get(value);
+            const isOver = dragOver === index;
+            return (
+              <div
+                key={value}
+                draggable
+                onDragStart={() => handleDragStart(index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
+                className={cn(
+                  'flex items-center gap-2 px-3 py-2 bg-background transition-colors select-none',
+                  isOver ? 'bg-muted/60 border-t-2 border-t-primary' : 'hover:bg-muted/30',
+                )}
+              >
+                <GripVertical className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 cursor-grab active:cursor-grabbing" />
+                <span className="text-xs text-muted-foreground font-mono w-4 shrink-0 text-center">
+                  {index + 1}
+                </span>
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm text-muted-foreground">{model.label}</span>
-                  <span className="ml-1.5 font-mono text-xs text-muted-foreground/60">
-                    {model.value}
+                  <span className="text-sm font-medium">{model?.label ?? value}</span>
+                  <span className="ml-1.5 font-mono text-xs text-muted-foreground">
+                    {value}
                   </span>
                 </div>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 shrink-0"
-                  onClick={() => add(model.value)}
-                  title="Adicionar à fila"
+                  className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => remove(value)}
+                  title="Remover da fila"
                 >
-                  <Plus className="h-3.5 w-3.5" />
+                  <X className="h-3.5 w-3.5" />
                 </Button>
               </div>
-            ))}
-          </div>
+            );
+          })}
+
+          {available.length > 0 && (
+            <>
+              {allowedModels.length > 0 && (
+                <div className="px-3 py-1.5 bg-muted/30 border-y">
+                  <span className="text-xs text-muted-foreground">Disponíveis</span>
+                </div>
+              )}
+              {available.map((model) => (
+                <div
+                  key={model.id}
+                  className="flex items-center gap-2 px-3 py-2 hover:bg-muted/30 transition-colors"
+                >
+                  <span className="w-3.5 shrink-0" />
+                  <span className="w-4 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm text-muted-foreground">{model.label}</span>
+                    <span className="ml-1.5 font-mono text-xs text-muted-foreground/60">
+                      {model.value}
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0"
+                    onClick={() => add(model.value)}
+                    title="Adicionar à fila"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </>
+          )}
         </div>
       )}
     </div>

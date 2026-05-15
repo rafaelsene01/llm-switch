@@ -39,7 +39,9 @@
       "Bash(node_modules/.bin/tsc -p apps/api/tsconfig.app.json --noEmit)",
       "Bash(npm exec *)",
       "Bash(Get-ChildItem -Path \"d:\\\\llm-switch\" -Directory)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Skill(web-dev)",
+      "Skill(web-dev:*)"
     ],
     "additionalDirectories": [
       "C:\\Users\\rafae\\.claude",
