@@ -1,8 +1,9 @@
 import type { Request, Response } from 'express';
 import { chatService } from '../services/chat.service';
+import type { FullStreamPart } from '../services/chat.service';
 import { store } from '../services/store.service';
 import { providersDb } from '../services/providers-db.service';
-import { buildFallbackQueue, peekFirstChunk } from '../utils/fallback';
+import { buildFallbackQueue } from '../utils/fallback';
 import { isRateLimitError } from '../utils/errors';
 import type { OpenAIMessage, OpenAITool, OpenAIToolCall } from '../types';
 
@@ -10,9 +11,6 @@ function makeDeltaChunk(id: string, created: number, model: string, content: str
   return { id, object: 'chat.completion.chunk', created, model, choices: [{ index: 0, delta: { content }, finish_reason: null }] };
 }
 
-function makeDoneChunk(id: string, created: number, model: string) {
-  return { id, object: 'chat.completion.chunk', created, model, choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] };
-}
 
 export async function chatCompletions(req: Request, res: Response): Promise<void> {
   const {
@@ -66,11 +64,19 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
   if (stream) {
     let lastStreamErr: { candidate: string; err: unknown } | null = null;
     for (const candidate of queue) {
-      let handle;
       try {
-        handle = await chatService.streamComplete({ ...baseOpts, providerModel: candidate });
-        // Peek at first chunk — throws if provider rejects immediately (e.g. 429)
-        const { first, rest } = await peekFirstChunk(handle.textStream);
+        const handle = await chatService.streamRaw({ ...baseOpts, providerModel: candidate });
+        const fullIter = handle.fullStream[Symbol.asyncIterator]();
+
+        // Peek at first event — throws if provider rejects immediately (e.g. 429)
+        let firstEvent: FullStreamPart | null = null;
+        try {
+          const firstResult = await fullIter.next();
+          if (!firstResult.done) firstEvent = firstResult.value;
+        } catch (peekErr) {
+          lastStreamErr = { candidate, err: peekErr };
+          continue;
+        }
 
         // Stream is alive — write headers now
         const created = Math.floor(Date.now() / 1000);
@@ -81,26 +87,62 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
 
         res.write(`data: ${JSON.stringify({ id: handle.requestId, object: 'chat.completion.chunk', created, model: candidate, choices: [{ index: 0, delta: { role: 'assistant', content: '' }, finish_reason: null }] })}\n\n`);
 
-        if (first) {
-          res.write(`data: ${JSON.stringify(makeDeltaChunk(handle.requestId, created, candidate, first))}\n\n`);
-        }
+        // Track tool call index by toolCallId (OpenAI uses integer indices)
+        const toolCallIndexMap = new Map<string, number>();
+        let toolCallCounter = 0;
+        let finalFinishReason = 'stop';
+
+        const processEvent = (event: FullStreamPart) => {
+          // Cast to any to work around catch-all union member preventing narrowing
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const e = event as any;
+          if (e.type === 'text-delta') {
+            res.write(`data: ${JSON.stringify(makeDeltaChunk(handle.requestId, created, candidate, e.textDelta as string))}\n\n`);
+          } else if (e.type === 'tool-call-streaming-start') {
+            const idx = toolCallCounter++;
+            toolCallIndexMap.set(e.toolCallId as string, idx);
+            res.write(`data: ${JSON.stringify({
+              id: handle.requestId, object: 'chat.completion.chunk', created, model: candidate,
+              choices: [{ index: 0, delta: { tool_calls: [{ index: idx, id: e.toolCallId, type: 'function', function: { name: e.toolName, arguments: '' } }] }, finish_reason: null }],
+            })}\n\n`);
+          } else if (e.type === 'tool-call-delta') {
+            const idx = toolCallIndexMap.get(e.toolCallId as string) ?? 0;
+            res.write(`data: ${JSON.stringify({
+              id: handle.requestId, object: 'chat.completion.chunk', created, model: candidate,
+              choices: [{ index: 0, delta: { tool_calls: [{ index: idx, function: { arguments: e.argsTextDelta } }] }, finish_reason: null }],
+            })}\n\n`);
+          } else if (e.type === 'tool-call') {
+            // Non-streaming tool call (full args at once) — emit as a single chunk
+            if (!toolCallIndexMap.has(e.toolCallId as string)) {
+              const idx = toolCallCounter++;
+              toolCallIndexMap.set(e.toolCallId as string, idx);
+              res.write(`data: ${JSON.stringify({
+                id: handle.requestId, object: 'chat.completion.chunk', created, model: candidate,
+                choices: [{ index: 0, delta: { tool_calls: [{ index: idx, id: e.toolCallId, type: 'function', function: { name: e.toolName, arguments: JSON.stringify(e.args) } }] }, finish_reason: null }],
+              })}\n\n`);
+            }
+          } else if (e.type === 'finish') {
+            finalFinishReason = (e.finishReason as string) === 'tool-calls' ? 'tool_calls' : ((e.finishReason as string) || 'stop');
+          } else if (e.type === 'error') {
+            const errText = `⚠️ **Erro no LLM Switch**\n\nErro durante o stream do modelo \`${candidate}\`.\n\n**Detalhes:** ${String(e.error)}`;
+            res.write(`data: ${JSON.stringify(makeDeltaChunk(handle.requestId, created, candidate, errText))}\n\n`);
+          }
+        };
+
+        if (firstEvent) processEvent(firstEvent);
 
         try {
-          for await (const text of rest) {
-            res.write(`data: ${JSON.stringify(makeDeltaChunk(handle.requestId, created, candidate, text))}\n\n`);
+          let next = await fullIter.next();
+          while (!next.done) {
+            processEvent(next.value);
+            next = await fullIter.next();
           }
         } catch (streamErr) {
           const errText = `⚠️ **Erro no LLM Switch**\n\nErro durante o stream do modelo \`${candidate}\`.\n\n**Detalhes:** ${(streamErr as Error).message}`;
           res.write(`data: ${JSON.stringify(makeDeltaChunk(handle.requestId, created, candidate, errText))}\n\n`);
         }
 
-        const internalErr = handle.getStreamError();
-        if (internalErr) {
-          const errText = `⚠️ **Erro no LLM Switch**\n\nO modelo \`${candidate}\` não é compatível com esta requisição.\n\n**Detalhes:** ${internalErr.message}`;
-          res.write(`data: ${JSON.stringify(makeDeltaChunk(handle.requestId, created, candidate, errText))}\n\n`);
-        }
-
-        res.write(`data: ${JSON.stringify(makeDoneChunk(handle.requestId, created, candidate))}\n\n`);
+        res.write(`data: ${JSON.stringify({ id: handle.requestId, object: 'chat.completion.chunk', created, model: candidate, choices: [{ index: 0, delta: {}, finish_reason: finalFinishReason }] })}\n\n`);
         res.write('data: [DONE]\n\n');
         res.end();
         return;

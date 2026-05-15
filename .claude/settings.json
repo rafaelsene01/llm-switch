@@ -37,7 +37,9 @@
       "Bash(Get-ChildItem -Path \"d:\\\\llm-switch\\\\apps\\\\api\\\\src\\\\\" -Recurse -Force | Select-Object FullName | head -50)",
       "Bash(Select-String '\"ai\"')",
       "Bash(node_modules/.bin/tsc -p apps/api/tsconfig.app.json --noEmit)",
-      "Bash(npm exec *)"
+      "Bash(npm exec *)",
+      "Bash(Get-ChildItem -Path \"d:\\\\llm-switch\" -Directory)",
+      "Bash(Select-Object Name)"
     ],
     "additionalDirectories": [
       "C:\\Users\\rafae\\.claude",
