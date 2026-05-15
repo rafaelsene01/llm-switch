@@ -1,12 +1,12 @@
 # LLM Switch
 
-Um gateway de uso pessoal para cadastrar e alternar entre múltiplos providers de LLM — OpenAI, Anthropic, Google, Mistral e outros — aproveitando ao máximo os limites gratuitos de cada um sem precisar trocar de API key ou mudar código.
+Gateway pessoal OpenAI-compatible para múltiplos providers de LLM. Configura uma vez, usa em qualquer client.
 
 ---
 
-## O problema que resolve
+## Problema
 
-Cada provider oferece um nível gratuito com limites de tokens/requisições. Sem um switch, você precisa ficar trocando de chave manualmente ou fica preso em um único provider. O LLM Switch centraliza tudo: você configura suas chaves uma vez e usa normalmente, enquanto o switch roteia para o provider que você quiser.
+Cada provider tem limites gratuitos. Sem switch: troca manual de chave, código acoplado a provider. LLM Switch centraliza — roteia para o provider/modelo certo conforme fila de prioridade do usuário.
 
 ---
 
@@ -14,13 +14,13 @@ Cada provider oferece um nível gratuito com limites de tokens/requisições. Se
 
 | Feature | Detalhe |
 |---|---|
-| **Multi-provider** | OpenAI, Anthropic, Google Gemini, Mistral, OpenRouter, Ollama, LM Studio |
-| **Compatível com OpenAI** | Aponte qualquer client OpenAI para o LLM Switch sem mudar código |
-| **Dashboard admin** | Interface web para gerenciar providers, usuários, modelos e regras |
-| **Sanitização de PII** | Remove CPF, CNPJ, e-mail, API keys, senhas e mais antes de enviar ao provider |
-| **Autenticação própria** | Suas chaves internas, isoladas das chaves reais dos providers |
-| **Rate limiting** | Por usuário/cliente, configurável |
-| **Streaming** | Suporte a `stream: true` (SSE) |
+| **Multi-provider** | OpenRouter, Ollama, LM Studio. Múltiplas instâncias do mesmo tipo |
+| **Compatível OpenAI** | Aponte qualquer client OpenAI sem mudar código |
+| **Compatível Anthropic** | Endpoint `/v1/messages` suportado |
+| **Fila de prioridade** | Por usuário — modelos ordenados, troca automática quando quota esgota |
+| **Quota + rate limit** | Por modelo e por usuário, configurável |
+| **Dashboard admin** | Gerenciar providers, usuários, modelos, atividade, analytics |
+| **Streaming** | SSE (`stream: true`) |
 | **Docker** | Sobe com um comando |
 
 ---
@@ -28,55 +28,52 @@ Cada provider oferece um nível gratuito com limites de tokens/requisições. Se
 ## Início rápido
 
 ```bash
-# 1. Instalar dependências
-npm install
-
-# 2. Configurar
 cp .env.example .env
-# Edite .env com suas chaves de cada provider
-
-# 3. Rodar
-npm run dev
+docker compose up -d --build
 ```
 
-### Com Docker
+Dashboard em `http://localhost:3001`. Acesse para criar providers e usuários.
+
+### Sem Docker
 
 ```bash
-cp .env.example .env
-docker compose up -d
+npm install
+nx run api:serve   # API na porta 3000
+nx run web:dev     # Admin UI na porta 3001
 ```
-
-Acesse o dashboard em `http://localhost:3001` para configurar providers e criar usuários.
 
 ---
 
 ## Uso
 
-O LLM Switch expõe a mesma API da OpenAI. Qualquer client só precisa mudar a `baseURL`:
+Muda só a `baseURL`:
 
 ```javascript
 const client = new OpenAI({
   baseURL: "http://localhost:3000/v1",
-  apiKey: "sua_key_interna",  // criada no dashboard, não a chave real do provider
+  apiKey: "sua_key_interna",  // criada no dashboard
 });
 
-// Escolha o provider no campo model
 const response = await client.chat.completions.create({
-  model: "anthropic:claude-3-5-haiku-20241022",  // ou "openai:gpt-4o-mini", "google:gemini-2.0-flash" etc.
+  model: "qualquer-coisa",  // ignorado — modelo vem da fila do usuário
   messages: [{ role: "user", content: "Olá!" }]
 });
 ```
 
-### Formato do model
+> O campo `model` do client é ignorado. O gateway usa a fila de prioridade configurada para o usuário. Se o modelo preferido atingiu quota, tenta o próximo automaticamente.
 
-Sempre `provider:modelo`:
+### Formato de modelo (no dashboard)
 
 ```
-openai:gpt-4o-mini
-anthropic:claude-3-5-haiku-20241022
-google:gemini-2.0-flash
-mistral:mistral-small-latest
+instanceId:nomeDoModelo
+
+openrouter:claude-3-5-haiku-20241022
+openrouter:gpt-4o-mini
+ollama:llama3
+lmstudio:mistral-7b
 ```
+
+Múltiplas instâncias: `openrouter`, `openrouter_2`, etc.
 
 ---
 
@@ -85,21 +82,34 @@ mistral:mistral-small-latest
 | Método | Rota | Descrição |
 |---|---|---|
 | `GET` | `/health` | Health check (sem auth) |
-| `POST` | `/v1/chat/completions` | Completions (compatível OpenAI) |
+| `POST` | `/v1/chat/completions` | Completions (OpenAI-compatible) |
+| `POST` | `/v1/messages` | Messages (Anthropic-compatible) |
 | `GET` | `/v1/models` | Lista modelos disponíveis |
+| `GET/POST` | `/admin/*` | Admin API (Bearer ADMIN_KEY) |
 
 ---
 
-## Estrutura do projeto
+## Estrutura
 
 ```
-llm-switch/
-├── apps/
-│   ├── api/    — Express + TypeScript (porta 3000)
-│   └── web/    — Next.js 14 admin dashboard (porta 3001)
-├── libs/
-│   └── shared/ — Tipos TypeScript compartilhados
-├── docker/
-├── .env.example
-└── docker-compose.yml
+apps/api/    — Express + TypeScript (porta 3000)
+apps/web/    — Next.js 14 admin dashboard (porta 3001)
+libs/shared/ — tipos TypeScript compartilhados
+data/        — SQLite: gateway.db, providers.db, activity.db
+logs/        — audit.log, errors.log, markdown por requisição
 ```
+
+---
+
+## Vars de ambiente
+
+| Var | Descrição |
+|---|---|
+| `PORT` | Porta da API (default 3000) |
+| `ADMIN_KEY` | Chave admin (Bearer para rotas `/admin/*`) |
+| `NEXT_PUBLIC_ADMIN_KEY` | Mesmo valor, usado pelo dashboard |
+| `RATE_LIMIT_MAX` | Máx requisições por janela |
+| `RATE_LIMIT_WINDOW_MS` | Janela de rate limit em ms |
+| `LOG_LEVEL` | Nível de log Winston |
+
+Chaves dos providers ficam no banco (`data/providers.db`) — configuradas via dashboard, não via env.

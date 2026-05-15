@@ -1,51 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git remote *)",
-      "Bash(git push *)",
-      "Bash(node node_modules/typescript/bin/tsc --project apps/api/tsconfig.app.json --noEmit)",
-      "Bash(dir -Recurse -Path \"d:\\\\llm-switch\\\\libs\" -Filter \"*.ts\")",
-      "Bash(Select-Object -First 30)",
-      "Read(//mnt/d/llm-switch/**)",
-      "WebSearch",
-      "WebFetch(domain:openrouter.ai)",
-      "Bash(Get-ChildItem -Path \"d:\\\\llm-switch\\\\apps\\\\api\\\\src\" -Recurse -File)",
-      "Bash(Select-Object FullName)",
-      "Bash(Sort-Object FullName)",
-      "Read(//d/llm-gateway/apps/web/src/components/activity/**)",
-      "Read(//d/llm-gateway/apps/web/src/hooks/**)",
-      "Read(//d/llm-gateway/apps/web/src/types/**)",
-      "Bash(sqlite3 data/activity.db \".schema activity_logs\")",
-      "Bash(findstr -i lib)",
-      "Bash(sqlite3 \"data/gateway.db\" \".tables\")",
-      "Bash(Get-ChildItem -Path \"d:\\\\llm-switch\\\\apps\\\\web\\\\src\" -Recurse -Directory)",
-      "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(Get-Content \"C:\\\\Users\\\\rafae\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--llm-switch\\\\0f1e6fe4-2cde-4341-b761-4c7f7e4c45bf\\\\tasks\\\\bxxk1rb3f.output\" -Tail 40)",
-      "Bash(node \"d:\\\\llm-switch\\\\.claude\\\\skills\\\\impeccable\\\\scripts\\\\load-context.mjs\")",
-      "Bash(Get-ChildItem -Path \"D:\\\\llm-switch\" -Force)",
-      "Bash(Select-Object Name, Mode)",
-      "Bash(npx next *)",
-      "Bash(dir apps\\\\web /b)",
-      "PowerShell(npx nx run api:serve 2>&1)",
-      "Bash(Get-Content \"C:\\\\Users\\\\rafae\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--llm-switch\\\\f98452a9-c69c-4b35-81b3-80ca4032f330\\\\tasks\\\\bq0u8e3sm.output\" -Wait)",
-      "Bash(Select-String -Pattern \"error|Error|listen|started|ready|warn|Warn\" --line-buffered)",
-      "PowerShell(npx nx run web:dev 2>&1)",
-      "Skill(update-config)",
-      "Skill(update-config:*)",
-      "Bash(mkdir -p \"d:\\\\llm-switch\\\\.specs\\\\features\\\\api-fallback\")",
-      "Bash(Remove-Item \"d:\\\\llm-switch\\\\apps\\\\api\\\\src\\\\services\\\\quota.service.ts\" -Force)",
-      "Bash(Get-ChildItem -Path \"d:\\\\llm-switch\\\\apps\\\\api\\\\src\\\\\" -Recurse -Force | Select-Object FullName | head -50)",
-      "Bash(Select-String '\"ai\"')",
-      "Bash(node_modules/.bin/tsc -p apps/api/tsconfig.app.json --noEmit)",
-      "Bash(npm exec *)",
-      "Bash(Get-ChildItem -Path \"d:\\\\llm-switch\" -Directory)",
-      "Bash(Select-Object Name)",
-      "Skill(web-dev)",
-      "Skill(web-dev:*)"
-    ],
-    "additionalDirectories": [
-      "C:\\Users\\rafae\\.claude",
-      "d:\\llm-switch\\.specs\\features"
+      "Skill(caveman)",
+      "Skill(caveman:*)"
     ]
   }
 }
