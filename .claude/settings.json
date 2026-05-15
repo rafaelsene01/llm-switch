@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Skill(caveman)",
-      "Skill(caveman:*)"
+      "Skill(caveman:*)",
+      "Bash(grep -n \"console\\\\\\\\.log\" \"D:\\\\llm-switch\\\\apps\\\\api\\\\src\\\\services\\\\store.service.ts\")",
+      "Bash(del \"d:\\\\llm-switch\\\\apps\\\\api\\\\src\\\\middleware\\\\rateLimit.middleware.ts\")"
     ]
   }
 }

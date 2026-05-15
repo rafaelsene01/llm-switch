@@ -3,7 +3,6 @@ import { chatService } from '../services/chat.service';
 import { store } from '../services/store.service';
 import { providersDb } from '../services/providers-db.service';
 import { buildFallbackQueue } from '../utils/fallback';
-import { isRateLimitError } from '../utils/errors';
 import {
   messagesAnthropicToOpenAI,
   toolsAnthropicToOpenAI,
@@ -76,11 +75,7 @@ export async function anthropicMessages(req: Request, res: Response): Promise<vo
       return;
     }
 
-    if (lastErr && !isRateLimitError(lastErr.err)) {
-      res.status(502).json({ type: 'error', error: { type: 'api_error', message: `Provider error for "${lastErr.candidate}": ${(lastErr.err as Error).message}` } });
-    } else {
-      res.status(429).json({ type: 'error', error: { type: 'rate_limit_error', message: 'Rate limit reached on all available models.' } });
-    }
+    res.status(502).json({ type: 'error', error: { type: 'api_error', message: lastErr ? `Provider error for "${lastErr.candidate}": ${(lastErr.err as Error).message}` : 'No models available.' } });
     return;
   }
 
@@ -101,9 +96,8 @@ export async function anthropicMessages(req: Request, res: Response): Promise<vo
     try {
       firstResult = await iter.next();
     } catch (err) {
-      if (isRateLimitError(err)) { lastStreamErr = { candidate, err }; continue; }
       lastStreamErr = { candidate, err };
-      break;
+      continue;
     }
 
     // Headers committed — from here on we can only write SSE events
@@ -219,9 +213,5 @@ export async function anthropicMessages(req: Request, res: Response): Promise<vo
     return;
   }
 
-  if (lastStreamErr && !isRateLimitError(lastStreamErr.err)) {
-    res.status(502).json({ type: 'error', error: { type: 'api_error', message: `Provider error for "${lastStreamErr.candidate}": ${(lastStreamErr.err as Error).message}` } });
-  } else {
-    res.status(429).json({ type: 'error', error: { type: 'rate_limit_error', message: 'Rate limit reached on all available models.' } });
-  }
+  res.status(502).json({ type: 'error', error: { type: 'api_error', message: lastStreamErr ? `Provider error for "${lastStreamErr.candidate}": ${(lastStreamErr.err as Error).message}` : 'No models available.' } });
 }

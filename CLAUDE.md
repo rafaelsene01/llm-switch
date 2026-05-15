@@ -20,7 +20,7 @@ docker compose -f docker-compose.prod.yml up -d --build  # prod build
 docker compose down                    # stop all
 ```
 
-Copy `.env.example` to `.env` before running. Key vars: `PORT`, `ADMIN_KEY`, `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_MS`, `LOG_LEVEL`. Web also needs `NEXT_PUBLIC_ADMIN_KEY` (same value as `ADMIN_KEY`). Provider API keys stored in `data/providers.db` via admin UI — not env vars (legacy `OPENAI_API_KEY` etc. in env.ts are unused).
+Copy `.env.example` to `.env` before running. Key vars: `PORT`, `ADMIN_KEY`, `LOG_LEVEL`. Web also needs `NEXT_PUBLIC_ADMIN_KEY` (same value as `ADMIN_KEY`). Provider API keys stored in `data/providers.db` via admin UI — not env vars (legacy `OPENAI_API_KEY` etc. in env.ts are unused).
 
 ## Architecture
 
@@ -54,12 +54,11 @@ On first start, auto-migrates from legacy `data/config.json` if present.
 
 ```
 Client → POST /v1/chat/completions
-  → authMiddleware        (validates Bearer / X-Api-Key; sets req.user with allowedModels queue)
-  → rateLimitMiddleware   (per-client express-rate-limit via req.clientLabel)
-  → chat controller       (selectAvailableModel → resolveModel → AI SDK → log → respond)
+  → authMiddleware   (validates Bearer / X-Api-Key; sets req.user with allowedModels queue)
+  → chat controller  (selectAvailableModel → resolveModel → AI SDK → log → respond)
 ```
 
-Model selection: controlled entirely by user's `allowedModels` priority queue — `body.model` from the client is completely ignored. `selectAvailableModel(candidates)` picks the first model under quota; when a candidate is over quota it automatically tries sibling provider instances of the same provider type and model name (e.g. `openrouter_2:claude-3-sonnet` if `openrouter:claude-3-sonnet` is exhausted) before moving to the next item in the queue. Falls back to `req.userModel` only for legacy users with no `allowedModels`. Returns 400 if queue empty, 429 if all candidates (including siblings) are over quota.
+Model selection: controlled entirely by user's `allowedModels` priority queue — `body.model` from the client is completely ignored. `buildFallbackQueue()` expands candidates with sibling provider instances inserted after each original (same provider type + same model name, e.g. `openrouter_2:claude-3-sonnet` after `openrouter:claude-3-sonnet`). On provider error, tries next sibling then next model in queue. Falls back to `req.userModel` only for legacy users with no `allowedModels`. Returns 400 if queue empty, 502 if all candidates fail.
 
 Provider format: `"instanceId:modelName"` where instanceId is a provider DB record (e.g. `"openrouter"`, `"ollama"`, `"lmstudio"`).
 
@@ -70,7 +69,6 @@ Provider format: `"instanceId:modelName"` where instanceId is a provider DB reco
 - **[apps/api/src/services/providers-db.service.ts](apps/api/src/services/providers-db.service.ts)** — SQLite store (`data/providers.db`) for provider instances. Supported types: `openrouter`, `ollama`, `lmstudio`.
 - **[apps/api/src/services/providers.service.ts](apps/api/src/services/providers.service.ts)** — `listProviderModels(providerType, key, url)` fetches model list from provider API. `testProviderConnection()` sends test prompt.
 - **[apps/api/src/services/activity-log.service.ts](apps/api/src/services/activity-log.service.ts)** — SQLite (`data/activity.db`) + markdown files per request. Tracks tokens, cost, provider, user. `getModelUsage(model, since)` used by quota service. Analytics queries strip `instanceId:` prefix so sibling instances (e.g. `openrouter:claude-3` + `openrouter_2:claude-3`) aggregate under same model name.
-- **[apps/api/src/services/quota.service.ts](apps/api/src/services/quota.service.ts)** — `selectAvailableModel(candidates)` returns first model under quota. When candidate is over quota, tries sibling provider instances (same provider type + same model name, not already in queue) before advancing. Uses `providersDb` to map instanceId → providerType for sibling matching. Buffer percent configurable per model (default 10%).
 - **[apps/api/src/services/pricing.service.ts](apps/api/src/services/pricing.service.ts)** — `buildPricingMap()` fetches LiteLLM pricing data. `getPricingForModel()` maps model value to cost per 1M tokens.
 - **[apps/api/src/services/chat.service.ts](apps/api/src/services/chat.service.ts)** — `ChatService.complete()` and `ChatService.streamComplete()`. No sanitization — calls AI SDK directly, logs to activity log with token/cost data.
 - **[apps/api/src/middleware/auth.middleware.ts](apps/api/src/middleware/auth.middleware.ts)** — Validates API key, sets `req.clientLabel`, `req.user` (includes `allowedModels` queue), `req.tokenPreview`.

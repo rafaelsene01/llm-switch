@@ -16,9 +16,8 @@ Cada provider tem limites gratuitos. Sem switch: troca manual de chave, código 
 |---|---|
 | **Multi-provider** | OpenRouter, Ollama, LM Studio. Múltiplas instâncias do mesmo tipo |
 | **Compatível OpenAI** | Aponte qualquer client OpenAI sem mudar código |
-| **Compatível Anthropic** | Endpoint `/v1/messages` suportado |
 | **Fila de prioridade** | Por usuário — modelos ordenados, troca automática quando quota esgota |
-| **Quota + rate limit** | Por modelo e por usuário, configurável |
+| **Fallback automático** | Erro no provider → tenta próxima instância do mesmo modelo → próximo modelo na fila |
 | **Dashboard admin** | Gerenciar providers, usuários, modelos, atividade, analytics |
 | **Streaming** | SSE (`stream: true`) |
 | **Docker** | Sobe com um comando |
@@ -108,8 +107,6 @@ logs/        — audit.log, errors.log, markdown por requisição
 | `PORT` | Porta da API (default 3000) |
 | `ADMIN_KEY` | Chave admin (Bearer para rotas `/admin/*`) |
 | `NEXT_PUBLIC_ADMIN_KEY` | Mesmo valor, usado pelo dashboard |
-| `RATE_LIMIT_MAX` | Máx requisições por janela |
-| `RATE_LIMIT_WINDOW_MS` | Janela de rate limit em ms |
 | `LOG_LEVEL` | Nível de log Winston |
 
 Chaves dos providers ficam no banco (`data/providers.db`) — configuradas via dashboard, não via env.

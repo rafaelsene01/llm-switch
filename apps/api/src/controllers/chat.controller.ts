@@ -4,7 +4,6 @@ import type { FullStreamPart } from '../services/chat.service';
 import { store } from '../services/store.service';
 import { providersDb } from '../services/providers-db.service';
 import { buildFallbackQueue } from '../utils/fallback';
-import { isRateLimitError } from '../utils/errors';
 import type { OpenAIMessage, OpenAITool, OpenAIToolCall } from '../types';
 
 function makeDeltaChunk(id: string, created: number, model: string, content: string) {
@@ -152,11 +151,7 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
       }
     }
 
-    if (lastStreamErr && !isRateLimitError(lastStreamErr.err)) {
-      res.status(502).json({ error: { message: `Erro ao chamar o provider "${lastStreamErr.candidate}": ${(lastStreamErr.err as Error).message}`, type: 'provider_error' } });
-    } else {
-      res.status(429).json({ error: { message: 'Rate limit atingido em todos os modelos disponíveis.', type: 'quota_exceeded' } });
-    }
+    res.status(502).json({ error: { message: lastStreamErr ? `Erro ao chamar o provider "${lastStreamErr.candidate}": ${(lastStreamErr.err as Error).message}` : 'Nenhum modelo disponível.', type: 'provider_error' } });
     return;
   }
 
@@ -216,9 +211,5 @@ export async function chatCompletions(req: Request, res: Response): Promise<void
     return;
   }
 
-  if (lastErr && !isRateLimitError(lastErr.err)) {
-    res.status(502).json({ error: { message: `Erro ao chamar o provider "${lastErr.candidate}": ${(lastErr.err as Error).message}`, type: 'provider_error' } });
-  } else {
-    res.status(429).json({ error: { message: 'Rate limit atingido em todos os modelos disponíveis.', type: 'quota_exceeded' } });
-  }
+  res.status(502).json({ error: { message: lastErr ? `Erro ao chamar o provider "${lastErr.candidate}": ${(lastErr.err as Error).message}` : 'Nenhum modelo disponível.', type: 'provider_error' } });
 }
