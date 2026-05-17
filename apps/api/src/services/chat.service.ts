@@ -5,6 +5,8 @@ import { logRequest } from '../utils/logger';
 import { activityLog } from './activity-log.service';
 import { store } from './store.service';
 import type { OpenAIMessage, OpenAITool } from '../types';
+import { tracer } from '../telemetry';
+import { SpanStatusCode } from '@opentelemetry/api';
 
 export interface ChatServiceOptions {
   messages: OpenAIMessage[];
@@ -166,6 +168,10 @@ export class ChatService {
     const sdkToolChoice = convertToolChoice(toolChoice);
     const coreMessages = convertMessagesToCore(messages);
 
+    const span = tracer.startSpan('chat.complete');
+    span.setAttribute('llm.model', providerModel);
+    span.setAttribute('llm.provider', providerModel.split(':')[0]);
+
     let capturedStreamError: Error | null = null;
 
     const result = streamText({
@@ -178,6 +184,9 @@ export class ChatService {
       ...(sdkTools ? { tools: sdkTools } : {}),
       ...(sdkToolChoice ? { toolChoice: sdkToolChoice } : {}),
       onError: ({ error }) => {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
+        span.recordException(error as Error);
+        span.end();
         capturedStreamError = error as Error;
       },
       onFinish: async ({ usage, text }) => {
@@ -186,6 +195,8 @@ export class ChatService {
         const completionTokens = usage?.completionTokens ?? 0;
         const { inputCostUsd, outputCostUsd } = computeCosts(providerModel, promptTokens, completionTokens);
         logRequest({ requestId, clientLabel, providerModel, originalMessages: messages, responseTokens: usage?.totalTokens, durationMs });
+        span.setStatus({ code: SpanStatusCode.OK });
+        span.end();
         activityLog.log({
           requestId,
           userName: opts.user?.name ?? clientLabel,
@@ -279,93 +290,105 @@ export class ChatService {
     const sdkToolChoice = convertToolChoice(toolChoice);
     const coreMessages = convertMessagesToCore(messages);
 
-    let result;
-    try {
-      result = await generateText({
-        model,
-        messages: coreMessages,
-        system,
-        temperature,
-        maxTokens,
-        maxRetries: 0,
-        ...(sdkTools ? { tools: sdkTools } : {}),
-        ...(sdkToolChoice ? { toolChoice: sdkToolChoice } : {}),
-      });
-    } catch (err) {
-      const durationMs = Date.now() - startTime;
-      const errorMessage = (err as Error).message;
-      logRequest({
-        requestId,
-        clientLabel,
-        providerModel,
-        originalMessages: messages,
-        durationMs,
-        error: err as Error,
-      });
-      activityLog.log({
-        requestId,
-        userName: opts.user?.name ?? clientLabel,
-        tokenPreview,
-        originalMessages: messages as Array<{ role: string; content: unknown }>,
+    return tracer.startActiveSpan('chat.complete', async (span) => {
+      span.setAttribute('llm.model', providerModel);
+      span.setAttribute('llm.provider', providerModel.split(':')[0]);
+      try {
+        let result;
+        try {
+          result = await generateText({
+            model,
+            messages: coreMessages,
+            system,
+            temperature,
+            maxTokens,
+            maxRetries: 0,
+            ...(sdkTools ? { tools: sdkTools } : {}),
+            ...(sdkToolChoice ? { toolChoice: sdkToolChoice } : {}),
+          });
+        } catch (err) {
+          const durationMs = Date.now() - startTime;
+          const errorMessage = (err as Error).message;
+          logRequest({
+            requestId,
+            clientLabel,
+            providerModel,
+            originalMessages: messages,
+            durationMs,
+            error: err as Error,
+          });
+          activityLog.log({
+            requestId,
+            userName: opts.user?.name ?? clientLabel,
+            tokenPreview,
+            originalMessages: messages as Array<{ role: string; content: unknown }>,
+            llmResponse: null,
+            providerModel,
+            blocked: false,
+            promptTokens: 0,
+            completionTokens: 0,
+            totalTokens: 0,
+            costUsd: 0,
+            inputCostUsd: 0,
+            outputCostUsd: 0,
+            errorMessage,
+          });
+          throw err;
+        }
 
-        llmResponse: null,
-        providerModel,
-        blocked: false,
-        promptTokens: 0,
-        completionTokens: 0,
-        totalTokens: 0,
-        costUsd: 0,
-        inputCostUsd: 0,
-        outputCostUsd: 0,
-        errorMessage,
-      });
-      throw err;
-    }
+        const durationMs = Date.now() - startTime;
 
-    const durationMs = Date.now() - startTime;
+        logRequest({
+          requestId,
+          clientLabel,
+          providerModel,
+          originalMessages: messages,
+          responseTokens: result.usage?.totalTokens,
+          durationMs,
+        });
 
-    logRequest({
-      requestId,
-      clientLabel,
-      providerModel,
-      originalMessages: messages,
-      responseTokens: result.usage?.totalTokens,
-      durationMs,
+        const promptTokens = result.usage?.promptTokens ?? 0;
+        const completionTokens = result.usage?.completionTokens ?? 0;
+        const { inputCostUsd, outputCostUsd } = computeCosts(providerModel, promptTokens, completionTokens);
+
+        activityLog.log({
+          requestId,
+          userName: opts.user?.name ?? clientLabel,
+          tokenPreview,
+          originalMessages: messages as Array<{ role: string; content: unknown }>,
+          llmResponse: extractTextFromResult(result.text),
+          providerModel,
+          blocked: false,
+          promptTokens,
+          completionTokens,
+          totalTokens: result.usage?.totalTokens ?? 0,
+          costUsd: inputCostUsd + outputCostUsd,
+          inputCostUsd,
+          outputCostUsd,
+        });
+
+        span.setStatus({ code: SpanStatusCode.OK });
+        return {
+          requestId,
+          text: result.text ?? null,
+          toolCalls: result.toolCalls,
+          finishReason: result.finishReason ?? 'stop',
+          usage: {
+            promptTokens: result.usage?.promptTokens ?? 0,
+            completionTokens: result.usage?.completionTokens ?? 0,
+            totalTokens: result.usage?.totalTokens ?? 0,
+          },
+          providerModel,
+          durationMs,
+        };
+      } catch (err) {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (err as Error).message });
+        span.recordException(err as Error);
+        throw err;
+      } finally {
+        span.end();
+      }
     });
-
-    const promptTokens = result.usage?.promptTokens ?? 0;
-    const completionTokens = result.usage?.completionTokens ?? 0;
-    const { inputCostUsd, outputCostUsd } = computeCosts(providerModel, promptTokens, completionTokens);
-
-    activityLog.log({
-      requestId,
-      userName: opts.user?.name ?? clientLabel,
-      tokenPreview,
-      originalMessages: messages as Array<{ role: string; content: unknown }>,
-      llmResponse: extractTextFromResult(result.text),
-      providerModel,
-      blocked: false,
-      promptTokens,
-      completionTokens,
-      totalTokens: result.usage?.totalTokens ?? 0,
-      costUsd: inputCostUsd + outputCostUsd,
-      inputCostUsd,
-      outputCostUsd,
-    });
-
-    return {
-      requestId,
-      text: result.text ?? null,
-      toolCalls: result.toolCalls,
-      finishReason: result.finishReason ?? 'stop',
-      usage: {
-        promptTokens: result.usage?.promptTokens ?? 0,
-        completionTokens: result.usage?.completionTokens ?? 0,
-        totalTokens: result.usage?.totalTokens ?? 0,
-      },
-      providerModel,
-      durationMs,
-    };
   }
 }
 

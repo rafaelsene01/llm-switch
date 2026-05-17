@@ -4,7 +4,11 @@
       "Skill(caveman)",
       "Skill(caveman:*)",
       "Bash(grep -n \"console\\\\\\\\.log\" \"D:\\\\llm-switch\\\\apps\\\\api\\\\src\\\\services\\\\store.service.ts\")",
-      "Bash(del \"d:\\\\llm-switch\\\\apps\\\\api\\\\src\\\\middleware\\\\rateLimit.middleware.ts\")"
+      "Bash(del \"d:\\\\llm-switch\\\\apps\\\\api\\\\src\\\\middleware\\\\rateLimit.middleware.ts\")",
+      "Bash(mkdir -p \"d:\\\\llm-switch\\\\.specs\\\\features\\\\opentelemetry\")"
+    ],
+    "additionalDirectories": [
+      "d:\\llm-switch\\.specs\\features"
     ]
   }
 }
