@@ -3,7 +3,7 @@ FROM node:22-alpine AS deps
 RUN apk add --no-cache python3 make g++
 RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 WORKDIR /workspace
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 RUN pnpm i --no-frozen-lockfile
